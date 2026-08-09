@@ -1,63 +1,103 @@
 .app {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  gap: var(--space-7);
+  min-height: 100%;
   max-width: var(--max-width-chat);
   margin: 0 auto;
-  padding: var(--space-6) var(--space-4);
+  padding: var(--space-10) var(--space-8);
+  box-sizing: border-box;
 }
 
 .header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
   flex-shrink: 0;
-  margin-bottom: var(--space-5);
 }
 
-.titleRow {
+.brand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.mascot {
+  height: var(--size-mascot-header);
+  width: auto;
+  flex-shrink: 0;
+}
+
+.brandText {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-ink);
+  line-height: var(--line-height-tight);
+}
+
+.subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-body);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
 }
 
 .lockButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-2);
+  width: var(--size-lock-button);
+  height: var(--size-lock-button);
+  flex-shrink: 0;
+  padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
-  color: var(--color-text-secondary);
+  color: var(--color-ink);
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .lockButton:hover {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-lock-hover);
 }
 
-.title {
-  margin: 0;
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-heading);
-  color: var(--color-ink);
+.lockButton:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
-.subtitle {
-  margin: var(--space-1) 0 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.notice {
-  margin: var(--space-4) 0 0;
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-teal);
   border-radius: var(--radius-md);
-  line-height: var(--line-height-tight);
+  flex-shrink: 0;
+}
+
+.bannerIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-teal);
+}
+
+.bannerText {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-soft);
+  line-height: var(--line-height-normal);
 }
 
 .main {
@@ -65,4 +105,23 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: var(--space-6) var(--space-4);
+    gap: var(--space-5);
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: var(--font-size-sm);
+  }
+
+  .mascot {
+    height: 44px;
+  }
 }
