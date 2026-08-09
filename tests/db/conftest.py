@@ -15,7 +15,7 @@ FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures"
 RETRIEVAL_ENV_DEFAULTS = {
     "QDRANT_DEV_COLLECTION_NAME": "JOBS_DEV",
     "EMBEDDING_MODEL": "intfloat/multilingual-e5-small",
-    "HUBSTER_API_KEYS": "test-api-key",
+    "TOOKRATT_API_KEYS": "test-api-key",
 }
 
 

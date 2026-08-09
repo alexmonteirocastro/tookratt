@@ -57,7 +57,7 @@ jobs:
           QDRANT_URL: http://localhost:6333
           QDRANT_COLLECTION_NAME: JOBS_ON_THE_HUB
           EMBEDDING_MODEL: intfloat/multilingual-e5-small
-          HUBSTER_API_KEYS: test-api-key
+          TOOKRATT_API_KEYS: test-api-key
         run: uv run pytest -v -m "not retrieval and not generation"
 
   retrieval-test:
@@ -96,7 +96,7 @@ jobs:
           QDRANT_COLLECTION_NAME: ${{ secrets.QDRANT_COLLECTION_NAME }}
           QDRANT_DEV_COLLECTION_NAME: JOBS_DEV
           EMBEDDING_MODEL: intfloat/multilingual-e5-small
-          HUBSTER_API_KEYS: test-api-key
+          TOOKRATT_API_KEYS: test-api-key
         run: uv run pytest -v -m "retrieval or generation"
 
   frontend-test:

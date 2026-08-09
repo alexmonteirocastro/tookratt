@@ -11,7 +11,7 @@ def api_test_env(monkeypatch):
     monkeypatch.setenv("QDRANT_COLLECTION_NAME", "JOBS_ON_THE_HUB")
     monkeypatch.setenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    monkeypatch.setenv("HUBSTER_API_KEYS", TEST_API_KEY)
+    monkeypatch.setenv("TOOKRATT_API_KEYS", TEST_API_KEY)
 
 
 @pytest.fixture(autouse=True)

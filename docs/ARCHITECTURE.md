@@ -117,7 +117,7 @@ Set at minimum:
 - `QDRANT_API_KEY` — cluster API key
 - `QDRANT_COLLECTION_NAME` / `QDRANT_DEV_COLLECTION_NAME` — distinct collection names
 - `EMBEDDING_MODEL=intfloat/multilingual-e5-small`
-- `HUBSTER_API_KEYS` — at least one bearer token for `/chat` and `/jobs/*`
+- `TOOKRATT_API_KEYS` — at least one bearer token for `/chat` and `/jobs/*`
 - `GEMINI_API_KEY` — if using `/chat` with the default Gemini provider
 
 `intfloat/multilingual-e5-small` is served via Qdrant Cloud Inference only — there is no local FastEmbed fallback ([ADR-0014](adr/0014-embedding-model-migration.md)). Ingestion, `/jobs/search`, and `/chat` retrieval all fail against a local Qdrant container with the current defaults.

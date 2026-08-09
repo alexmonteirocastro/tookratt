@@ -20,9 +20,9 @@ Given the user base is small, known in advance, and doesn't need per-user sessio
 - HTTP Basic Auth at the nginx/proxy layer is cheap to bolt on, but auth state doesn't flow naturally into the SPA's `fetch` calls, and offers no per-user identity for the app itself — worse UX for no real gain at this scale.
 - A FastAPI dependency keeps the check in application code, consistent with the existing `Settings`/`pydantic-settings` pattern (ALE-72) — valid keys live in `.env`, not hardcoded, and require no code change to rotate.
 
-## Decision 2: A small set of static keys via `HUBSTER_API_KEYS`, not one shared secret
+## Decision 2: A small set of static keys via `TOOKRATT_API_KEYS`, not one shared secret
 
-**Decision:** Store a comma-separated set of valid keys in a single env var (`HUBSTER_API_KEYS=abc123,def456,ghi789`), parsed into a set in `Settings` (ALE-72 pattern). The FastAPI dependency checks `token in settings.hubster_api_keys` instead of an exact-match comparison against one value.
+**Decision:** Store a comma-separated set of valid keys in a single env var (`TOOKRATT_API_KEYS=abc123,def456,ghi789`), parsed into a set in `Settings` (ALE-72 pattern). The FastAPI dependency checks `token in settings.tookratt_api_keys` instead of an exact-match comparison against one value. During the ALE-168 rebrand cutover, `HUBSTER_API_KEYS` remains accepted as a temporary alias and is removed once Render/GitHub secrets have been migrated.
 
 **Rationale:**
 

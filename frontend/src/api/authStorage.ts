@@ -1,4 +1,4 @@
-export const API_KEY_STORAGE_KEY = "hubster_api_key";
+export const API_KEY_STORAGE_KEY = "tookratt_api_key";
 
 export function getStoredApiKey(): string | null {
   try {
