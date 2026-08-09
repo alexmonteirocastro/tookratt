@@ -18,7 +18,7 @@ _OVERRIDE_AUTH_HEADERS = {"Authorization": f"Bearer {_OVERRIDE_API_KEY}"}
 def test_protected_route_accepts_valid_api_key(mock_get_qdrant_client, mock_query_jobs):
     from types import SimpleNamespace
 
-    mock_settings = api_settings_namespace(hubster_api_keys={_OVERRIDE_API_KEY})
+    mock_settings = api_settings_namespace(tookratt_api_keys={_OVERRIDE_API_KEY})
     app.dependency_overrides[get_settings] = lambda: mock_settings
     mock_get_qdrant_client.return_value = object()
     mock_query_jobs.return_value = SimpleNamespace(points=[])
@@ -59,7 +59,7 @@ def test_protected_route_rejects_invalid_api_key():
 
 
 def test_protected_route_rejects_key_not_in_overridden_settings():
-    mock_settings = api_settings_namespace(hubster_api_keys={"other-key"})
+    mock_settings = api_settings_namespace(tookratt_api_keys={"other-key"})
     app.dependency_overrides[get_settings] = lambda: mock_settings
 
     try:

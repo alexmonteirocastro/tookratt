@@ -26,9 +26,12 @@ jobs:
       QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
       QDRANT_COLLECTION_NAME: ${{ secrets.QDRANT_COLLECTION_NAME }}
       EMBEDDING_MODEL: intfloat/multilingual-e5-small
-      # Settings() requires HUBSTER_API_KEYS even though ingestion doesn't use
-      # /chat auth — reuse the same production key(s) set on Render.
-      HUBSTER_API_KEYS: ${{ secrets.HUBSTER_API_KEYS }}
+      # Settings() requires API keys even though ingestion doesn't use /chat
+      # auth — reuse the same production key(s) set on Render (ALE-168).
+      # GHA exports missing secrets as "" (not unset), which would beat the
+      # Settings AliasChoices fallback — resolve here so a missing
+      # TOOKRATT_API_KEYS secret still uses HUBSTER_API_KEYS.
+      TOOKRATT_API_KEYS: ${{ secrets.TOOKRATT_API_KEYS || secrets.HUBSTER_API_KEYS }}
       # ADR-0015: optional Loki push (omit or leave unset in secrets to skip).
       GRAFANA_LOKI_URL: ${{ secrets.GRAFANA_LOKI_URL }}
       GRAFANA_LOKI_USER_ID: ${{ secrets.GRAFANA_LOKI_USER_ID }}

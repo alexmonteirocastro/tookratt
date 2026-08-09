@@ -22,7 +22,7 @@ def require_api_key(
                 "code": "missing_api_key",
             },
         )
-    if credentials.credentials not in settings.hubster_api_keys:
+    if credentials.credentials not in settings.tookratt_api_keys:
         raise HTTPException(
             status_code=401,
             detail={

@@ -60,5 +60,5 @@ services:
       QDRANT_URL: http://localhost:6333
       QDRANT_COLLECTION_NAME: JOBS_ON_THE_HUB
       EMBEDDING_MODEL: intfloat/multilingual-e5-small
-      HUBSTER_API_KEYS: test-api-key
+      TOOKRATT_API_KEYS: test-api-key
     command: ["pytest", "-v", "-m", "not retrieval and not generation"]

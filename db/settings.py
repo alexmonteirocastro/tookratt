@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Annotated, Any
 from urllib.parse import urlparse
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 from qdrant_client import QdrantClient
 
@@ -81,11 +81,13 @@ class Settings(BaseSettings):
             "POST /chat sources and generation context; weaker matches are omitted."
         ),
     )
-    hubster_api_keys: Annotated[set[str], NoDecode] = Field(
-        validation_alias="HUBSTER_API_KEYS",
+    tookratt_api_keys: Annotated[set[str], NoDecode] = Field(
+        # Prefer TOOKRATT_API_KEYS; HUBSTER_API_KEYS kept as cutover alias (ALE-168).
+        validation_alias=AliasChoices("TOOKRATT_API_KEYS", "HUBSTER_API_KEYS"),
         description=(
             "Comma-separated set of valid bearer tokens for /chat and /jobs/* "
-            "(see ADR-0011)."
+            "(see ADR-0011). Prefer TOOKRATT_API_KEYS; HUBSTER_API_KEYS remains "
+            "accepted until the rebrand cutover secret is removed."
         ),
     )
     # ADR-0015: optional Grafana Cloud Loki push (all three required to enable).
@@ -113,9 +115,9 @@ class Settings(BaseSettings):
         ),
     )
 
-    @field_validator("hubster_api_keys", mode="before")
+    @field_validator("tookratt_api_keys", mode="before")
     @classmethod
-    def parse_hubster_api_keys(cls, value: str | set[str] | None) -> set[str]:
+    def parse_tookratt_api_keys(cls, value: str | set[str] | None) -> set[str]:
         if value is None or value == "":
             raise ValueError("must contain at least one API key")
         if isinstance(value, str):
