@@ -12,7 +12,7 @@ seeded from `golden_jobs.json`, plus disposable `JOBS_COMPARE_*` collections).
 Fixture company names (`Acme Corp`, `Copenhagen Digital`, …) are intentional —
 do not replace these with production screenshots.
 
-![Hubster eval review — Review tab form on JOBS_DEV](assets/01-overview-review-form.png)
+![Töökratt eval review — Review tab form on JOBS_DEV](assets/01-overview-review-form.png)
 
 ## How the four tabs relate to pytest
 

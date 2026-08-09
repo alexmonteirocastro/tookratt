@@ -6,7 +6,7 @@
 
 ## Context
 
-Hubster's stated purpose is a RAG layer on top of The Hub — better candidate experience when job searching. Retrieval (Qdrant + FastEmbed) is built and verified (ALE-68). Generation is not. ALE-73 scoped the open questions; this ADR records the answers and, more importantly, *why*, so the reasoning survives independently of any one ticket.
+Töökratt's stated purpose is a RAG layer on top of The Hub — better candidate experience when job searching. Retrieval (Qdrant + FastEmbed) is built and verified (ALE-68). Generation is not. ALE-73 scoped the open questions; this ADR records the answers and, more importantly, *why*, so the reasoning survives independently of any one ticket.
 
 Two decisions are bundled here because they were originally proposed together and needed to be pulled apart:
 
@@ -67,7 +67,7 @@ Claude Haiku 4.5 and the OpenAI Nano-tier models were set aside for this stage o
 
 This is the more important part of this decision. Given the deprecation history above, wiring the Gemini SDK directly into `api/main.py` would mean the next vendor change (a deprecation, a pricing change, a decision to move to a paid tier or a different provider) requires a rewrite of the endpoint itself.
 
-Hubster already has a working pattern for exactly this problem: `the_hub_client` package isolates every Hub-API-specific detail (HTTP calls, response shapes, retry/backoff) behind typed functions and models (`JobOpportunity`, `get_full_jobs_picture_by_country`, etc.), so `db/` and `api/` never touch raw Hub JSON. The generation layer gets the same treatment:
+Töökratt already has a working pattern for exactly this problem: `the_hub_client` package isolates every Hub-API-specific detail (HTTP calls, response shapes, retry/backoff) behind typed functions and models (`JobOpportunity`, `get_full_jobs_picture_by_country`, etc.), so `db/` and `api/` never touch raw Hub JSON. The generation layer gets the same treatment:
 
 ```
 llm_client/

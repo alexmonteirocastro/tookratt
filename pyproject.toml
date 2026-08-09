@@ -1,5 +1,5 @@
 [project]
-name = "hubster"
+name = "tookratt"
 version = "0.1.0"
 description = "Scrape The Hub job portal via API and store embeddings in Qdrant for semantic search"
 readme = "README.md"

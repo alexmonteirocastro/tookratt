@@ -12,7 +12,7 @@ ALE-132 (spike) confirmed `bge-small-en-v1.5` is not available via Qdrant Cloud 
 
 ALE-138 (spike) then evidence-tested both candidates: first against a 7-job fixture set, then against the full production corpus (1,015 real `JOBS_ON_THE_HUB` points, re-embedded read-only into a throwaway collection — production untouched). Findings:
 
-- **MiniLM is not viable.** Expected-hit scores collapse to 0.40–0.65 on the fixture set — far below any reasonable cutoff, and incompatible with Hubster's hard-cutoff `CHAT_SOURCE_MIN_SCORE` filtering strategy without a fundamental rework.
+- **MiniLM is not viable.** Expected-hit scores collapse to 0.40–0.65 on the fixture set — far below any reasonable cutoff, and incompatible with Töökratt's hard-cutoff `CHAT_SOURCE_MIN_SCORE` filtering strategy without a fundamental rework.
 - **E5-small is viable and stable at scale.** Full production corpus: top-1 scores 0.838–0.879 (mean 0.866), rank-5 scores 0.832–0.874 (mean 0.852) — a tight, consistent band, changing only ~0.01–0.02 from a 100-job smoke test, which validates the smoke test rather than overturning it.
 - **E5-small is not available in local FastEmbed's registry** (`TextEmbedding.list_supported_models()`), only via Qdrant Cloud Inference. This has a direct implementation consequence: ingestion, not just query-time, must also use Cloud Inference for this model — there is no local fallback.
 - **Manual relevance review** (10 queries, real corpus, no automated ground truth — same methodology ALE-92 used when no golden set existed) found ~5/10 good-or-excellent, ~2/10 mixed, ~3/10 clear misses at top-1. Failure modes are role confusion (frontend↔backend) and country/geo imprecision (Stockholm→Spain, Germany→Netherlands) — **the same class of gap ALE-92 already documented for `bge-small-en-v1.5`** (~37.5% keyword-precision failure rate), not a new problem introduced by this migration.
@@ -21,7 +21,7 @@ This ADR's scope is narrow and deliberate: **unblock deployment without regressi
 
 ## Decision 1: Adopt `intfloat/multilingual-e5-small` via Qdrant Cloud Inference — not `all-MiniLM-L6-v2`, not staying on `bge-small-en-v1.5` + Render Standard
 
-**Decision:** Switch Hubster's embedding model from `BAAI/bge-small-en-v1.5` to `intfloat/multilingual-e5-small`, served via Qdrant Cloud Inference rather than in-process FastEmbed.
+**Decision:** Switch Töökratt's embedding model from `BAAI/bge-small-en-v1.5` to `intfloat/multilingual-e5-small`, served via Qdrant Cloud Inference rather than in-process FastEmbed.
 
 **Rationale:**
 
