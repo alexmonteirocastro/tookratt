@@ -13,13 +13,13 @@ Alert configuration lives in Grafana Cloud (no Collector / no self-hosted stack)
    - `GRAFANA_LOKI_API_KEY` — access policy token (basic-auth password)
 4. Same three secrets on Render (API) and as GitHub Actions secrets for `ingest.yml`.
 
-Structured logs set Loki labels `event` and `source` (via `props_to_labels`), plus `app=hubster`.
+Structured logs set Loki labels `event` and `source` (via `props_to_labels`), plus `app=tookratt`.
 
 ## Contact point (email)
 
 1. Grafana Cloud → **Alerting** → **Contact points** → **Add contact point**.
 2. Type: **Email**. Address: the on-call / maintainer inbox.
-3. Save (e.g. name `hubster-email`).
+3. Save (e.g. name `tookratt-email`).
 
 ## Alert rule
 
@@ -28,13 +28,13 @@ Structured logs set Loki labels `event` and `source` (via `props_to_labels`), pl
 3. Query (matches ingestion and `/chat` user-query detections):
 
 ```logql
-count_over_time({app="hubster", event="injection_detected"}[5m]) > 0
+count_over_time({app="tookratt", event="injection_detected"}[5m]) > 0
 ```
 
 Equivalent explore filter for debugging:
 
 ```logql
-{app="hubster", event="injection_detected"}
+{app="tookratt", event="injection_detected"}
 ```
 
 Inspect `source` (`ingestion` | `user_query`), `pattern`, and (when present) `job_id` / `question` in the JSON log line.
@@ -42,7 +42,7 @@ Inspect `source` (`ingestion` | `user_query`), `pattern`, and (when present) `jo
 4. **Evaluation interval:** `1m` or `5m` — short enough that user-query hits are not delayed to the daily ingestion cadence. Do **not** evaluate only once per day.
 5. Pending period: `0` or `1m` (fire as soon as a match appears in the window).
 6. Labels / annotations: optional `severity=warning`, summary mentioning `injection_detected`.
-7. Notification: contact point `hubster-email`.
+7. Notification: contact point `tookratt-email`.
 
 ## Verify
 

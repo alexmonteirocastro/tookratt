@@ -12,7 +12,7 @@
       }
     ]
   },
-  "description": "Hubster /chat observability from ADR-0015 structured Loki logs (chat_request + injection_detected). Import via Grafana UI — see docs/ops/grafana-cloud-chat-observability.md.",
+  "description": "Töökratt /chat observability from ADR-0015 structured Loki logs (chat_request + injection_detected). Import via Grafana UI — see docs/ops/grafana-cloud-chat-observability.md.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -45,7 +45,7 @@
         {
           "datasource": { "type": "loki", "uid": "${datasource}" },
           "editorMode": "code",
-          "expr": "sum(count_over_time({app=\"hubster\", event=\"chat_request\"}[$__auto]))",
+          "expr": "sum(count_over_time({app=\"tookratt\", event=\"chat_request\"}[$__auto]))",
           "legendFormat": "chat_request",
           "queryType": "range",
           "refId": "A"
@@ -81,7 +81,7 @@
         {
           "datasource": { "type": "loki", "uid": "${datasource}" },
           "editorMode": "code",
-          "expr": "sum by (error_type) (count_over_time({app=\"hubster\", event=\"chat_request\"} | json | status=\"error\" | __error__=\"\" [$__auto]))",
+          "expr": "sum by (error_type) (count_over_time({app=\"tookratt\", event=\"chat_request\"} | json | status=\"error\" | __error__=\"\" [$__auto]))",
           "legendFormat": "{{error_type}}",
           "queryType": "range",
           "refId": "A"
@@ -116,7 +116,7 @@
         {
           "datasource": { "type": "loki", "uid": "${datasource}" },
           "editorMode": "code",
-          "expr": "quantile_over_time(0.50, {app=\"hubster\", event=\"chat_request\"} | json | unwrap latency_ms | __error__=\"\" [$__auto]) by ()",
+          "expr": "quantile_over_time(0.50, {app=\"tookratt\", event=\"chat_request\"} | json | unwrap latency_ms | __error__=\"\" [$__auto]) by ()",
           "legendFormat": "p50",
           "queryType": "range",
           "refId": "A"
@@ -124,7 +124,7 @@
         {
           "datasource": { "type": "loki", "uid": "${datasource}" },
           "editorMode": "code",
-          "expr": "quantile_over_time(0.95, {app=\"hubster\", event=\"chat_request\"} | json | unwrap latency_ms | __error__=\"\" [$__auto]) by ()",
+          "expr": "quantile_over_time(0.95, {app=\"tookratt\", event=\"chat_request\"} | json | unwrap latency_ms | __error__=\"\" [$__auto]) by ()",
           "legendFormat": "p95",
           "queryType": "range",
           "refId": "B"
@@ -160,7 +160,7 @@
         {
           "datasource": { "type": "loki", "uid": "${datasource}" },
           "editorMode": "code",
-          "expr": "sum by (provider) (count_over_time({app=\"hubster\", event=\"chat_request\"} | json | provider != \"\" | __error__=\"\" [$__auto]))",
+          "expr": "sum by (provider) (count_over_time({app=\"tookratt\", event=\"chat_request\"} | json | provider != \"\" | __error__=\"\" [$__auto]))",
           "legendFormat": "{{provider}}",
           "queryType": "range",
           "refId": "A"
@@ -196,7 +196,7 @@
         {
           "datasource": { "type": "loki", "uid": "${datasource}" },
           "editorMode": "code",
-          "expr": "sum by (source) (count_over_time({app=\"hubster\", event=\"injection_detected\"}[$__auto]))",
+          "expr": "sum by (source) (count_over_time({app=\"tookratt\", event=\"injection_detected\"}[$__auto]))",
           "legendFormat": "{{source}}",
           "queryType": "range",
           "refId": "A"
@@ -208,7 +208,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["hubster", "adr-0015", "chat", "loki"],
+  "tags": ["tookratt", "adr-0015", "chat", "loki"],
   "templating": {
     "list": [
       {
@@ -229,8 +229,8 @@
   "time": { "from": "now-24h", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Hubster /chat observability",
-  "uid": "hubster-chat-observability",
+  "title": "Töökratt /chat observability",
+  "uid": "tookratt-chat-observability",
   "version": 1,
   "weekStart": ""
 }

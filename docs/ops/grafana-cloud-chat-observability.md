@@ -8,24 +8,26 @@ Dashboard JSON (importable): [`grafana-dashboards/chat-observability.json`](graf
 
 1. Loki push working (all three `GRAFANA_LOKI_*` env vars on the API / ingestion — see `.env.example`).
 2. Grafana Cloud stack with the Loki datasource already available (same stack used for the injection alert).
-3. At least a few real `chat_request` / `injection_detected` lines in Loki (Explore with `{app="hubster"}`).
+3. At least a few real `chat_request` / `injection_detected` lines in Loki (Explore with `{app="tookratt"}`).
 
 ## Import
 
 1. Grafana Cloud → **Dashboards** → **New** → **Import**.
 2. Upload `docs/ops/grafana-dashboards/chat-observability.json` (or paste its contents).
 3. When prompted, select your **Loki** datasource for the `datasource` variable (or pick it from the dashboard dropdown after import).
-4. Save. UID is fixed as `hubster-chat-observability` so re-import updates the same dashboard.
+4. Save. UID is fixed as `tookratt-chat-observability` so re-import updates the same dashboard.
+
+> **ALE-169 cutover:** the UID changed from `hubster-chat-observability`, so the first import creates a **new** dashboard rather than updating the old one. Delete the Hubster-tagged dashboard once the new panels populate. Also update the injection alert LogQL to `app="tookratt"` and rename/recreate the contact point to `tookratt-email` (see [grafana-cloud-injection-alerting.md](grafana-cloud-injection-alerting.md)).
 
 ## Panels
 
 | Panel | LogQL (simplified) | Source fields |
 |-------|--------------------|---------------|
-| Request volume | `sum(count_over_time({app="hubster", event="chat_request"}[$__auto]))` | Loki label `event` |
+| Request volume | `sum(count_over_time({app="tookratt", event="chat_request"}[$__auto]))` | Loki label `event` |
 | Error rate by `error_type` | `… event="chat_request" \| json \| status="error"` then `sum by (error_type)` | JSON `status`, `error_type` |
 | Latency p50 / p95 | `quantile_over_time(0.50\|0.95, … \| json \| unwrap latency_ms [$__auto])` | JSON `latency_ms` |
 | Provider breakdown | `sum by (provider) (count_over_time(… \| json \| provider != "" …))` | JSON `provider` |
-| Injection detections by source | `sum by (source) (count_over_time({app="hubster", event="injection_detected"}[$__auto]))` | Loki labels `event`, `source` |
+| Injection detections by source | `sum by (source) (count_over_time({app="tookratt", event="injection_detected"}[$__auto]))` | Loki labels `event`, `source` |
 
 Injection panel selector matches the existing alert rule family (`event="injection_detected"`); see [grafana-cloud-injection-alerting.md](grafana-cloud-injection-alerting.md).
 
@@ -38,4 +40,4 @@ With Loki credentials configured on the deployed API:
 3. **Error** — induce a distinguishable failure (e.g. temporarily force a Gemini rate-limit or point at a broken generator config); confirm **Error rate by error_type** shows the expected `error_type` (e.g. `GenerationRateLimitError`), not a generic bucket.
 4. **Injection** — send a `/chat` question containing `ignore previous instructions`; confirm a normal answer still returns, and **Injection detections by source** shows `user_query`.
 
-If panels are empty: open **Explore**, run `{app="hubster"}`, and confirm lines exist. Check that `event` appears as a **label** (from `props_to_labels`) and that the log line body is JSON parseable with `| json`.
+If panels are empty: open **Explore**, run `{app="tookratt"}`, and confirm lines exist. Check that `event` appears as a **label** (from `props_to_labels`) and that the log line body is JSON parseable with `| json`.
