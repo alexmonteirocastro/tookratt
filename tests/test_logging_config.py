@@ -115,7 +115,7 @@ def test_configure_logging_attaches_queue_handler_when_fully_configured():
     mock_cls.assert_called_once_with(
         ANY,
         url="https://logs-prod.example/loki/api/v1/push",
-        tags={"app": "hubster"},
+        tags={"app": "tookratt"},
         auth=("123456", "glc_token"),
         props_to_labels=["event", "source"],
     )

@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 _configured = False
 _loki_handler: logging.Handler | None = None
 
-CHAT_LOGGER_NAME = "hubster.chat"
-INJECTION_LOGGER_NAME = "hubster.injection"
+CHAT_LOGGER_NAME = "tookratt.chat"
+INJECTION_LOGGER_NAME = "tookratt.injection"
 
 _LOKI_LABEL_PROPS = ["event", "source"]
 # Bound free-text fields shipped to Loki (prompt/response/question), independent
@@ -56,7 +56,7 @@ def configure_logging(settings: Settings | None = None) -> None:
         handler = LokiQueueHandler(
             Queue(-1),
             url=url,
-            tags={"app": "hubster"},
+            tags={"app": "tookratt"},
             auth=(user_id, api_key),
             props_to_labels=list(_LOKI_LABEL_PROPS),
         )
