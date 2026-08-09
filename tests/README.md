@@ -1,4 +1,4 @@
-# Hubster tests
+# Töökratt tests
 
 ## Unit tests
 

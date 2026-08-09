@@ -1,4 +1,4 @@
-# Hubster eval review UI (`evals_system/`)
+# Töökratt eval review UI (`evals_system/`)
 
 Local Streamlit surface for human-aided retrieval/generation review and wiring the
 [`evals/`](../evals/) comparison/sweep harness (ALE-146 / ALE-147). Companion to

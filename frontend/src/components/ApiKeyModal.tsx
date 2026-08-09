@@ -111,7 +111,7 @@ export function ApiKeyModal({
         {phase === "success" ? (
           <>
             <p className={styles.success}>
-              API key verified. You can use Hubster for this browser session.
+              API key verified. You can use Töökratt for this browser session.
             </p>
             <button type="button" className={styles.button} onClick={onClose}>
               Close
@@ -120,7 +120,7 @@ export function ApiKeyModal({
         ) : (
           <>
             <p className={styles.description}>
-              Enter your Hubster API key to use the chat and job search endpoints.
+              Enter your Töökratt API key to use the chat and job search endpoints.
             </p>
             <form className={styles.form} onSubmit={handleSubmit}>
               <label htmlFor={inputId} className={styles.label}>

@@ -18,7 +18,7 @@ VIEWPORT = {"width": 1400, "height": 900}
 
 def _wait_ready(page) -> None:
     page.goto(BASE, wait_until="domcontentloaded")
-    page.get_by_text("Hubster eval review").first.wait_for(timeout=60_000)
+    page.get_by_text("Töökratt eval review").first.wait_for(timeout=60_000)
     time.sleep(1.5)
 
 

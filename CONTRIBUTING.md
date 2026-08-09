@@ -1,4 +1,4 @@
-# Contributing to Hubster
+# Contributing to Töökratt
 
 This guide covers code-quality tooling and the checks to run before opening a pull request. For running the stack locally, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#local-development). For testing, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#testing).
 

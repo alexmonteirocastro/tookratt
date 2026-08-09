@@ -74,7 +74,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings)
     application = FastAPI(
-        title="Hubster API",
+        title="Töökratt API",
         description="JSON API for job stats and semantic search over The Hub listings.",
     )
     application.state.limiter = limiter

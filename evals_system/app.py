@@ -22,13 +22,13 @@ from evals_system.review import render_review_tab
 from evals_system.sweep_tab import render_sweep_tab
 
 st.set_page_config(
-    page_title="Hubster eval review",
+    page_title="Töökratt eval review",
     layout="wide",
 )
 
 ensure_db()
 
-st.title("Hubster eval review")
+st.title("Töökratt eval review")
 st.caption(
     "Local human-in-the-loop review + ALE-147 harness tabs. "
     "Read-only against chosen Qdrant collections (except disposable JOBS_COMPARE_*)."

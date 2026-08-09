@@ -6,7 +6,7 @@
 
 ## Context
 
-ALE-107 shortlisted three realistic combinations for hosting Hubster's three components (frontend, backend, Qdrant) plus ingestion, explicitly deferring the final choice to a follow-up ADR. This is that ADR. The constraint carried over unchanged from the spike: prioritize free/budget-friendly options over capability, since this is still a prototype, not a funded product.
+ALE-107 shortlisted three realistic combinations for hosting Töökratt's three components (frontend, backend, Qdrant) plus ingestion, explicitly deferring the final choice to a follow-up ADR. This is that ADR. The constraint carried over unchanged from the spike: prioritize free/budget-friendly options over capability, since this is still a prototype, not a funded product.
 
 ## Decision 1: Adopt Option A (all-managed) over Option B (self-hosted VM) and Option C (Cloud Run)
 

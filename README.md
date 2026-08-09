@@ -1,8 +1,8 @@
-# Hubster
+# Töökratt
 
 ![Tests](https://github.com/alexmonteirocastro/hubster/actions/workflows/test.yml/badge.svg) ![Deploy](https://github.com/alexmonteirocastro/hubster/actions/workflows/deploy.yml/badge.svg)
 
-Hubster ingests job listings from [The Hub](https://thehub.io/) via their public API, embeds the content via **Qdrant Cloud Inference** (`intfloat/multilingual-e5-small`), and stores the results in [Qdrant](https://qdrant.tech/) for semantic search — with a `/chat` RAG layer and React UI for natural-language job discovery across Nordic/European startup markets.
+Töökratt ingests job listings from [The Hub](https://thehub.io/) via their public API, embeds the content via **Qdrant Cloud Inference** (`intfloat/multilingual-e5-small`), and stores the results in [Qdrant](https://qdrant.tech/) for semantic search — with a `/chat` RAG layer and React UI for natural-language job discovery across Nordic/European startup markets.
 
 ## Live deployment
 
@@ -15,7 +15,7 @@ Hubster ingests job listings from [The Hub](https://thehub.io/) via their public
 ### 1. Configure environment
 
 ```bash
-cd hubster
+cd tookratt
 cp .env.example .env
 ```
 
@@ -48,7 +48,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#ingestion) for sync vs seed deta
 
 ## REST API
 
-The FastAPI service exposes a stable JSON contract for any frontend or client. It wraps existing Hubster logic — it does not reimplement ingestion or retrieval.
+The FastAPI service exposes a stable JSON contract for any frontend or client. It wraps existing Töökratt logic — it does not reimplement ingestion or retrieval.
 
 | Endpoint | Description |
 |----------|-------------|

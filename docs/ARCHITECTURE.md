@@ -4,7 +4,7 @@ Companion to the [README](../README.md) quick-start. Covers configuration, how i
 
 ## How it works
 
-1. For each supported country, Hubster calls `/api/v2/jobs` to discover all job IDs (paginated).
+1. For each supported country, Töökratt calls `/api/v2/jobs` to discover all job IDs (paginated).
 2. For each ID, it fetches `/api/jobs/single/{id}` and maps the response to a `JobOpportunity` model.
 3. HTML fields are converted to Markdown.
 4. A document string is built from the job title, company name, company description, and job description.
@@ -84,7 +84,7 @@ Sync never drops the collection, so search stays available throughout. A second 
 **Scheduling (cron example)**
 
 ```cron
-0 */6 * * * cd /path/to/hubster && docker compose --profile ingestion run --rm ingestion
+0 */6 * * * cd /path/to/tookratt && docker compose --profile ingestion run --rm ingestion
 ```
 
 Runs incremental sync every 6 hours inside the ingestion container.
@@ -100,7 +100,7 @@ Runs incremental sync every 6 hours inside the ingestion container.
 **1. Install dependencies**
 
 ```bash
-cd hubster
+cd tookratt
 uv sync
 # or: pip install -e .
 ```
@@ -224,7 +224,7 @@ Component tests (Vitest + React Testing Library) cover message rendering (includ
 ## Project structure
 
 ```
-hubster/
+tookratt/
 ├── main.py                      # Sync/seed Qdrant, test search
 ├── docs/
 │   ├── adr/                     # Architectural decision records
@@ -345,7 +345,7 @@ During ingestion, a job that still fails after bounded retries is skipped; the o
 
 ## Testing
 
-Hubster has three test layers:
+Töökratt has three test layers:
 
 - **Unit tests** — mock The Hub API responses and verify parsing logic. No network or Qdrant required.
 - **Retrieval golden-set tests** — evaluate semantic search quality against a fixed query set in the dev Qdrant collection (`JOBS_DEV`). See [tests/README.md](../tests/README.md).

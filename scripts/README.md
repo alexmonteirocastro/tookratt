@@ -116,7 +116,7 @@ The **summary** section gives, per model:
 | `sentence-transformers/all-MiniLM-L6-v2` | Yes |
 | `intfloat/multilingual-e5-small` | Yes |
 
-Local FastEmbed is not used for Hubster embedding under ADR-0014 — compare models against Qdrant Cloud.
+Local FastEmbed is not used for Töökratt embedding under ADR-0014 — compare models against Qdrant Cloud.
 
 ## 3. Generation model comparison
 

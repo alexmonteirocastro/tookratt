@@ -28,7 +28,7 @@ export default function App() {
     <div className={styles.app}>
       <header className={styles.header}>
         <div className={styles.titleRow}>
-          <h1 className={styles.title}>Hubster</h1>
+          <h1 className={styles.title}>Töökratt</h1>
           <button
             type="button"
             className={styles.lockButton}
