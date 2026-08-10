@@ -100,3 +100,4 @@ Workflow guide (how to read `separation_margin`, judgments, sweeps, etc.):
   - [ADR-0009](docs/adr/0009-grounded-inline-job-hyperlinks.md) — grounded inline job hyperlinks in generated answers
   - [ADR-0014](docs/adr/0014-embedding-model-migration.md) — E5-small via Qdrant Cloud Inference
   - [ADR-0015](docs/adr/0015-observability-logging-and-alerting.md) — structured Loki logging and prompt-injection alerting
+  - [ADR-0016](docs/adr/0016-marketing-site-topology-and-capture.md) — marketing site topology (apex + `app.`) and waitlist/contact capture
