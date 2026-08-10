@@ -1,5 +1,5 @@
 import { EmailMessage } from "cloudflare:email";
-import { createMimeMessage } from "mimetext";
+import { createMimeMessage, Mailbox } from "mimetext";
 import { corsHeaders, isAllowedOrigin } from "./cors";
 import { verifyTurnstileToken } from "./turnstile";
 import { buildEmail, parseCapturePayload } from "./validate";
@@ -33,10 +33,11 @@ async function sendCaptureEmail(
   replyTo: string,
 ): Promise<void> {
   const msg = createMimeMessage();
-  msg.setSender({ name: "Töökratt", addr: FROM_ADDRESS });
+  // Bare addr only — no Unicode display name (avoids RFC 2047 surprises on MTAs).
+  msg.setSender({ addr: FROM_ADDRESS });
   msg.setRecipient(TO_ADDRESS);
   msg.setSubject(subject);
-  msg.setHeader("Reply-To", replyTo);
+  msg.setHeader("Reply-To", new Mailbox(replyTo));
   msg.addMessage({ contentType: "text/plain", data: text });
 
   await env.EMAIL.send(
