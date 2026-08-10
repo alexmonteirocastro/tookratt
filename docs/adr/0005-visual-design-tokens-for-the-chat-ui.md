@@ -53,7 +53,9 @@ repo-wide hex hunt.
 | `--color-bubble-user` | `#C97D2E` | user message bubble |
 | `--color-bubble-assistant` | `#1B2A4A` | assistant / loading bubble |
 | `--color-bubble-assistant-text` | `#F4EFE6` | text on navy bubbles |
-| `--color-error` / `--color-error-bg` / `--color-error-border` | `#9B2C2C` / `#FCE8E6` / … | production error bubbles (not in the design prototype) |
+| `--color-error` | `#9B2C2C` | error message text |
+| `--color-error-bg` | `#FCE8E6` | error bubble background |
+| `--color-error-border` | `rgba(155, 44, 44, 0.35)` | error bubble border |
 
 **Supersedes:** indigo `#4338CA` / white `#FFFFFF` / gray band palette from the
 2026-07-07 revision.
@@ -116,17 +118,22 @@ part of the live language (bubbles / bordered cream panels instead).
 Computed relative-luminance contrast (WCAG 2.x formula) against the live
 tokens:
 
-| Pair | Ratio | AA normal (4.5:1) | AA large (3:1) |
+| Pair | Ratio | AA normal (4.5:1) | Notes |
 |---|---|---|---|
-| `--color-ink` / `--color-accent-text` on `--color-accent` / `--color-bubble-user` (`#1B2A4A` on `#C97D2E`) | **4.37:1** | Fail | Pass |
-| Parchment on navy (assistant text) | 12.42:1 | Pass | Pass |
-| Ink on parchment / cream (page text) | 12.42:1 / 13.42:1 | Pass | Pass |
-| Teal on cream (banner icon) | 5.62:1 | Pass | Pass |
+| `--color-ink` / `--color-accent-text` on `--color-accent` / `--color-bubble-user` (`#1B2A4A` on `#C97D2E`) | **4.37:1** | Fail | Applicable bar for live UI — see below |
+| Parchment on navy (assistant text) | 12.42:1 | Pass | |
+| Ink on parchment / cream (page text) | 12.42:1 / 13.42:1 | Pass | |
+| Teal on cream (banner icon) | 5.62:1 | Pass | |
+
+The navy-on-amber ratio (4.37:1) would clear WCAG’s **large-text** AA floor
+(3:1) if the glyphs qualified as large text (≥24px regular or ≥18.66px /
+14pt bold). They do not in the shipped UI: the Ask label is 16px bold and
+user-bubble body is ~17px regular — so the large-text allowance does **not**
+apply, and the relevant criterion is AA normal (4.5:1), which fails.
 
 **Accepted risk:** navy-on-amber for Ask label and user-bubble body sits
-**0.13 below** AA for normal text. Large-text AA passes. Adjusting either
-color would diverge from the signed-off handoff for a marginal gain; leave as
-shipped.
+**0.13 below** AA for normal text. Adjusting either color would diverge from
+the signed-off handoff for a marginal gain; leave as shipped.
 
 **Revisit trigger:** before treating Ask / user-bubble copy as long-form body
 text (or if a formal a11y gate is added to CI), darken ink toward ~`#192746`
