@@ -135,6 +135,42 @@ jobs:
         working-directory: frontend
         run: npm run lint
 
+  marketing-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-marketing
+      cancel-in-progress: true
+    steps:
+      - name: Skipping checks (docs-only PR)
+        if: inputs.skip_heavy_tests
+        run: echo "Skipping checks (docs-only PR)"
+
+      - uses: actions/checkout@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+
+      - uses: actions/setup-node@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: marketing/package-lock.json
+
+      - name: Install dependencies
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: marketing
+        run: npm ci
+
+      - name: Run marketing lint
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: marketing
+        run: npm run lint
+
+      - name: Run marketing build
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: marketing
+        run: npm run build
+
   markdown-link-check:
     runs-on: ubuntu-latest
     timeout-minutes: 5

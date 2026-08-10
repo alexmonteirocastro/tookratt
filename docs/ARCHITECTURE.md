@@ -163,6 +163,8 @@ Requires `.env` with Qdrant Cloud settings (`QDRANT_URL`, `QDRANT_API_KEY`, `EMB
 
 **CORS:** With the default `/api` same-origin proxy (see Frontend section below), the browser does not make cross-origin requests in normal Docker or Vite dev use. If you override `VITE_API_BASE_URL` to a full URL (e.g. `http://localhost:8000`), the frontend origin must be listed in `CORS_ALLOWED_ORIGINS` (comma-separated; default `http://localhost:5173`).
 
+Production chat SPA is hosted at `https://app.tookratt.com` ([ADR-0016](adr/0016-marketing-site-topology-and-capture.md)); include that origin in Render's `CORS_ALLOWED_ORIGINS`. The marketing apex (`tookratt.com`) is a separate static Pages project and does **not** call the API, so it does not need a CORS entry.
+
 > Any frontend should call this API rather than Qdrant or The Hub directly. The React chat UI is scoped in [ADR-0004](adr/0004-frontend-architecture-for-chat-interface.md); its visual language (navy / amber / parchment tokens, Sora + Karla, radii, layout) is defined in [ADR-0005](adr/0005-visual-design-tokens-for-the-chat-ui.md) (Töökratt dashboard handoff, ALE-172). Design tokens live in `frontend/src/styles/tokens.css` as CSS custom properties — components reference tokens by name, never hardcoded hex or px values.
 
 ### Frontend (React chat UI)
@@ -221,6 +223,10 @@ npm test
 
 Component tests (Vitest + React Testing Library) cover message rendering (including markdown in assistant replies), loading state, network/HTTP error handling, and the `generated: false` no-match case. They run in CI via the `frontend-test` job in `.github/workflows/ci.yml`.
 
+### Marketing site (`marketing/`)
+
+Separate Vite (vanilla TypeScript) static site for the apex domain ([ADR-0016](adr/0016-marketing-site-topology-and-capture.md)). Tokens are duplicated from `frontend/src/styles/tokens.css` by design. Waitlist/contact forms POST to the ALE-177 Worker when `VITE_CAPTURE_URL` is set; otherwise they fall back to `mailto:hello@tookratt.com`. See [`marketing/README.md`](../marketing/README.md).
+
 ## Project structure
 
 ```
@@ -237,6 +243,9 @@ tookratt/
 │   │   ├── components/          # Chat view, messages, sources, input
 │   │   └── styles/              # Design tokens (tokens.css) and global styles
 │   ├── Dockerfile
+│   └── package.json
+├── marketing/                   # Apex landing page (Vite vanilla; ADR-0016)
+│   ├── src/                     # Page, forms, Turnstile + mailto capture
 │   └── package.json
 ├── api/
 │   ├── main.py                  # FastAPI app (jobs stats, semantic search, /chat)
