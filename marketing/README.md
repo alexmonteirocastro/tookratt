@@ -30,4 +30,4 @@ Cloudflare Pages: set **Root directory** to `marketing`, build command `npm run 
 
 ## Forms
 
-Both forms include Cloudflare Turnstile when `VITE_CAPTURE_URL` and `VITE_TURNSTILE_SITE_KEY` are set. Until the Worker (ALE-177) is live, leave `VITE_CAPTURE_URL` unset and submit opens the visitor's mail client.
+Both forms include Cloudflare Turnstile when `VITE_CAPTURE_URL` is set (script loaded on demand). Until the Worker (ALE-177) is live, leave `VITE_CAPTURE_URL` unset and submit opens the visitor's mail client — no Turnstile script is fetched in that mode.

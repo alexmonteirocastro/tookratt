@@ -1,6 +1,11 @@
 import { getTurnstileSiteKey } from "./config";
 
+const TURNSTILE_SCRIPT_ID = "cf-turnstile-api";
+const TURNSTILE_SRC =
+  "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback";
+
 const pending: Array<() => void> = [];
+let scriptRequested = false;
 
 function flushPending(): void {
   if (!window.turnstile) {
@@ -11,21 +16,32 @@ function flushPending(): void {
   }
 }
 
+function ensureTurnstileScript(): void {
+  if (window.turnstile || scriptRequested) {
+    return;
+  }
+  scriptRequested = true;
+  window.onloadTurnstileCallback = flushPending;
+
+  if (document.getElementById(TURNSTILE_SCRIPT_ID)) {
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.id = TURNSTILE_SCRIPT_ID;
+  script.src = TURNSTILE_SRC;
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+/** Resolve once Turnstile api.js is available. Loads the script on first call. */
 export function whenTurnstileReady(callback: () => void): void {
   if (window.turnstile) {
     callback();
     return;
   }
   pending.push(callback);
-  window.onloadTurnstileCallback = flushPending;
-  // api.js may already be loaded without an explicit callback name.
-  const poll = window.setInterval(() => {
-    if (window.turnstile) {
-      window.clearInterval(poll);
-      flushPending();
-    }
-  }, 100);
-  window.setTimeout(() => window.clearInterval(poll), 10_000);
+  ensureTurnstileScript();
 }
 
 export function renderTurnstile(
