@@ -6,9 +6,10 @@ Töökratt ingests job listings from [The Hub](https://thehub.io/) via their pub
 
 ## Live deployment
 
-- **App:** https://hubster-2ox.pages.dev
+- **Marketing site:** https://tookratt.com (Cloudflare Pages — `marketing/`)
+- **App:** https://app.tookratt.com (Cloudflare Pages — `frontend/`)
 - **API:** https://hubster-alpi.onrender.com
-- Hosted on Cloudflare Pages (frontend) + Render (backend) + Qdrant Cloud (vector store), all free-tier. See [ADR-0013](docs/adr/0013-deployment-strategy.md) for the full rationale and accepted trade-offs.
+- Hosting topology: apex marketing + `app.` chat per [ADR-0016](docs/adr/0016-marketing-site-topology-and-capture.md); free-tier stack rationale in [ADR-0013](docs/adr/0013-deployment-strategy.md).
 
 ## Quick start (Docker)
 
@@ -85,6 +86,7 @@ Workflow guide (how to read `separation_margin`, judgments, sweeps, etc.):
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — code-quality tooling and dev checks
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — environment variables, ingestion, local development, project layout, data model, Hub API client, and testing
+- [marketing/README.md](marketing/README.md) — apex landing page (Cloudflare Pages)
 - [docs/PRODUCT_VISION.md](docs/PRODUCT_VISION.md) — problem, roadmap, and trust bar for `/chat`
 - [docs/ops/grafana-cloud-chat-observability.md](docs/ops/grafana-cloud-chat-observability.md) — Grafana Cloud `/chat` dashboard (ADR-0015)
 - [docs/ops/grafana-cloud-injection-alerting.md](docs/ops/grafana-cloud-injection-alerting.md) — Grafana Cloud injection alert rule (ADR-0015)

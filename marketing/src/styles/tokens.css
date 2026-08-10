@@ -1,0 +1,52 @@
+/*
+ * Marketing-site tokens — duplicated from frontend/src/styles/tokens.css
+ * per ADR-0016 (accepted cost across two Pages projects). Keep in sync by hand.
+ */
+:root {
+  --color-ink: #1b2a4a;
+  --color-text-secondary: rgba(27, 42, 74, 0.65);
+  --color-text-muted: rgba(27, 42, 74, 0.55);
+  --color-text-faint: rgba(27, 42, 74, 0.45);
+  --color-surface: #fbf8f2;
+  --color-surface-alt: #f4efe6;
+  --color-border: rgba(27, 42, 74, 0.15);
+  --color-accent: #c97d2e;
+  --color-accent-hover: #b56f28;
+  --color-accent-text: #1b2a4a;
+  --color-teal: #2e6e62;
+  --color-on-teal-muted: rgba(244, 239, 230, 0.85);
+  --color-on-navy: #f4efe6;
+  --color-on-navy-muted: rgba(244, 239, 230, 0.75);
+  --color-error: #9b2c2c;
+  --color-error-bg: #fce8e6;
+  --color-success-bg: rgba(46, 110, 98, 0.12);
+  --color-success: #2e6e62;
+
+  --font-family-display: "Sora", "Helvetica Neue", Arial, sans-serif;
+  --font-family: "Karla", "Helvetica Neue", Arial, sans-serif;
+
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 56px;
+  --space-section: 110px;
+  --space-section-sm: 72px;
+  --space-page-x: 80px;
+  --space-page-x-sm: 24px;
+
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 100px;
+
+  --max-width: 1400px;
+  --max-width-copy: 520px;
+  --max-width-form: 480px;
+  --size-mascot-nav: 44px;
+  --size-mascot-hero: 380px;
+  --size-mascot-cta: 130px;
+}
