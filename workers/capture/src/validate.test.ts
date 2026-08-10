@@ -50,6 +50,31 @@ describe("parseCapturePayload", () => {
       }),
     ).toBe("Turnstile token is required.");
   });
+
+  it("rejects CRLF in name (subject header injection)", () => {
+    expect(
+      parseCapturePayload({
+        type: "contact",
+        email: "alex@example.com",
+        name: "Alex\r\nBcc: evil@example.com",
+        message: "hi",
+        turnstileToken: "token",
+      }),
+    ).toBe("Name contains invalid characters.");
+  });
+
+  it("normalizes CR in message body without rejecting newlines", () => {
+    const result = parseCapturePayload({
+      type: "contact",
+      email: "alex@example.com",
+      name: "Alex",
+      message: "line1\r\nline2\nline3",
+      turnstileToken: "token",
+    });
+    expect(result).toMatchObject({
+      message: "line1\nline2\nline3",
+    });
+  });
 });
 
 describe("buildEmail", () => {

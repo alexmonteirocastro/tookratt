@@ -1,3 +1,5 @@
+import { EmailMessage } from "cloudflare:email";
+import { createMimeMessage } from "mimetext";
 import { corsHeaders, isAllowedOrigin } from "./cors";
 import { verifyTurnstileToken } from "./turnstile";
 import { buildEmail, parseCapturePayload } from "./validate";
@@ -22,6 +24,24 @@ function jsonResponse(
       ...corsHeaders(origin),
     },
   });
+}
+
+async function sendCaptureEmail(
+  env: Env,
+  subject: string,
+  text: string,
+  replyTo: string,
+): Promise<void> {
+  const msg = createMimeMessage();
+  msg.setSender({ name: "Töökratt", addr: FROM_ADDRESS });
+  msg.setRecipient(TO_ADDRESS);
+  msg.setSubject(subject);
+  msg.setHeader("Reply-To", replyTo);
+  msg.addMessage({ contentType: "text/plain", data: text });
+
+  await env.EMAIL.send(
+    new EmailMessage(FROM_ADDRESS, TO_ADDRESS, msg.asRaw()),
+  );
 }
 
 export default {
@@ -80,13 +100,7 @@ export default {
     const { subject, text } = buildEmail(parsed);
 
     try {
-      await env.EMAIL.send({
-        to: TO_ADDRESS,
-        from: FROM_ADDRESS,
-        replyTo: parsed.email,
-        subject,
-        text,
-      });
+      await sendCaptureEmail(env, subject, text, parsed.email);
     } catch (error) {
       console.error("Email send failed", error);
       return jsonResponse(

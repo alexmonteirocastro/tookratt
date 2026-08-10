@@ -48,4 +48,4 @@ Optional custom domain (e.g. `capture.tookratt.com`) in the Cloudflare dashboard
 
 ## Email binding
 
-`wrangler.toml` locks the recipient to `hello@tookratt.com`. Sender is `noreply@tookratt.com` with `replyTo` set to the submitter. Ensure Email Routing is enabled for `tookratt.com` and `hello@` is a verified destination (Bet 001).
+`wrangler.toml` locks the recipient to `hello@tookratt.com`. Sender is `noreply@tookratt.com` with a `Reply-To` header set to the submitter (MIME via `mimetext` + `EmailMessage`). Ensure Email Routing is enabled for `tookratt.com` and `hello@` is a verified destination (Bet 001).

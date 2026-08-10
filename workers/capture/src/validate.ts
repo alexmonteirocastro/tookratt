@@ -14,6 +14,11 @@ export type CapturePayload = {
   turnstileToken: string;
 };
 
+/** Reject CR/LF so values cannot inject MIME headers (e.g. via Subject). */
+function containsCrLf(value: string): boolean {
+  return value.includes("\r") || value.includes("\n");
+}
+
 export function parseCapturePayload(raw: unknown): CapturePayload | string {
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
     return "Request body must be a JSON object.";
@@ -34,17 +39,24 @@ export function parseCapturePayload(raw: unknown): CapturePayload | string {
   if (name.length > MAX_NAME) {
     return `Name must be at most ${MAX_NAME} characters.`;
   }
+  // name is interpolated into the Subject header — reject CR/LF injection.
+  if (name && containsCrLf(name)) {
+    return "Name contains invalid characters.";
+  }
 
   const message = typeof body.message === "string" ? body.message.trim() : "";
   if (message.length > MAX_MESSAGE) {
     return `Message must be at most ${MAX_MESSAGE} characters.`;
   }
+  // Message only reaches the MIME body (newlines are fine there). Strip bare
+  // CR so a lone \r cannot confuse line endings if a future path reuses it.
+  const safeMessage = message.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   if (type === "contact") {
     if (!name) {
       return "Please enter your name.";
     }
-    if (!message) {
+    if (!safeMessage) {
       return "Please enter a message.";
     }
   }
@@ -64,7 +76,7 @@ export function parseCapturePayload(raw: unknown): CapturePayload | string {
     payload.name = name;
   }
   if (type === "contact") {
-    payload.message = message;
+    payload.message = safeMessage;
   }
   return payload;
 }

@@ -4,18 +4,24 @@ export const ALLOWED_ORIGINS = new Set([
   "https://www.tookratt.com",
 ]);
 
+export function isAllowedOrigin(origin: string | null): boolean {
+  return origin !== null && ALLOWED_ORIGINS.has(origin);
+}
+
+/**
+ * CORS headers for a request Origin.
+ * Omits Access-Control-Allow-Origin when the origin is missing or not allowed,
+ * so the header only ever reflects a real allow-listed origin.
+ */
 export function corsHeaders(origin: string | null): HeadersInit {
-  const allowOrigin =
-    origin && ALLOWED_ORIGINS.has(origin) ? origin : [...ALLOWED_ORIGINS][0];
-  return {
-    "Access-Control-Allow-Origin": allowOrigin,
+  const headers: Record<string, string> = {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
-}
-
-export function isAllowedOrigin(origin: string | null): boolean {
-  return origin !== null && ALLOWED_ORIGINS.has(origin);
+  if (isAllowedOrigin(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin as string;
+  }
+  return headers;
 }

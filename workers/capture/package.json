@@ -9,6 +9,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
+  "dependencies": {
+    "mimetext": "^3.0.24"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260804.1",
     "typescript": "~6.0.2",
