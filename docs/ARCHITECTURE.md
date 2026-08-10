@@ -163,7 +163,7 @@ Requires `.env` with Qdrant Cloud settings (`QDRANT_URL`, `QDRANT_API_KEY`, `EMB
 
 **CORS:** With the default `/api` same-origin proxy (see Frontend section below), the browser does not make cross-origin requests in normal Docker or Vite dev use. If you override `VITE_API_BASE_URL` to a full URL (e.g. `http://localhost:8000`), the frontend origin must be listed in `CORS_ALLOWED_ORIGINS` (comma-separated; default `http://localhost:5173`).
 
-> Any frontend should call this API rather than Qdrant or The Hub directly. The React chat UI is scoped in [ADR-0004](adr/0004-frontend-architecture-for-chat-interface.md); its visual language (colors, spacing, type, radii) is defined in [ADR-0005](adr/0005-visual-design-tokens-for-the-chat-ui.md). Design tokens live in `frontend/src/styles/tokens.css` as CSS custom properties — components reference tokens by name, never hardcoded hex or px values.
+> Any frontend should call this API rather than Qdrant or The Hub directly. The React chat UI is scoped in [ADR-0004](adr/0004-frontend-architecture-for-chat-interface.md); its visual language (navy / amber / parchment tokens, Sora + Karla, radii, layout) is defined in [ADR-0005](adr/0005-visual-design-tokens-for-the-chat-ui.md) (Töökratt dashboard handoff, ALE-172). Design tokens live in `frontend/src/styles/tokens.css` as CSS custom properties — components reference tokens by name, never hardcoded hex or px values.
 
 ### Frontend (React chat UI)
 

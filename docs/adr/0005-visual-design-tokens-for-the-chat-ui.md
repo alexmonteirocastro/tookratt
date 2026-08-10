@@ -1,145 +1,172 @@
-# ADR-0005: Visual Design Tokens for the Chat UI (thehub.io-inspired)
+# ADR-0005: Visual Design Tokens for the Chat UI (Töökratt dashboard)
 
-* **Status:** Proposed
-* **Date:** 2026-07-07
-* **Related:** ADR-0004 (frontend architecture), ALE-74 (implementation)
+* **Status:** Accepted
+* **Date:** 2026-07-07 (original); superseded palette/type 2026-08-10 (ALE-174 / ALE-172)
+* **Related:** ADR-0004 (frontend architecture), ALE-74 (initial implementation), ALE-172 (dashboard redesign handoff), ALE-174 (this rewrite)
 
 ## Context
 
-ALE-74 scopes the React chat UI's data flow and testing but not its visual
-language. thehub.io — a sibling consumer site in the same job-market domain
-this project's data is sourced from — was reviewed as a style reference via a
-direct screenshot (a live browser session for computed-style/devtools
-inspection was attempted and unavailable; no scraping of markup or CSS was
-performed). This ADR defines an original token set in the same visual mood,
-not a reproduction of thehub.io's actual styles or assets, which remain their IP.
+ALE-74 scoped the React chat UI's data flow and testing but not its visual
+language. The first version of this ADR (2026-07-07) defined an original
+**thehub.io-inspired** token set: Inter Variable, indigo accent (`#4338CA`),
+white/gray surfaces — derived from a screenshot mood board, not copied brand
+assets.
 
-Observed pattern (from the screenshot, described at the level of layout/mood,
-not literal values): a restrained lowercase wordmark with no icon; a nav that
-groups links with a hairline divider rather than heavy separators; one
-reserved saturated accent color spent entirely on the primary CTA, with every
-other surface neutral (near-black text, grays, white/off-white bands); a
-single grotesk sans typeface carrying hierarchy through weight rather than a
-second display face; rounded white cards on light-gray section bands instead
-of hard borders; exactly one decorative flourish (a small textured graphic),
-not several.
+ALE-172 shipped a Claude Design handoff for the Töökratt rebrand: navy / amber
+/ parchment / cream / teal, Sora + Karla, mascot, and a single-dashboard
+layout. `frontend/src/styles/tokens.css` was updated to match. This ADR is
+rewritten so the documented decisions match the live tokens (ALE-174).
+
+The earlier Inter / indigo decisions are **superseded**, not deleted from
+history: they remain the rationale for *having* a CSS-variable token seam
+(Decision 1 is unchanged in spirit).
 
 ## Decision 1: Token system lives in CSS custom properties, not inline/magic values
 
-**Decision:** All colors, spacing, radii, and type sizes are defined once as
-CSS custom properties (e.g. `src/styles/tokens.css`: `--color-accent`,
-`--space-4`, etc.) and consumed everywhere else by reference — never a
-hardcoded hex or px value inside a component.
+**Decision:** All colors, spacing, radii, type sizes, and layout constants are
+defined once as CSS custom properties in `frontend/src/styles/tokens.css` and
+consumed everywhere else by reference — never a hardcoded hex or px value
+inside a component stylesheet (beyond unavoidable CSS keywords like `transparent`).
 
-**Rationale:**
-- Mirrors the project's existing "isolate the thing that will change behind
-  one seam" pattern (`src/api/client.ts` for the API per ADR-0004 Decision 2,
-  `llm_client.base.Generator` for the LLM provider per ADR-0001,
-  `HubClientConfig` for Hub client tuning) — applied here to design values
-  instead of a service or provider boundary.
-- The project is explicitly expected to possibly scale beyond prototype
-  (the same framing ADR-0002 Decision 2 and ADR-0003 Decision 4 use to justify
-  paying a small cost now). A rebrand or theme change later should be a
-  single-file edit, not a repo-wide find/replace across every component.
+**Rationale:** Unchanged from the original ADR — isolate the volatile visual
+values behind one seam so a rebrand is a single-file edit. ALE-172 proved
+that path: the redesign was largely a `tokens.css` + component restyle, not a
+repo-wide hex hunt.
 
-## Decision 2: Palette — one reserved accent, everything else neutral
+## Decision 2: Palette — navy / amber / parchment (Töökratt handoff)
 
-**Decision:**
+**Decision:** Live values in `tokens.css` (canonical). Primary mapping:
 
 | Token | Value | Use |
 |---|---|---|
-| `--color-ink` | `#1A2233` | headings, primary text |
-| `--color-text-secondary` | `#5B6474` | subheads, muted body |
-| `--color-surface` | `#FFFFFF` | cards, input |
-| `--color-surface-alt` | `#F5F6F8` | section bands |
-| `--color-border` | `#E3E5EA` | hairline dividers only |
-| `--color-accent` | `#4338CA` | the single CTA/action color — send button, links, focus ring |
-| `--color-accent-hover` | `#372DAE` | hover/active state |
+| `--color-ink` | `#1B2A4A` | primary text, wordmark, lock icon stroke |
+| `--color-text-secondary` | `rgba(27, 42, 74, 0.65)` | subtitle |
+| `--color-text-muted` / `--color-text-faint` / `--color-text-soft` | navy at 55% / 45% / 75% | empty-state, counter, banner copy |
+| `--color-surface` | `#FBF8F2` (cream) | panels, input bar, lock button, modal |
+| `--color-surface-alt` | `#F4EFE6` (parchment) | page background |
+| `--color-border` | `rgba(27, 42, 74, 0.15)` | input / lock borders |
+| `--color-border-teal` | `rgba(46, 110, 98, 0.2)` | info banner border |
+| `--color-accent` | `#C97D2E` (amber) | Ask button, links |
+| `--color-accent-hover` | `#b56f28` | Ask / link hover |
+| `--color-accent-text` | `#1B2A4A` | text on amber CTAs |
+| `--color-teal` | `#2E6E62` | info-banner icon |
+| `--color-bubble-user` | `#C97D2E` | user message bubble |
+| `--color-bubble-assistant` | `#1B2A4A` | assistant / loading bubble |
+| `--color-bubble-assistant-text` | `#F4EFE6` | text on navy bubbles |
+| `--color-error` | `#9B2C2C` | error message text |
+| `--color-error-bg` | `#FCE8E6` | error bubble background |
+| `--color-error-border` | `rgba(155, 44, 44, 0.35)` | error bubble border |
 
-**Rationale:** the reference layout spends its entire color budget on one
-saturated accent reserved for the primary action; everything else is
-near-black or gray. That discipline maps directly onto a chat UI, where the
-"send" action is the one thing that should visually shout — and it keeps the
-palette small enough to hold in your head, which matters more for a solo
-learning project than for a large team with a design system to enforce it.
+**Supersedes:** indigo `#4338CA` / white `#FFFFFF` / gray band palette from the
+2026-07-07 revision.
 
-## Decision 3: Single grotesk sans, not a display/body pairing
+**Rationale:** ALE-172 high-fidelity handoff is the product brand for the
+dashboard; tokens track that brief rather than the earlier sibling-site mood.
 
-**Decision:** `font-family: Inter, "Helvetica Neue", Arial, sans-serif` for
-both headings and body; weight (700 headings / 400–500 body) does the
-differentiation work instead of a second typeface.
+## Decision 3: Display / body pairing — Sora + Karla (self-hosted)
 
-**Rationale:** general frontend-design guidance favors a deliberate
-display/body pairing by default, but where a brief pins down a direction, the
-brief wins — and the reference site's own restraint (one family,
-weight-driven hierarchy) *is* the pinned-down direction here. Introducing a
-second display face would be adding personality the brief didn't ask for.
+**Decision:**
 
-## Decision 4: Spacing/radius/shadow scale
+- Display / headings: `--font-family-display: "Sora", …` (weights 400 / 700
+  loaded)
+- Body / UI: `--font-family: "Karla", …` (weights 400 / 500 / 700 loaded)
+- Hosting: `@fontsource/sora` and `@fontsource/karla` (OFL-1.1), imported from
+  `main.tsx` — **not** Google Fonts CDN (free-tier / privacy / offline-friendly,
+  consistent with the previous Inter Variable self-host choice)
 
-**Decision:** 4px base spacing scale (`--space-1: 4px` … `--space-8: 64px`);
-`--radius-sm: 6px` (inputs/buttons), `--radius-md: 12px` (cards); one soft
-shadow token `--shadow-card: 0 1px 3px rgba(16,24,40,0.08)`.
+**Supersedes:** single-family Inter Variable with weight-only hierarchy.
 
-**Rationale:** the reference layout uses whitespace and rounded cards instead
-of hard borders as its primary separator. Codifying that as a scale — instead
-of ad hoc paddings/radii per component — keeps that discipline consistent as
-more views get added later, and is cheap to define once versus expensive to
-retrofit across N components after the fact (the same cost asymmetry ADR-0002
-Decision 2 uses for payload indexing).
+**Rationale:** The handoff specifies a deliberate display/body pairing. Both
+families are OFL-licensed for web embedding; self-hosting avoids a runtime CDN
+dependency.
+
+## Decision 4: Spacing, radius, and layout scale
+
+**Decision:**
+
+- Spacing: 4px-based scale `--space-1` … `--space-10`, plus handoff-specific
+  pads (`--space-input-pad-y`, `--space-bubble-pad-x`, `--space-empty-gap`, …)
+- Radii: `--radius-sm: 12px` (lock), `--radius-md: 14px` (banner),
+  `--radius-lg: 16px`, `--radius-xl: 18px` (input bar), `--radius-pill: 100px`
+  (Ask), asymmetric `--radius-bubble-user` / `--radius-bubble-assistant`
+- Layout: `--max-width-chat: 980px`; `--min-height-conversation: 420px`;
+  mascot `--size-mascot-header: 56px`, `--size-mascot-empty: 120px`;
+  `--size-lock-button: 44px`
+
+**Supersedes:** `--radius-sm: 6px`, `--shadow-card`, and the narrower
+`--max-width-chat: 48rem` card-on-gray grammar. Soft card shadows are no longer
+part of the live language (bubbles / bordered cream panels instead).
 
 ## Decision 5: Application to the chat UI specifically
 
-- Input bar → styled like a split search bar (single pill container, icon +
-  placeholder, solid `--color-accent` button) instead of a generic bordered
-  `<input>`.
-- Message list → sits on `--color-surface-alt`; individual messages are
-  `--color-surface` cards with `--shadow-card` — the same visual grammar the
-  reference site uses for its category-card grid, reused rather than
-  inventing a second card language.
-- Sources (`ChatResponse.sources`, per ADR-0004 Decision 4) → rendered as
-  small `--shadow-card` chips (title, company, score) rather than a bare
-  list, for the same reason.
+- **Header** — mascot + lowercase Sora wordmark “töökratt”, subtitle, cream lock
+  button (API key modal trigger).
+- **Info banner** — cream surface, teal border/icon, stateless-question copy.
+- **Conversation** — empty state with large mascot; user bubbles amber/navy text;
+  assistant bubbles navy/parchment text; loading indicator matches assistant
+  bubble chrome; error messages use the dedicated error tokens (production
+  addition beyond the prototype’s canned replies).
+- **Input bar** — cream bordered panel, transparent textarea, live `N/500`
+  counter, pill Ask button disabled when empty.
+- **Sources** — when shown, chips/cards sit on navy assistant bubbles using
+  `--color-on-navy-*` tokens (no `--shadow-card`).
+- **Favicons / apple-touch** — sized mascot crops in `frontend/public/`
+  (resolved under ALE-172; opaque parchment background).
+
+## Contrast audit (ALE-174)
+
+Computed relative-luminance contrast (WCAG 2.x formula) against the live
+tokens:
+
+| Pair | Ratio | AA normal (4.5:1) | Notes |
+|---|---|---|---|
+| `--color-ink` / `--color-accent-text` on `--color-accent` / `--color-bubble-user` (`#1B2A4A` on `#C97D2E`) | **4.37:1** | Fail | Applicable bar for live UI — see below |
+| Parchment on navy (assistant text) | 12.42:1 | Pass | |
+| Ink on parchment / cream (page text) | 12.42:1 / 13.42:1 | Pass | |
+| Teal on cream (banner icon) | 5.62:1 | Pass | |
+
+The navy-on-amber ratio (4.37:1) would clear WCAG’s **large-text** AA floor
+(3:1) if the glyphs qualified as large text (≥24px regular or ≥18.66px /
+14pt bold). They do not in the shipped UI: the Ask label is 16px bold and
+user-bubble body is ~17px regular — so the large-text allowance does **not**
+apply, and the relevant criterion is AA normal (4.5:1), which fails.
+
+**Accepted risk:** navy-on-amber for Ask label and user-bubble body sits
+**0.13 below** AA for normal text. Adjusting either color would diverge from
+the signed-off handoff for a marginal gain; leave as shipped.
+
+**Revisit trigger:** before treating Ask / user-bubble copy as long-form body
+text (or if a formal a11y gate is added to CI), darken ink toward ~`#192746`
+or lighten amber slightly until ≥ 4.5:1 — both ~3% nudges were enough in a
+spot check.
 
 ## Alternatives considered and rejected
 
-- **Sampling exact hex/font values from thehub.io via devtools** — rejected:
-  not attempted at all once a live browser session wasn't available, and even
-  if it had been, redefining brand-identical values would raise the exact IP
-  concern this ADR's Context section explicitly avoids. An original palette
-  in the same mood serves the brief without that risk.
-- **A display/body font pairing** — rejected per Decision 3: not what the
-  reference direction calls for; would add unrequested personality.
-- **Adopting a full design-system library (e.g. Tailwind's default theme,
-  MUI) now** — rejected: one view, a small fixed token set; a dependency for
-  theming machinery the project doesn't yet need. Revisit if a second real
-  view or dark-mode requirement appears (see Revisit triggers).
+- **Keep Inter / indigo and only rename Hubster → Töökratt in copy** —
+  rejected: ALE-172 handoff is the brand direction.
+- **Google Fonts CDN for Sora/Karla** — rejected: OFL self-host via
+  `@fontsource` matches free-tier / offline constraints and the prior Inter
+  approach.
+- **Adjust amber/navy now to force AA 4.5:1** — deferred per contrast section;
+  handoff fidelity preferred for ALE-174.
+- **Full design-system library (Tailwind default theme, MUI)** — still
+  rejected: one dashboard view; hand-rolled tokens remain enough.
 
 ## Consequences
 
-**Positive:** one small, documented seam for all visual values, consistent
-with the project's existing isolation pattern for external/volatile
-dependencies; no thehub.io assets, CSS, or brand values reproduced; a
-recognizable, coherent visual language available to `ALE-74` from day one
-instead of default browser styling.
+**Positive:** docs match `tokens.css`; rebrand is documented; Decision 1’s
+seam remains the change vehicle; production loading/error states are named as
+intentional extensions of the prototype.
 
-**Negative / accepted risks:** token values were derived from visual
-inspection of a single screenshot at one viewport size, not from computed
-styles across breakpoints — treat this as a starting palette to refine
-in-browser during implementation, not as final, validated values. No
-accessibility contrast audit has been run yet against `--color-accent` on
-`--color-surface`.
+**Negative / accepted risks:** navy-on-amber contrast shortfall (see above);
+token set is larger than the 2026-07 indigo palette (more semantic aliases for
+opacity and on-navy surfaces) — still one file.
 
 ## Revisit triggers
 
-- If the app grows a second real view or a dark-mode requirement, revisit
-  whether a design-system library (vs. hand-rolled tokens) is worth the
-  dependency (mirrors ADR-0004's own "second real view" revisit trigger for
-  Next.js/routing).
-- Before shipping beyond a local demo, run a contrast check on
-  `--color-accent`/`--color-ink` against WCAG AA and adjust if it fails —
-  not yet verified.
-- If thehub.io's own visual direction changes materially, or a closer visual
-  fidelity pass becomes valuable, redo this ADR's Context section with real
-  browser-based inspection (computed styles, not a screenshot) once that
-  tooling is available.
+- Contrast nudge for navy-on-amber (see Contrast audit).
+- If a second real view or dark mode appears, revisit whether a design-system
+  library beats hand-rolled tokens (same trigger as ADR-0004 for routing).
+- If a simplified monochrome mark is designed, prefer it for 16×16 favicon
+  only (smile is illegible at that size with the current art — accepted under
+  ALE-172).
