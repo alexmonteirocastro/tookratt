@@ -87,6 +87,7 @@ Workflow guide (how to read `separation_margin`, judgments, sweeps, etc.):
 - [CONTRIBUTING.md](CONTRIBUTING.md) — code-quality tooling and dev checks
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — environment variables, ingestion, local development, project layout, data model, Hub API client, and testing
 - [marketing/README.md](marketing/README.md) — apex landing page (Cloudflare Pages)
+- [workers/capture/README.md](workers/capture/README.md) — waitlist/contact capture Worker
 - [docs/PRODUCT_VISION.md](docs/PRODUCT_VISION.md) — problem, roadmap, and trust bar for `/chat`
 - [docs/ops/grafana-cloud-chat-observability.md](docs/ops/grafana-cloud-chat-observability.md) — Grafana Cloud `/chat` dashboard (ADR-0015)
 - [docs/ops/grafana-cloud-injection-alerting.md](docs/ops/grafana-cloud-injection-alerting.md) — Grafana Cloud injection alert rule (ADR-0015)

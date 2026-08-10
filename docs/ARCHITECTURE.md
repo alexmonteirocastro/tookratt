@@ -225,7 +225,7 @@ Component tests (Vitest + React Testing Library) cover message rendering (includ
 
 ### Marketing site (`marketing/`)
 
-Separate Vite (vanilla TypeScript) static site for the apex domain ([ADR-0016](adr/0016-marketing-site-topology-and-capture.md)). Tokens are duplicated from `frontend/src/styles/tokens.css` by design. Waitlist/contact forms POST to the ALE-177 Worker when `VITE_CAPTURE_URL` is set; otherwise they fall back to `mailto:hello@tookratt.com`. See [`marketing/README.md`](../marketing/README.md).
+Separate Vite (vanilla TypeScript) static site for the apex domain ([ADR-0016](adr/0016-marketing-site-topology-and-capture.md)). Tokens are duplicated from `frontend/src/styles/tokens.css` by design. Waitlist/contact forms POST to the capture Worker (`workers/capture`, ALE-177) when `VITE_CAPTURE_URL` is set; otherwise they fall back to `mailto:hello@tookratt.com`. See [`marketing/README.md`](../marketing/README.md) and [`workers/capture/README.md`](../workers/capture/README.md).
 
 ## Project structure
 
@@ -247,6 +247,8 @@ tookratt/
 ├── marketing/                   # Apex landing page (Vite vanilla; ADR-0016)
 │   ├── src/                     # Page, forms, Turnstile + mailto capture
 │   └── package.json
+├── workers/
+│   └── capture/                 # Waitlist/contact Worker (send_email; ALE-177)
 ├── api/
 │   ├── main.py                  # FastAPI app (jobs stats, semantic search, /chat)
 │   └── schemas.py               # API request/response models
