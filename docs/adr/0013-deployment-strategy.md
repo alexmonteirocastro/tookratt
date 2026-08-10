@@ -2,7 +2,7 @@
 
 * **Status:** Proposed
 * **Date:** 2026-07-12
-* **Related:** ALE-107 (spike), ADR-0004 Decision 5 (`VITE_API_BASE_URL`, browser-reachable URL requirement), ADR-0006 (chat endpoint hardening — single-instance rate-limiting assumption), ALE-86 (CORS configuration), ALE-72 (Settings/env-var pattern), ALE-113 (proxy timeout revisit trigger — activated, not resolved, by this ADR), ALE-108 (Ollama containerization — explicitly not needed for this deployment), ALE-119 / ALE-122 (API key auth / prompt-injection guardrails — related follow-ups, not blocking)
+* **Related:** ALE-107 (spike), ADR-0004 Decision 5 (`VITE_API_BASE_URL`, browser-reachable URL requirement), ADR-0006 (chat endpoint hardening — single-instance rate-limiting assumption), ALE-86 (CORS configuration), ALE-72 (Settings/env-var pattern), ALE-113 (proxy timeout revisit trigger — activated, not resolved, by this ADR), ALE-108 (Ollama containerization — explicitly not needed for this deployment), ALE-119 / ALE-122 (API key auth / prompt-injection guardrails — related follow-ups, not blocking), ADR-0016 (revises Decision 2 — apex marketing Pages project + `app.tookratt.com` chat)
 
 ## Context
 
@@ -89,3 +89,13 @@ ALE-107 shortlisted three realistic combinations for hosting Töökratt's three 
 
 - **Option B — self-hosted Oracle Always Free VM running the existing Docker Compose file as-is.** Smallest actual behavior change of the three shortlisted options and worth revisiting if Render/Qdrant Cloud prove unreliable in practice — rejected for now due to Oracle's recently halved Ampere allocation, inconsistent account approval, and the patching/security burden of a real VM.
 - **Option C — Cloud Run backend, Qdrant Cloud or Compute Engine for Qdrant.** More generous free compute in principle — rejected for now due to the card-on-file requirement and the multi-instance default directly fighting ADR-0006's rate-limiting assumption, for no benefit this project's current scale needs.
+
+## Follow-up notes (post-acceptance)
+
+### Decision 2 revision — marketing apex + `app.` chat subdomain (ADR-0016 / ALE-175)
+
+This is a scoped revision to Decision 2's assumption of a single Cloudflare Pages project, recorded in [ADR-0016](0016-marketing-site-topology-and-capture.md) rather than rewritten in place, to preserve the decision-history thread.
+
+**What changed:** Frontend hosting remains Cloudflare Pages, but there are now two Pages projects: the marketing landing page on the apex (`tookratt.com` + `www`), and the existing chat Vite app on `app.tookratt.com`. Decision 2's Vite build / `VITE_API_BASE_URL` contract for the chat app is unchanged. Waitlist/contact capture (Cloudflare Worker + Email Routing `send_email`, no persistence) is also decided in ADR-0016 and was never in this ADR's scope.
+
+**Why not edit Decision 2 silently:** project convention is revision-via-follow-up ADR when a later ticket changes a prior decision's scope, so readers of this file still see what was originally decided and where the later change lives.
