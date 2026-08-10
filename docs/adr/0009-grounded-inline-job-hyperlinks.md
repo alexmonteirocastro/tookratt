@@ -58,7 +58,7 @@
 
 - Directly answers the ask: keep the backend response (and its transparency/debuggability value — full metadata, scores) exactly as it is; only the client-side presentation changes.
 - Necessary as a safety net, not just a stylistic choice: Decision 2's instruction depends on model compliance, which isn't guaranteed to be perfect (see Consequences). The sources list remains the complete, guaranteed-accurate reference even on a turn where the model's prose under-links or paraphrases past a job without linking it.
-- Consistent with ADR-0004 Decision 4's principle (render what the API returns, don't invent client-side relevance logic) and ADR-0005's token system (reuses `--shadow-card`, just a smaller footprint) — a restyle, not a new rendering philosophy.
+- Consistent with ADR-0004 Decision 4's principle (render what the API returns, don't invent client-side relevance logic) and ADR-0005's token system (compact chips use on-navy surface tokens when nested in assistant bubbles) — a restyle, not a new rendering philosophy.
 - An explicit `VITE_SHOW_DEBUG_SOURCES` flag preserves the retrieval-debugging workflow ADR-0001 Decision 5 depends on (scores and full source metadata visible when you need them) without coupling presentation to environment heuristics. Pair with `LLM_PROVIDER=stub` (ADR-0007) when iterating on UI — stub for instant answers, debug sources for retrieval inspection — but each concern stays independently configurable.
 
 ## Consequences
