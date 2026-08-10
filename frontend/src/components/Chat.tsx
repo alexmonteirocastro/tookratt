@@ -65,14 +65,25 @@ export function Chat() {
     [scrollToBottom],
   );
 
+  const showEmpty = messages.length === 0 && !isLoading;
+
   return (
     <div className={styles.chat}>
       <div className={styles.messages} ref={listRef} aria-live="polite">
-        {messages.length === 0 && !isLoading && (
-          <p className={styles.empty}>
-            Ask about Nordic and European startup jobs — for example, &ldquo;backend engineer in
-            Denmark&rdquo; or &ldquo;remote frontend roles in Sweden&rdquo;.
-          </p>
+        {showEmpty && (
+          <div className={styles.empty}>
+            <img
+              className={styles.emptyMascot}
+              src="/mascot.png"
+              alt=""
+              width={120}
+              height={120}
+            />
+            <p className={styles.emptyText}>
+              Ask about Nordic and European startup jobs — for example, &ldquo;backend engineer
+              in Denmark&rdquo; or &ldquo;remote frontend roles in Sweden&rdquo;.
+            </p>
+          </div>
         )}
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />

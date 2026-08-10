@@ -8,7 +8,7 @@
   font-weight: var(--font-weight-medium);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--color-text-secondary);
+  color: var(--color-on-navy-muted);
 }
 
 .list {
@@ -22,9 +22,9 @@
 
 .item {
   padding: var(--space-2) var(--space-4);
-  background: var(--color-surface);
+  background: var(--color-on-navy-soft);
+  border: 1px solid var(--color-on-navy-chip-border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-card);
 }
 
 .header {
@@ -53,14 +53,14 @@
 
 .score {
   font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-on-navy-muted);
   white-space: nowrap;
 }
 
 .meta {
   margin: var(--space-1) 0 0;
   font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-on-navy-muted);
 }
 
 .chipList {
@@ -77,9 +77,9 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-1) var(--space-2);
-  background: var(--color-surface);
+  background: var(--color-on-navy-soft);
+  border: 1px solid var(--color-on-navy-chip-border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-card);
 }
 
 .chipLink {
@@ -101,6 +101,6 @@
 
 .chipScore {
   font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-on-navy-muted);
   white-space: nowrap;
 }

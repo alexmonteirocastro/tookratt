@@ -1,49 +1,82 @@
 /*
- * Design tokens for the Töökratt chat UI — values per ADR-0005.
+ * Design tokens for the Töökratt chat UI — ALE-172 dashboard redesign.
  * Components reference these by name; no hardcoded hex or px elsewhere.
  */
 :root {
-  /* Palette (ADR-0005 Decision 2) */
-  --color-ink: #1a2233;
-  --color-text-secondary: #5b6474;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f5f6f8;
-  --color-border: #e3e5ea;
-  --color-accent: #4338ca;
-  --color-accent-hover: #372dae;
+  /* Palette (ALE-172 design handoff) */
+  --color-ink: #1b2a4a;
+  --color-text-secondary: rgba(27, 42, 74, 0.65);
+  --color-text-muted: rgba(27, 42, 74, 0.55);
+  --color-text-faint: rgba(27, 42, 74, 0.45);
+  --color-text-soft: rgba(27, 42, 74, 0.75);
+  --color-surface: #fbf8f2;
+  --color-surface-alt: #f4efe6;
+  --color-border: rgba(27, 42, 74, 0.15);
+  --color-border-teal: rgba(46, 110, 98, 0.2);
+  --color-accent: #c97d2e;
+  --color-accent-hover: #b56f28;
+  --color-accent-text: #1b2a4a;
+  --color-teal: #2e6e62;
+  --color-bubble-user: #c97d2e;
+  --color-bubble-assistant: #1b2a4a;
+  --color-bubble-assistant-text: #f4efe6;
+  --color-lock-hover: #f0ebe0;
+  --color-on-navy-muted: rgba(244, 239, 230, 0.65);
+  --color-on-navy-soft: rgba(251, 248, 242, 0.12);
+  --color-on-navy-border: rgba(251, 248, 242, 0.2);
+  --color-overlay: rgba(27, 42, 74, 0.45);
 
-  /* Implementation extensions for error states (not in ADR-0005 palette) */
-  --color-error: #b42318;
-  --color-error-bg: #fef3f2;
+  /* Error states (production; not in prototype) */
+  --color-error: #9b2c2c;
+  --color-error-bg: #fce8e6;
+  --color-error-border: rgba(155, 44, 44, 0.35);
 
-  /* Typography (ADR-0005 Decision 3) — Inter Variable self-hosted via
-     @fontsource-variable/inter in main.tsx (font-display: swap per @font-face). */
-  --font-family: "Inter Variable", "Helvetica Neue", Arial, sans-serif;
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-xl: 1.5rem;
+  /* Typography — Sora (display) + Karla (body), self-hosted via @fontsource */
+  --font-family-display: "Sora", "Helvetica Neue", Arial, sans-serif;
+  --font-family: "Karla", "Helvetica Neue", Arial, sans-serif;
+  --font-size-xs: 0.875rem; /* 14px */
+  --font-size-sm: 1rem; /* 16px */
+  --font-size-base: 1.0625rem; /* 17px */
+  --font-size-lg: 1.1875rem; /* 19px */
+  --font-size-xl: 2rem; /* 32px */
   --font-weight-body: 400;
   --font-weight-medium: 500;
   --font-weight-heading: 700;
   --line-height-tight: 1.3;
-  --line-height-normal: 1.55;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
 
-  /* Spacing (ADR-0005 Decision 4 — 4px base) */
+  /* Spacing (4px base, extended for handoff paddings) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
-  --space-8: 64px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 56px;
 
-  /* Radius & shadow (ADR-0005 Decision 4) */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --shadow-card: 0 1px 3px rgba(16, 24, 40, 0.08);
+  /* Radius (ALE-172 handoff) */
+  --radius-sm: 12px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-xl: 18px;
+  --radius-pill: 100px;
+  --radius-bubble-user: 16px 16px 4px 16px;
+  --radius-bubble-assistant: 16px 16px 16px 4px;
 
   /* Layout */
-  --max-width-chat: 48rem;
+  --max-width-chat: 980px;
+  --min-height-conversation: 420px;
+  --size-mascot-header: 56px;
+  --size-mascot-empty: 120px;
+  --size-lock-button: 44px;
+  --space-input-pad-y: 18px;
+  --space-input-gap: 10px;
+  --space-ask-pad-x: 30px;
+  --space-bubble-pad-x: 22px;
+  --space-empty-gap: 26px;
+  --color-on-navy-chip-border: rgba(251, 248, 242, 0.15);
 }
