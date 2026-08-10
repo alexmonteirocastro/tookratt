@@ -28,6 +28,8 @@ Both questions were resolved in ALE-173's pre-implementation rabbit-hole discuss
 
 **Decision:** A Cloudflare Worker receives waitlist/contact form submissions from the landing page and relays them to `hello@tookratt.com` via Cloudflare Email Routing's `send_email` binding. **No KV, no D1, no other persistence layer** — by design, not as deferred work. Kept to the smallest thing that works; Email Routing is already live (Bet 001).
 
+**Abuse mitigation:** Cloudflare Turnstile gates the form client-side; the Worker verifies the response token server-side against Cloudflare's `siteverify` endpoint before sending any email. No rate limiting or honeypot beyond this — Turnstile is the guard, not a supplement to one.
+
 **Rationale:**
 
 - Reuses infra already in place rather than adding a new third-party form product or a new storage surface.
@@ -53,6 +55,7 @@ Both questions were resolved in ALE-173's pre-implementation rabbit-hole discuss
 
 - Design-token duplication between the two Pages projects (Decision 1).
 - No stored waitlist/contact submissions — if an email is missed or `hello@` is unreachable, the submission is gone. Accepted at current volume; see Revisit triggers.
+- The Worker is a public endpoint; Turnstile is the only abuse guard (no auth, no additional rate limiting). Accepted as proportionate to a $0 prototype with no stored data at stake — revisit if abuse is observed in practice.
 - Two Cloudflare Pages projects and one Worker to configure and keep healthy instead of one Pages project — small operational surface growth, still within the free tier.
 
 ## Revisit triggers
