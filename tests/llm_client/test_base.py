@@ -333,7 +333,7 @@ def test_get_llm_settings_allows_missing_gemini_key_for_ollama(monkeypatch, tmp_
     settings = get_llm_settings()
 
     assert settings.llm_provider == "ollama"
-    assert settings.ollama_model == "qwen3:4b"
+    assert settings.ollama_model == "qwen3:8b"
 
 
 def test_get_generator_returns_ollama_when_configured(monkeypatch, tmp_path):

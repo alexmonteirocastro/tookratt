@@ -21,7 +21,7 @@ def _settings(**overrides) -> LLMSettings:
         "backoff_factor": 1.0,
         "timeout_seconds": 30.0,
         "ollama_base_url": "http://localhost:11434/v1",
-        "ollama_model": "qwen3:4b",
+        "ollama_model": "qwen3:8b",
         "ollama_timeout_seconds": 60.0,
         "ollama_max_chars_per_job": 1200,
         "ollama_num_predict": 256,
@@ -63,7 +63,7 @@ def test_ollama_generate_returns_trimmed_text():
     assert answer == "hello world"
     assert len(responses.calls) == 1
     request_body = json.loads(responses.calls[0].request.body)
-    assert request_body["model"] == "qwen3:4b"
+    assert request_body["model"] == "qwen3:8b"
     assert request_body["stream"] is True
     assert request_body["think"] is False
     assert request_body["options"]["num_predict"] == 256
