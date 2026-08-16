@@ -171,6 +171,42 @@ jobs:
         working-directory: marketing
         run: npm run build
 
+  capture-worker-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-capture-worker
+      cancel-in-progress: true
+    steps:
+      - name: Skipping checks (docs-only PR)
+        if: inputs.skip_heavy_tests
+        run: echo "Skipping checks (docs-only PR)"
+
+      - uses: actions/checkout@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+
+      - uses: actions/setup-node@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: workers/capture/package-lock.json
+
+      - name: Install dependencies
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: workers/capture
+        run: npm ci
+
+      - name: Typecheck capture Worker
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: workers/capture
+        run: npm run typecheck
+
+      - name: Test capture Worker
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: workers/capture
+        run: npm test
+
   markdown-link-check:
     runs-on: ubuntu-latest
     timeout-minutes: 5
