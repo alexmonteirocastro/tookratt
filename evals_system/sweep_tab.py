@@ -53,7 +53,7 @@ def _render_sweep_table(result: MinScoreSweepResult) -> None:
         }
         for row in result.rows
     ]
-    st.dataframe(rows, use_container_width=True)
+    st.dataframe(rows)
     suggested = result.suggested_max_safe_threshold
     if suggested is None:
         st.warning("No safe threshold found (every candidate misses expected hits).")

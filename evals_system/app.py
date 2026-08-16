@@ -1,7 +1,9 @@
-"""ALE-146: Human-aided eval review UI (Streamlit).
+"""ALE-163: Human-aided eval review UI (Streamlit).
 
 Local-only tool. Bootstrap repo root on sys.path so ``db`` / ``evals`` /
 ``llm_client`` import the same way as scripts/*.py.
+
+Review is the landing page; Compare holds the occasional-use harness tabs.
 """
 
 from __future__ import annotations
@@ -15,11 +17,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 import streamlit as st
 
-from evals_system.embeddings_tab import render_embeddings_tab
-from evals_system.generation_tab import render_generation_tab
 from evals_system.judgments import ensure_db
-from evals_system.review import render_review_tab
-from evals_system.sweep_tab import render_sweep_tab
 
 st.set_page_config(
     page_title="Töökratt eval review",
@@ -27,12 +25,6 @@ st.set_page_config(
 )
 
 ensure_db()
-
-st.title("Töökratt eval review")
-st.caption(
-    "Local human-in-the-loop review + ALE-147 harness tabs. "
-    "Read-only against chosen Qdrant collections (except disposable JOBS_COMPARE_*)."
-)
 
 with st.sidebar:
     st.markdown("### Notes")
@@ -44,15 +36,20 @@ with st.sidebar:
         "- Judgments: `evals_system/data/judgments.db` (gitignored)."
     )
 
-tab_review, tab_embed, tab_gen, tab_sweep = st.tabs(
-    ["Review", "Embeddings", "Generation", "Min-score sweep"]
+page = st.navigation(
+    [
+        st.Page(
+            "app_pages/review.py",
+            title="Review",
+            icon=":material/rate_review:",
+            default=True,
+        ),
+        st.Page(
+            "app_pages/compare.py",
+            title="Compare",
+            icon=":material/compare:",
+        ),
+    ],
+    position="top",
 )
-
-with tab_review:
-    render_review_tab()
-with tab_embed:
-    render_embeddings_tab()
-with tab_gen:
-    render_generation_tab()
-with tab_sweep:
-    render_sweep_tab()
+page.run()

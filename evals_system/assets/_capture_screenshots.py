@@ -18,8 +18,13 @@ VIEWPORT = {"width": 1400, "height": 900}
 
 def _wait_ready(page) -> None:
     page.goto(BASE, wait_until="domcontentloaded")
-    page.get_by_text("Töökratt eval review").first.wait_for(timeout=60_000)
+    page.get_by_text("Live query").first.wait_for(timeout=60_000)
     time.sleep(1.5)
+
+
+def _open_compare(page) -> None:
+    page.get_by_text("Compare", exact=True).first.click()
+    time.sleep(0.8)
 
 
 def _click_tab(page, name: str) -> None:
@@ -65,6 +70,7 @@ def main() -> None:
         time.sleep(1.0)
         _shot(page, "02-review-sources-answer")
 
+        _open_compare(page)
         _click_tab(page, "Embeddings")
         _hide_streamlit_chrome(page)
         _shot(page, "03-embeddings-form")
