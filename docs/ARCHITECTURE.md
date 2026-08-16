@@ -35,7 +35,7 @@ Copy `.env.example` to `.env` before running anything locally or via Compose.
 | `GEMINI_BACKOFF_FACTOR` | Exponential backoff base between Gemini retries (optional) | `1.0` |
 | `GEMINI_TIMEOUT` | Per-request timeout in seconds for Gemini (optional) | `30.0` |
 | `OLLAMA_BASE_URL` | Ollama API base URL (when `LLM_PROVIDER=ollama`); `/v1` suffix is stripped for native `/api/chat` calls. In Docker Compose with Ollama on the host, use `http://host.docker.internal:11434/v1` — see [CONTRIBUTING.md](../CONTRIBUTING.md#docker-compose-host-ollama) | `http://localhost:11434/v1` |
-| `OLLAMA_MODEL` | Ollama model tag (when `LLM_PROVIDER=ollama`) | `qwen3:4b` |
+| `OLLAMA_MODEL` | Ollama model tag (when `LLM_PROVIDER=ollama`) | `qwen3:8b` |
 | `OLLAMA_TIMEOUT_SECONDS` | Per-request timeout in seconds for Ollama (optional; default may 502 on CPU with full RAG context — see [CONTRIBUTING.md](../CONTRIBUTING.md#timeouts-on-cpu)) | `60.0` |
 | `OLLAMA_MAX_CHARS_PER_JOB` | Max characters of `document_text` per job sent to Ollama (optional) | `1200` |
 | `OLLAMA_NUM_PREDICT` | Max output tokens per Ollama request (optional) | `256` |

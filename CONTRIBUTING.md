@@ -125,12 +125,14 @@ For exercising the full RAG pipeline with a real local model when Gemini is rate
 
 ```bash
 brew install ollama
-ollama pull qwen3:4b
+ollama pull qwen3:8b
 ollama serve
-ollama run qwen3:4b   # preload model into memory (avoids cold-start on first /chat)
+ollama run qwen3:8b   # preload model into memory (avoids cold-start on first /chat)
 ```
 
-Ollama loads the model lazily on the first request. On CPU, that load can add significant latency to the first `/chat` call. Running `ollama run qwen3:4b` once after `ollama serve` preloads the model so subsequent requests only pay inference time.
+Ollama loads the model lazily on the first request. On CPU, that load can add significant latency to the first `/chat` call. Running `ollama run qwen3:8b` once after `ollama serve` preloads the model so subsequent requests only pay inference time.
+
+Do not use the short `qwen3:4b` tag as the local model: it currently resolves to thinking-only weights that ignore `think: false` and leak chain-of-thought into `/chat` answers (ALE-180, [findings 0006](docs/findings/0006-qwen3-4b-think-false-noop-findings.md)).
 
 #### Docker Compose (host Ollama)
 
@@ -144,7 +146,7 @@ OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
 
 Recreate the API after changing provider or URL: `docker compose up -d --force-recreate api`.
 
-Keep the preload step above (`ollama run qwen3:4b`) — it applies whether the API runs natively or in Compose.
+Keep the preload step above (`ollama run qwen3:8b`) — it applies whether the API runs natively or in Compose.
 
 On Linux Docker, `host.docker.internal` is not always available out of the box; you may need Compose `extra_hosts` or bind Ollama to `0.0.0.0` — see Docker and Ollama docs if the URL above does not connect.
 
@@ -164,7 +166,7 @@ LLM_PROVIDER=ollama
 # GEMINI_API_KEY is not required when using Ollama
 ```
 
-Defaults: `OLLAMA_BASE_URL=http://localhost:11434/v1`, `OLLAMA_MODEL=qwen3:4b`, `OLLAMA_TIMEOUT_SECONDS=60.0`, `OLLAMA_MAX_CHARS_PER_JOB=1200`, `OLLAMA_NUM_PREDICT=256`.
+Defaults: `OLLAMA_BASE_URL=http://localhost:11434/v1`, `OLLAMA_MODEL=qwen3:8b`, `OLLAMA_TIMEOUT_SECONDS=60.0`, `OLLAMA_MAX_CHARS_PER_JOB=1200`, `OLLAMA_NUM_PREDICT=256`.
 
 The Ollama adapter calls Ollama's native `/api/chat` endpoint with streaming and `think: false` (see ADR-0007 implementation notes). Job context sent to Ollama is truncated per listing to keep prompts within CPU-friendly limits.
 

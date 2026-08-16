@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-07-09
-* **Related:** ALE-101 (implementation), ADR-0001 (LLM provider strategy — revisit trigger fired), ADR-0006 (chat endpoint hardening, `GenerationRateLimitError`/`GenerationUnavailableError`)
+* **Related:** ALE-101 (implementation), ALE-111 (native `/api/chat` + `think: false`; briefly defaulted code to `qwen3:4b`), ALE-180 (reverted that default — `qwen3:4b` is thinking-only), ADR-0001 (LLM provider strategy — revisit trigger fired), ADR-0006 (chat endpoint hardening, `GenerationRateLimitError`/`GenerationUnavailableError`)
 
 ## Context
 
@@ -92,6 +92,7 @@ This ADR does not propose replacing Gemini. It proposes adding a local option, s
 - If Ollama becomes convenient enough that there's an appetite to make it the **default** provider (not just an opt-in dev path), that is a bigger decision than this ADR makes and should be evaluated on its own, including the "no unstable free tier" property this ADR does not currently need to weigh.
 - If this project needs to run in a shared/CI environment where a long-lived local Ollama daemon isn't available, revisit via a containerized Ollama service (e.g. a `docker-compose` entry) rather than assuming every environment has one running on `localhost:11434`.
 - If GPU hardware becomes available to the team, the CPU-only constraint driving Decision 2's model-size choice goes away and larger/faster local models become viable — worth re-evaluating the model pick at that point, not before.
+- If CPU latency of `qwen3:8b` is too painful for local `/chat`, evaluate `qwen3:4b-instruct` (not the thinking-only `qwen3:4b` tag) against the generation-quality eval set before considering it as the default. Do not re-default to `qwen3:4b` unless that tag's template honors `think: false`. Evidence: [findings 0006](../findings/0006-qwen3-4b-think-false-noop-findings.md) (ALE-180).
 
 ## Alternatives considered and rejected (for now)
 
@@ -105,6 +106,6 @@ This ADR does not propose replacing Gemini. It proposes adding a local option, s
 These reflect what shipped during ALE-101 follow-up work; the decisions above remain the authoritative rationale.
 
 - **Transport (Decision 3):** `OllamaGenerator` uses Ollama's native `POST /api/chat` with `stream: true` and `think: false`, not the OpenAI-compatible `/v1/chat/completions` endpoint. On Qwen3 models the OpenAI endpoint ignores `think: false`, burns tokens on internal reasoning, and non-streaming requests hit Ollama's ~5-minute server limit on CPU. The `/v1` suffix on `OLLAMA_BASE_URL` is stripped to derive the native base URL.
-- **Default model:** Code defaults to `qwen3:4b` (not `qwen3:8b`) for faster CPU inference. `qwen3:8b` remains a supported override via `OLLAMA_MODEL`.
+- **Default model:** Code defaults to `qwen3:8b`, matching Decision 2. ALE-111 briefly switched the default to `qwen3:4b` for faster CPU inference; ALE-180 reverted that. The current `qwen3:4b` tag is Ollama's 2507 thinking-only weights (`qwen3:4b-thinking`, digest `359d7dd4bcda`): its chat template always opens `<think>` and has no `/no_think` branch, so `think: false` is a no-op and chain-of-thought leaks into `content`. `qwen3:8b` still uses the original hybrid template and honors `think: false`. `qwen3:4b` remains a supported override with a known CoT leak. See [findings 0006](../findings/0006-qwen3-4b-think-false-noop-findings.md).
 - **Context and output limits:** `OLLAMA_MAX_CHARS_PER_JOB` (default `1200`) truncates each job's `document_text` before generation when `LLM_PROVIDER=ollama`. `OLLAMA_NUM_PREDICT` (default `256`) caps output tokens via native `options.num_predict`.
 - **Stub provider:** `LLM_PROVIDER=stub` selects `StubGenerator` — instant deterministic markdown answers for UI testing without Gemini quota or Ollama latency. Not part of the original ADR scope; documented in [CONTRIBUTING.md](../../CONTRIBUTING.md#stub-generator-recommended-for-ui-testing) and [ARCHITECTURE.md](../ARCHITECTURE.md#environment-variables).

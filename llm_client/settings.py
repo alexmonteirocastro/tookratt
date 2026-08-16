@@ -29,7 +29,7 @@ class LLMSettings(BaseSettings):
         validation_alias="OLLAMA_BASE_URL",
     )
     ollama_model: str = Field(
-        default="qwen3:4b",
+        default="qwen3:8b",
         validation_alias="OLLAMA_MODEL",
     )
     ollama_timeout_seconds: float = Field(

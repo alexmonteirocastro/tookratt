@@ -47,5 +47,5 @@
 ## Recommendation
 
 * ADR-0007's guidance stands as originally evaluated: `qwen3:8b` is a viable local model on the grounding-fidelity criterion that matters most, per this (small) eval. No action needed on the ADR itself.
-* The real gap is between what ADR-0007 evaluated (`qwen3:8b`) and what the code actually defaults to (`qwen3:4b`) — that divergence, and its consequence (ALE-180), is worth keeping in view when ALE-180 is picked up: one candidate fix direction is defaulting back to `qwen3:8b` (accepting the larger/slower model) rather than only chasing a `think: false` fix for `4b`, though that trade-off is ALE-180's call, not this document's.
+* The real gap is between what ADR-0007 evaluated (`qwen3:8b`) and what the code actually defaults to (`qwen3:4b`) — **resolved in ALE-180** ([findings 0006](0006-qwen3-4b-think-false-noop-findings.md)): default restored to `qwen3:8b`. The leak was the 2507 thinking-only retag of `qwen3:4b`, not a `think: false` plumbing bug.
 * No change recommended to ALE-150's shortlist (`gpt-oss:20b-cloud` per ALE-149) — this ticket is about the local model, not Cloud.
