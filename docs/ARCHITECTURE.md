@@ -171,7 +171,7 @@ Production chat SPA is hosted at `https://app.tookratt.com` ([ADR-0016](adr/0016
 
 A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). Each question is sent independently — conversation history is display-only and never sent to the API (see [ADR-0004](adr/0004-frontend-architecture-for-chat-interface.md)). Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
 
-Production is the Cloudflare Pages project `tookratt` (`app.tookratt.com`). Build watch paths include `frontend/*` only, so pushes that do not touch `frontend/` do not rebuild the chat app (ALE-178).
+Production is the Cloudflare Pages project `tookratt` (`app.tookratt.com`). Build watch paths include `frontend/*` only. Pushes that do not touch `frontend/` do not rebuild the chat app (ALE-178).
 
 Run locally:
 
