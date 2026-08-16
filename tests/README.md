@@ -128,3 +128,16 @@ For eval work not covered by pytest:
 - **Truncation vs precision correlation** — keyword positions relative to the 512-token cutoff for ALE-92 / ALE-138 failure jobs (ALE-141)
 
 See **[`scripts/README.md`](../scripts/README.md)** for prerequisites, commands, and how to read the output.
+
+## Manual generation-model comparison (scripts)
+
+For live-model generation-quality checks not covered by `@pytest.mark.generation`'s scripted generator (see "Generation eval tests" above):
+
+```bash
+uv run python scripts/compare_generators.py --providers gemini ollama:qwen3:8b
+```
+
+Runs `tests/fixtures/golden_generation.json` through each named `Generator` (`gemini`, `gemini:<model>`, `ollama`, `ollama:<model>`, `stub`) against a disposable collection, reporting per-case answers, retrieved sources, and grounding checks (ungrounded links/phrases). See [`scripts/README.md`](../scripts/README.md#3-generation-model-comparison) for flags and output details.
+
+Used to check ADR-0007's revisit trigger ("does `qwen3:8b` show grounding failures beyond Gemini") — see [`docs/findings/0005-ollama-qwen3-generation-quality-eval-findings.md`](../docs/findings/0005-ollama-qwen3-generation-quality-eval-findings.md) (ALE-110) and, for Ollama Cloud specifically, [`docs/findings/0004-ollama-cloud-generation-hosting-spike-findings.md`](../docs/findings/0004-ollama-cloud-generation-hosting-spike-findings.md) (ALE-149).
+
