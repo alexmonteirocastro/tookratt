@@ -171,6 +171,8 @@ Production chat SPA is hosted at `https://app.tookratt.com` ([ADR-0016](adr/0016
 
 A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). Each question is sent independently — conversation history is display-only and never sent to the API (see [ADR-0004](adr/0004-frontend-architecture-for-chat-interface.md)). Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
 
+Production is the Cloudflare Pages project `tookratt` (`app.tookratt.com`). Build watch paths include `frontend/*` only, so pushes that do not touch `frontend/` do not rebuild the chat app (ALE-178).
+
 Run locally:
 
 ```bash
@@ -226,6 +228,8 @@ Component tests (Vitest + React Testing Library) cover message rendering (includ
 ### Marketing site (`marketing/`)
 
 Separate Vite (vanilla TypeScript) static site for the apex domain ([ADR-0016](adr/0016-marketing-site-topology-and-capture.md)). Tokens are duplicated from `frontend/src/styles/tokens.css` by design. Waitlist/contact forms POST to the capture Worker (`workers/capture`, ALE-177) when `VITE_CAPTURE_URL` is set; otherwise they fall back to `mailto:hello@tookratt.com`. See [`marketing/README.md`](../marketing/README.md) and [`workers/capture/README.md`](../workers/capture/README.md).
+
+Production is the Cloudflare Pages project `tookratt-marketing` (`tookratt.com` / `www`). Build watch paths include `marketing/*` only, so pushes that do not touch `marketing/` do not rebuild the landing page (ALE-178).
 
 ## Project structure
 
