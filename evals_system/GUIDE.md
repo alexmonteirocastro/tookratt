@@ -1,9 +1,12 @@
 # Manual eval review guide
 
-How to use the four tabs in this UI when exploring retrieval/generation quality.
-For how to launch the app, see [README.md](README.md).
+How to use Review (daily loop) and Compare (occasional harness) when exploring
+retrieval/generation quality. For how to launch the app, see [README.md](README.md).
 
-**Prefer `JOBS_DEV` for Review-tab exploration** when you want stable, fixture-backed
+The app opens on **Review**. Compare (embedding / generation / min-score sweep)
+is a separate page so those tools stay out of the tagging loop.
+
+**Prefer `JOBS_DEV` for Review exploration** when you want stable, fixture-backed
 examples (same corpus as `golden_jobs.json` / `golden_queries.json`). Use
 `JOBS_ON_THE_HUB` when you are deliberately probing production-scale failure modes.
 
@@ -12,39 +15,43 @@ seeded from `golden_jobs.json`, plus disposable `JOBS_COMPARE_*` collections).
 Fixture company names (`Acme Corp`, `Copenhagen Digital`, …) are intentional —
 do not replace these with production screenshots.
 
-![Töökratt eval review — Review tab form on JOBS_DEV](assets/01-overview-review-form.png)
+![Töökratt eval review — Review live-query form on JOBS_DEV](assets/01-overview-review-form.png)
 
-## How the four tabs relate to pytest
+## How Review and Compare relate to pytest
 
 | Surface | Role |
 |---------|------|
 | `pytest -m retrieval` / `pytest -m generation` | Catch **known** regressions against the golden set (pass/fail). |
-| This UI (`evals_system/`) | Surface **new** failure modes worth promoting into the golden set. |
-| `evals/` + `scripts/` | Same comparison/sweep logic as the Embeddings / Generation / Sweep tabs, as CLI. |
+| Review page | Walk a live query or the golden set and tag whether answers are meaningful. |
+| Compare page + `evals/` + `scripts/` | Same comparison/sweep logic as the Embeddings / Generation / Sweep tabs, as UI or CLI. |
 
-Use pytest as the regression gate. Use this UI (or the CLI wrappers) when you are
-comparing models/providers, tuning `CHAT_SOURCE_MIN_SCORE`, or manually tagging
-queries that look wrong before writing a new golden case.
+Use pytest as the regression gate. Use Review when tagging queries; use Compare
+(or the CLI wrappers) when comparing models/providers or tuning `CHAT_SOURCE_MIN_SCORE`.
 
 ---
 
 ## Review
 
-Human-in-the-loop: run one query against a chosen collection, inspect sources +
-answer, tag the outcome, replay later.
+Human-in-the-loop landing page. Toggle **Live query** vs **Golden set** — not nested
+tabs, and with no Compare-page tooling on this page.
 
-### Form fields
+### Live query
+
+Run one query against a chosen collection, inspect sources + answer, tag the
+outcome. The query box clears after save so the next case is ready.
+
+#### Form fields
 
 | Field | Meaning |
 |-------|---------|
 | **Query** | Free-text question (same shape as `/chat`). |
-| **Collection** | `JOBS_DEV` and/or `JOBS_ON_THE_HUB` if they exist on your Qdrant cluster. |
+| **Collection** | `JOBS_DEV` and/or `JOBS_ON_THE_HUB` if they exist on this Qdrant cluster. |
 | **Country / Remote** | Optional payload filters (same semantics as `/chat`). |
 | **Limit** | Max retrieval hits before the min-score floor is applied (default 5). |
 
 ### What "Run query" actually calls
 
-Not HTTP `POST /chat`. The tab calls `query_jobs_in_qdrant` + `get_generator`
+Not HTTP `POST /chat`. Review calls `query_jobs_in_qdrant` + `get_generator`
 directly (same building blocks as the API), then applies
 `filter_chat_retrieval_points` with `CHAT_SOURCE_MIN_SCORE` and
 `sanitize_answer_links`. That means you need Qdrant + LLM credentials in `.env`,
@@ -52,7 +59,7 @@ but you do **not** need the FastAPI server running.
 
 ### Reading Sources / Answer
 
-![Review tab — Sources / Answer split after a JOBS_DEV query](assets/02-review-sources-answer.png)
+![Review — Sources / Answer split after a JOBS_DEV query](assets/02-review-sources-answer.png)
 
 - **Sources** (left): hits that survived the min-score floor, with score and
   expandable `document_text`. Empty → "No sources above the min-score floor" and
@@ -70,10 +77,21 @@ for a remote backend engineer in Copenhagen, but the top source is a
 **Frontend Developer** (`cph001`) — the same role-confusion pattern covered by
 `role_confusion_cases` in `golden_queries.json`.
 
+### Golden set
+
+Walks every case in `tests/fixtures/golden_queries.json` (golden queries, role
+confusion, and tech-stack adversarial), joined to `golden_jobs.json`. One case at
+a time, with a progress caption (`3 of N`) and previous/next. Expected / confuser
+jobs come from the fixture; retrieved sources + generated answer run against
+`JOBS_DEV` when that collection exists. Judgments persist with
+`collection_name=JOBS_DEV` (the fixture corpus).
+
 ### Judgments
 
-Tag `good` / `bad` / `partial`, optional note, **Save judgment**. Rows live in
-`evals_system/data/judgments.db` (gitignored local SQLite).
+Tag `good` / `bad` / `partial` with the buttons or keyboard shortcuts `g` / `b` /
+`p` (ignored while a note field is focused). Optional note is stored with the
+row. Shortcuts save immediately and, in golden-set mode, advance to the next
+case. Rows live in `evals_system/data/judgments.db` (gitignored local SQLite).
 
 **History** lists saved rows; **Replay** re-runs the stored query against the same
 collection and diffs answer text + source ids/scores — useful after a model or
@@ -81,13 +99,17 @@ threshold change.
 
 ---
 
-## Embeddings
+## Compare
+
+Occasional-use harness. Three tabs, same behavior as ALE-146.
+
+### Embeddings
 
 Side-by-side embedding model comparison via `evals.compare_embedding_models`.
 
 ![Embeddings tab — form before Run](assets/03-embeddings-form.png)
 
-### What the run does
+#### What the run does
 
 1. Seeds a disposable `JOBS_COMPARE_*` collection per selected model from
    `golden_jobs.json`.
@@ -102,7 +124,7 @@ The tool only compares the models you select. To evaluate a migration, **include
 the current production model as a baseline** in the same run; it is not added
 automatically.
 
-### Reading the summary metrics
+#### Reading the summary metrics
 
 | Metric | Meaning |
 |--------|---------|
@@ -121,7 +143,7 @@ survive and the ranking looks wrong).
 Expand **Queries — {model}** to see per-query `expected_scores`, `top_noise_score`,
 and any `all_missing` ids.
 
-### Worked example (what a bad margin looks like)
+#### Worked example (what a bad margin looks like)
 
 ![Embeddings results — MiniLM negative separation_margin vs E5 baseline](assets/04-embeddings-results.png)
 
@@ -143,14 +165,14 @@ not absolute scores across unrelated runs.
 
 ---
 
-## Generation
+### Generation
 
 Side-by-side generator comparison via `evals.compare_generators` on
 `golden_generation.json`.
 
 ![Generation tab — provider controls](assets/05-generation-form.png)
 
-### Controls
+#### Controls
 
 | Control | Meaning |
 |---------|---------|
@@ -161,7 +183,7 @@ Side-by-side generator comparison via `evals.compare_generators` on
 
 Explicit Run only (same caveat as Embeddings).
 
-### Reading case results
+#### Reading case results
 
 ![Generation results — expanded case with missing expected source](assets/06-generation-results.png)
 
@@ -182,7 +204,7 @@ In the screenshot, `[backend_copenhagen]` shows
 `Missing expected: ['abc123']` while other fixture ids filled top-k — flag that
 as retrieval before judging the stub answer text.
 
-### Watch-for: same sources, different honesty
+#### Watch-for: same sources, different honesty
 
 When comparing providers on identical retrieval (no `missing_expected_source_ids`),
 watch for one model fabricating a job or claim while another correctly declines.
@@ -194,14 +216,14 @@ ticket); do not rely on a one-off production screenshot.
 
 ---
 
-## Min-score sweep
+### Min-score sweep
 
 Explore candidate `CHAT_SOURCE_MIN_SCORE` values without re-embedding on every
 slider move.
 
 ![Min-score sweep — before Run retrieval](assets/07-sweep-form.png)
 
-### Two-phase flow
+#### Two-phase flow
 
 1. **Run retrieval** — seeds disposable `JOBS_COMPARE_MIN_SCORE_SWEEP` with the
    configured `EMBEDDING_MODEL`, runs golden (+ role-confusion) cases once, and
@@ -211,7 +233,7 @@ slider move.
 
 Delete the disposable collection with the cleanup button when finished.
 
-### Reading the grid
+#### Reading the grid
 
 ![Min-score sweep — live slider + full threshold grid](assets/08-sweep-results.png)
 
@@ -237,11 +259,12 @@ Embeddings tab), not a threshold tweak.
 ## Suggested workflow
 
 1. **Review** on `JOBS_DEV` (or production when hunting live bugs) → tag surprises.
-2. **Embeddings** — include production model + candidates; chase negative
+   Use **Golden set** to walk the fixture cases; **Live query** for ad-hoc probes.
+2. **Compare → Embeddings** — include production model + candidates; chase negative
    `separation_margin` and non-zero `missed_count`.
-3. **Min-score sweep** — after trusting the embedding, pick a floor that keeps
+3. **Compare → Min-score sweep** — after trusting the embedding, pick a floor that keeps
    expected hits and cuts confusers.
-4. **Generation** — compare providers on the same retrieval; separate retrieval
+4. **Compare → Generation** — compare providers on the same retrieval; separate retrieval
    misses from grounding/provider errors.
 5. Promote durable findings into `tests/fixtures/` and cover them with
    `pytest -m retrieval` / `generation`.

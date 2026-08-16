@@ -30,13 +30,11 @@ uv sync --group dev --group eval-ui
 uv run pytest tests/evals_system/
 ```
 
-## Tabs
+## Pages
 
-| Tab | What it does |
-|-----|----------------|
-| Review | Query a chosen collection, view sources + answer, tag good/bad/partial, replay history |
-| Embeddings | Explicit Run → `compare_embedding_models` |
-| Generation | Explicit Run → `compare_generators` (surfaces `GenerationCaseResult.error`) |
-| Min-score sweep | Run retrieval once (seed + cache scores); threshold slider is in-memory only |
+| Page | What it does |
+|------|----------------|
+| Review (landing) | Toggle **Live query** vs **Golden set**. Tag good/bad/partial (`g`/`b`/`p`), persist to `judgments`, replay history |
+| Compare | Embeddings / Generation / Min-score sweep tabs (ALE-147 harness). Explicit Run only |
 
-See [GUIDE.md](GUIDE.md) for the per-tab walkthrough.
+See [GUIDE.md](GUIDE.md) for the walkthrough.

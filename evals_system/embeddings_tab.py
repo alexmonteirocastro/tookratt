@@ -23,7 +23,7 @@ def _render_embedding_result(result: EmbeddingComparisonResult) -> None:
                 "collection": result.collection_names.get(model, ""),
             }
         )
-    st.dataframe(rows, use_container_width=True)
+    st.dataframe(rows)
 
     st.markdown("#### Per-query results")
     for model in result.models:

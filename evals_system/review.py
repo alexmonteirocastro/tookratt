@@ -1,14 +1,23 @@
-"""Human review tab: run retrieval + generation, tag, history, replay."""
+"""Human review UI: live query + golden-set walkthrough, tag, history, replay."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, cast
 
 import streamlit as st
 from qdrant_client.http.exceptions import UnexpectedResponse
 
 from db import get_qdrant_client, get_settings, query_jobs_in_qdrant
+from evals.fixtures import GOLDEN_QUERIES_PATH
 from evals.generation import format_context_for_generator
+from evals_system.golden_cases import (
+    FIXTURE_COLLECTION_NAME,
+    GoldenJobSummary,
+    GoldenWalkthroughCase,
+    load_walkthrough_cases,
+    walkthrough_top_k,
+)
 from evals_system.judgments import (
     Judgment,
     Tag,
@@ -21,6 +30,7 @@ from evals_system.review_collections import (
     REVIEW_COLLECTION_CANDIDATES,
     existing_review_collections,
 )
+from evals_system.tag_shortcuts import consume_tag_shortcut
 from llm_client import NO_MATCHING_JOBS_MESSAGE, get_generator
 from llm_client.context import filter_chat_retrieval_points, sanitize_answer_links
 from llm_client.exceptions import (
@@ -30,6 +40,12 @@ from llm_client.exceptions import (
 )
 from the_hub_client.models import CountryCode
 from the_hub_client.utils import build_job_url
+
+_GROUP_LABELS = {
+    "queries": "Golden queries",
+    "role_confusion_cases": "Role confusion",
+    "tech_stack_adversarial_cases": "Tech-stack adversarial",
+}
 
 
 def _payload_source(score: float, payload: dict[str, Any]) -> dict[str, Any]:
@@ -107,6 +123,20 @@ def run_review_query(
     }
 
 
+def review_mode_label(mode: str) -> str:
+    return "Live query" if mode == "live" else "Golden set"
+
+
+def consume_review_flash() -> None:
+    message = st.session_state.pop("review_flash", None)
+    if isinstance(message, str) and message:
+        st.success(message)
+
+
+def _set_flash(message: str) -> None:
+    st.session_state["review_flash"] = message
+
+
 def _render_sources(sources: list[dict[str, Any]]) -> None:
     if not sources:
         st.info("No sources above the min-score floor.")
@@ -164,14 +194,151 @@ def _diff_sources(
             st.write(f"- {line}")
 
 
-def render_review_tab() -> None:
-    ensure_db()
+def _render_job_summaries(jobs: tuple[GoldenJobSummary, ...], *, empty: str) -> None:
+    if not jobs:
+        st.caption(empty)
+        return
+    for job in jobs:
+        remote = "remote" if job.remote else "on-site"
+        st.markdown(
+            f"**{job.job_title}** @ {job.company} — `{job.job_id}` · "
+            f"{job.locality}, {job.country} · {remote}"
+        )
+        if job.job_description.strip():
+            st.caption(job.job_description)
 
-    st.subheader("Run a review query")
+
+def _fixture_sources(case: GoldenWalkthroughCase) -> list[dict[str, Any]]:
+    return [
+        {
+            "job_id": job.job_id,
+            "job_title": job.job_title,
+            "company": job.company,
+        }
+        for job in case.expected_jobs
+    ]
+
+
+def _render_judgment_controls(
+    *,
+    note_key: str,
+    shortcut_key: str,
+    on_tag: Callable[[Tag], None],
+) -> None:
+    consume_tag_shortcut(key=shortcut_key, on_tag=on_tag)
+    st.markdown("#### Judgment")
+    st.caption(
+        "Shortcuts: `g` good · `b` bad · `p` partial. Ignored while typing a note."
+    )
+    st.text_area("Note (optional)", key=note_key, height=60)
+    with st.container(horizontal=True):
+        st.button(
+            "Good",
+            on_click=on_tag,
+            args=("good",),
+            icon=":material/thumb_up:",
+            key=f"{note_key}_good",
+        )
+        st.button(
+            "Bad",
+            on_click=on_tag,
+            args=("bad",),
+            icon=":material/thumb_down:",
+            key=f"{note_key}_bad",
+        )
+        st.button(
+            "Partial",
+            on_click=on_tag,
+            args=("partial",),
+            icon=":material/thumbs_up_down:",
+            key=f"{note_key}_partial",
+        )
+
+
+def _clear_live_form() -> None:
+    st.session_state.pop("review_result", None)
+    st.session_state["review_query"] = ""
+    st.session_state["review_note"] = ""
+
+
+def _save_live_judgment(tag: Tag) -> None:
+    result_state = st.session_state.get("review_result")
+    if not isinstance(result_state, dict):
+        _set_flash("Run a query before tagging.")
+        return
+    result = cast(dict[str, Any], result_state)
+    note_raw = st.session_state.get("review_note", "")
+    note = str(note_raw).strip() if note_raw else ""
+    row_id = insert_judgment(
+        collection_name=result["collection_name"],
+        query=result["query"],
+        answer=result["answer"],
+        sources=_compact_sources_for_storage(result["sources"]),
+        tag=tag,
+        country=result.get("country"),
+        remote=result.get("remote"),
+        note=note or None,
+    )
+    _clear_live_form()
+    _set_flash(f"Saved judgment #{row_id}")
+
+
+def _save_golden_judgment(tag: Tag) -> None:
+    cases = load_walkthrough_cases()
+    if not cases:
+        return
+    idx = int(st.session_state.get("golden_index", 0))
+    idx = max(0, min(idx, len(cases) - 1))
+    case = cases[idx]
+    collection_name = FIXTURE_COLLECTION_NAME
+    cache_key = f"{collection_name}:{case.id}"
+    cached = st.session_state.get("golden_results", {}).get(cache_key)
+    if isinstance(cached, dict):
+        answer = str(cached.get("answer", ""))
+        sources = _compact_sources_for_storage(
+            cast(list[dict[str, Any]], cached.get("sources", []))
+        )
+        country = cached.get("country")
+        remote = cached.get("remote")
+    else:
+        answer = ""
+        sources = _fixture_sources(case)
+        country = case.country
+        remote = None
+    note_raw = st.session_state.get("golden_note", "")
+    note = str(note_raw).strip() if note_raw else ""
+    row_id = insert_judgment(
+        collection_name=collection_name,
+        query=case.query,
+        answer=answer,
+        sources=sources,
+        tag=tag,
+        country=country if isinstance(country, str) else None,
+        remote=remote if isinstance(remote, bool) else None,
+        note=note or None,
+    )
+    st.session_state["golden_note"] = ""
+    if idx < len(cases) - 1:
+        st.session_state["golden_index"] = idx + 1
+    _set_flash(f"Saved judgment #{row_id} for `{case.id}`")
+
+
+def _list_review_collections() -> list[str] | None:
     try:
         collections = existing_review_collections()
     except (UnexpectedResponse, ConnectionError, TimeoutError, OSError) as exc:
         st.error(f"Cannot list Qdrant collections: {exc}")
+        return None
+    return collections
+
+
+def render_live_query_mode() -> None:
+    ensure_db()
+    st.caption(
+        "Type a query, inspect sources + answer, then tag. Input clears after save."
+    )
+    collections = _list_review_collections()
+    if collections is None:
         return
     if not collections:
         st.warning(
@@ -263,28 +430,168 @@ def render_review_tab() -> None:
             st.caption("generated" if generated else "fallback (no matching jobs)")
             st.markdown(result["answer"])
 
-        st.markdown("#### Judgment")
-        tag = st.radio(
-            "Tag",
-            options=["good", "bad", "partial"],
-            horizontal=True,
-            key="review_tag",
+        _render_judgment_controls(
+            note_key="review_note",
+            shortcut_key="live_tag_shortcuts",
+            on_tag=_save_live_judgment,
         )
-        note = st.text_area("Note (optional)", key="review_note", height=60)
-        if st.button("Save judgment", key="review_save"):
-            row_id = insert_judgment(
-                collection_name=result["collection_name"],
-                query=result["query"],
-                answer=result["answer"],
-                sources=_compact_sources_for_storage(result["sources"]),
-                tag=cast(Tag, tag),
-                country=result.get("country"),
-                remote=result.get("remote"),
-                note=note.strip() or None,
-            )
-            st.success(f"Saved judgment #{row_id}")
 
-    st.divider()
+
+def _golden_cache_key(collection_name: str, case_id: str) -> str:
+    return f"{collection_name}:{case_id}"
+
+
+def _golden_prev() -> None:
+    st.session_state["golden_index"] = max(
+        0, int(st.session_state.get("golden_index", 0)) - 1
+    )
+    st.session_state["golden_note"] = ""
+
+
+def _golden_next() -> None:
+    cases = load_walkthrough_cases()
+    last = max(0, len(cases) - 1)
+    st.session_state["golden_index"] = min(
+        last, int(st.session_state.get("golden_index", 0)) + 1
+    )
+    st.session_state["golden_note"] = ""
+
+
+def _country_from_case(case: GoldenWalkthroughCase) -> CountryCode | None:
+    if not case.country:
+        return None
+    return CountryCode(case.country)
+
+
+def render_golden_walkthrough_mode() -> None:
+    ensure_db()
+    cases = load_walkthrough_cases()
+    if not cases:
+        st.warning(f"No cases found in `{GOLDEN_QUERIES_PATH}`.")
+        return
+
+    st.session_state.setdefault("golden_index", 0)
+    st.session_state.setdefault("golden_results", {})
+    idx = int(st.session_state["golden_index"])
+    idx = max(0, min(idx, len(cases) - 1))
+    st.session_state["golden_index"] = idx
+    case = cases[idx]
+    n = len(cases)
+    group_label = _GROUP_LABELS.get(case.group, case.group)
+
+    collections = _list_review_collections()
+    if collections is None:
+        collections = []
+    collection_name = FIXTURE_COLLECTION_NAME
+    can_run_live = collection_name in collections
+
+    st.caption(
+        f"{idx + 1} of {n} · `{case.id}` · {group_label}. "
+        f"Judgments persist with `collection_name={FIXTURE_COLLECTION_NAME}`."
+    )
+    st.progress((idx + 1) / n)
+
+    with st.container(horizontal=True):
+        st.button(
+            "Previous",
+            on_click=_golden_prev,
+            disabled=idx == 0,
+            icon=":material/arrow_back:",
+            key="golden_prev",
+        )
+        st.button(
+            "Next",
+            on_click=_golden_next,
+            disabled=idx >= n - 1,
+            icon=":material/arrow_forward:",
+            key="golden_next",
+        )
+
+    st.markdown(f"### {case.query}")
+    if case.country:
+        st.caption(f"Country filter: `{case.country}`")
+    if case.notes:
+        st.info(case.notes)
+
+    fixture_left, fixture_right = st.columns(2)
+    with fixture_left:
+        with st.container(border=True):
+            st.markdown("#### Expected jobs")
+            _render_job_summaries(
+                case.expected_jobs,
+                empty="No expected jobs in fixture.",
+            )
+    with fixture_right:
+        with st.container(border=True):
+            st.markdown("#### Confusers")
+            _render_job_summaries(
+                case.confuser_jobs,
+                empty="No confuser jobs for this case.",
+            )
+
+    collection_name = FIXTURE_COLLECTION_NAME
+    cache_key = _golden_cache_key(collection_name, case.id)
+    results_cache = cast(dict[str, Any], st.session_state["golden_results"])
+
+    if can_run_live and cache_key not in results_cache:
+        try:
+            with st.spinner("Retrieving and generating..."):
+                live = run_review_query(
+                    query=case.query,
+                    collection_name=collection_name,
+                    country=_country_from_case(case),
+                    remote=None,
+                    limit=walkthrough_top_k(),
+                )
+            results_cache[cache_key] = {
+                **live,
+                "query": case.query,
+                "collection_name": collection_name,
+                "country": case.country,
+                "remote": None,
+            }
+        except (
+            UnexpectedResponse,
+            ConnectionError,
+            TimeoutError,
+            OSError,
+            GenerationRateLimitError,
+            GenerationConfigurationError,
+            GenerationUnavailableError,
+        ) as exc:
+            st.warning(f"Live retrieval unavailable: {exc}")
+        except Exception as exc:
+            st.warning(f"Live retrieval unavailable: {exc}")
+
+    cached = results_cache.get(cache_key)
+    if isinstance(cached, dict):
+        live_left, live_right = st.columns(2)
+        with live_left:
+            st.markdown("#### Retrieved sources")
+            _render_sources(cast(list[dict[str, Any]], cached["sources"]))
+        with live_right:
+            st.markdown("#### Generated answer")
+            generated = cached.get("generated", False)
+            st.caption("generated" if generated else "fallback (no matching jobs)")
+            st.markdown(cached["answer"])
+        if st.button("Re-run this case", key="golden_rerun"):
+            results_cache.pop(cache_key, None)
+            st.rerun()
+    elif not can_run_live:
+        st.info(
+            f"`{FIXTURE_COLLECTION_NAME}` is not on this Qdrant cluster — "
+            "showing fixture jobs only. Seed with `uv run python main.py --seed-dev` "
+            "to retrieve and generate."
+        )
+
+    _render_judgment_controls(
+        note_key="golden_note",
+        shortcut_key="golden_tag_shortcuts",
+        on_tag=_save_golden_judgment,
+    )
+
+
+def render_history() -> None:
     st.subheader("History")
     filter_tag = st.selectbox(
         "Filter by tag",
