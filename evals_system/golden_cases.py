@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any
 
 from evals.fixtures import load_golden_jobs, load_golden_queries
@@ -71,6 +72,7 @@ def _str_ids(raw: Any) -> tuple[str, ...]:
     return tuple(str(item) for item in raw)
 
 
+@lru_cache(maxsize=1)
 def walkthrough_top_k() -> int:
     """Retrieval depth for walkthrough runs (golden_queries.json ``top_k``)."""
     raw = load_golden_queries().get("top_k", 5)
@@ -80,7 +82,8 @@ def walkthrough_top_k() -> int:
         return 5
 
 
-def load_walkthrough_cases() -> list[GoldenWalkthroughCase]:
+@lru_cache(maxsize=1)
+def load_walkthrough_cases() -> tuple[GoldenWalkthroughCase, ...]:
     """Load every golden query group, joined to ``golden_jobs.json`` rows."""
     golden_set = load_golden_queries()
     jobs_by_id = {job.job_id: job for job in load_golden_jobs()}
@@ -111,4 +114,4 @@ def load_walkthrough_cases() -> list[GoldenWalkthroughCase]:
                     confuser_jobs=_lookup_jobs(list(confuser_ids), jobs_by_id),
                 )
             )
-    return cases
+    return tuple(cases)

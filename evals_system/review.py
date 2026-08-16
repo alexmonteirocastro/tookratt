@@ -529,7 +529,6 @@ def render_golden_walkthrough_mode() -> None:
                 empty="No confuser jobs for this case.",
             )
 
-    collection_name = FIXTURE_COLLECTION_NAME
     cache_key = _golden_cache_key(collection_name, case.id)
     results_cache = cast(dict[str, Any], st.session_state["golden_results"])
 

@@ -26,6 +26,16 @@ st.set_page_config(
 
 ensure_db()
 
+with st.sidebar:
+    st.markdown("### Notes")
+    st.markdown(
+        "- Review uses `query_jobs_in_qdrant` + `get_generator` "
+        "(not HTTP `/chat`).\n"
+        "- Sweep: **Run retrieval** once, then drag the threshold slider "
+        "against cached scores.\n"
+        "- Judgments: `evals_system/data/judgments.db` (gitignored)."
+    )
+
 page = st.navigation(
     [
         st.Page(
