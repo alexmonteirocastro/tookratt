@@ -1,6 +1,7 @@
 name = "tookratt-capture"
 main = "src/index.ts"
 compatibility_date = "2026-08-10"
+compatibility_flags = ["nodejs_compat"]
 
 # Recipient locked to hello@ — verified Email Routing destination (ADR-0016).
 # TURNSTILE_SECRET_KEY is a Worker secret: `npx wrangler secret put TURNSTILE_SECRET_KEY`
