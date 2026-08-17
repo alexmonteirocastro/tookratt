@@ -6,33 +6,40 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   # Detect docs-only PRs so ci.yml can no-op heavy jobs while still
   # reporting the required check names (branch protection on main).
+  # Also detect frontend/ changes so visual snapshots can be skipped.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       docs_only: ${{ steps.docs.outputs.docs_only }}
+      frontend_changed: ${{ steps.docs.outputs.frontend_changed }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - id: docs
-        name: Detect docs-only PR
+        name: Detect docs-only PR and frontend changes
         run: |
           set -euo pipefail
           BASE="${{ github.event.pull_request.base.sha }}"
           HEAD="${{ github.event.pull_request.head.sha }}"
           mapfile -t files < <(git diff --name-only "$BASE"..."$HEAD")
           docs_only=true
+          frontend_changed=false
           if [ "${#files[@]}" -eq 0 ]; then
             docs_only=false
           fi
           for f in "${files[@]}"; do
             [ -z "$f" ] && continue
+            if [[ "$f" == frontend/* ]]; then
+              frontend_changed=true
+            fi
             if [[ "$f" == docs/* ]]; then
               continue
             fi
@@ -41,14 +48,16 @@ jobs:
               continue
             fi
             docs_only=false
-            break
           done
           echo "docs_only=${docs_only}"
+          echo "frontend_changed=${frontend_changed}"
           echo "docs_only=${docs_only}" >> "$GITHUB_OUTPUT"
+          echo "frontend_changed=${frontend_changed}" >> "$GITHUB_OUTPUT"
 
   ci:
     needs: changes
     uses: ./.github/workflows/ci.yml
     with:
       skip_heavy_tests: ${{ needs.changes.outputs.docs_only == 'true' }}
+      run_visual_tests: ${{ needs.changes.outputs.frontend_changed == 'true' }}
     secrets: inherit

@@ -9,6 +9,8 @@ import {
 } from "./helpers";
 
 test.describe("visual snapshots", { tag: "@visual" }, () => {
+  // Pixel diffs will not pass on retry (local vs CI fonts). Don't burn CI minutes.
+  test.describe.configure({ retries: 0 });
   test("empty chat view", async ({ page }) => {
     await seedApiKey(page);
     await openApp(page);

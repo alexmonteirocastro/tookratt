@@ -39,7 +39,7 @@ Playwright E2E smoke (blocking in the `playwright` CI job). First time: `npx pla
 cd frontend && npm run test:e2e -- --grep @smoke
 ```
 
-Visual snapshot diffs are non-blocking in CI (`npm run test:e2e -- --grep @visual`); review artifacts or re-record with `npm run test:e2e:update` after intentional UI changes.
+Visual snapshots run in CI only when the PR touches `frontend/` (non-blocking). Review the PR comment / `playwright-visual-diffs` artifact, or re-record with `npm run test:e2e:update` after intentional UI changes.
 
 ## Optional: pre-commit (commit time)
 

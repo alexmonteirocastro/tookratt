@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const isCI = Boolean(process.env.CI);
+const runVisual = process.env.PLAYWRIGHT_VISUAL !== "0";
 
 /**
  * Chromium-only E2E + visual regression (ADR-0017).
@@ -13,7 +14,9 @@ export default defineConfig({
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
   workers: isCI ? 1 : undefined,
-  reporter: isCI ? [["list"], ["html", { open: "never" }]] : [["list"], ["html"]],
+  reporter: isCI
+    ? [["list"], ["github"], ["html", { open: "never" }]]
+    : [["list"], ["html"]],
   timeout: 30_000,
   snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}{-projectName}{ext}",
   expect: {
@@ -36,11 +39,15 @@ export default defineConfig({
       testIgnore: /debug-sources/,
       use: { ...devices["Desktop Chrome"] },
     },
-    {
-      name: "chromium-debug-sources",
-      testMatch: /debug-sources/,
-      use: { ...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:5174" },
-    },
+    ...(runVisual
+      ? [
+          {
+            name: "chromium-debug-sources",
+            testMatch: /debug-sources/,
+            use: { ...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:5174" },
+          },
+        ]
+      : []),
   ],
   webServer: [
     {
@@ -53,15 +60,19 @@ export default defineConfig({
         VITE_SHOW_DEBUG_SOURCES: "false",
       },
     },
-    {
-      command: "npm run dev -- --host 127.0.0.1 --port 5174 --strictPort",
-      url: "http://127.0.0.1:5174",
-      reuseExistingServer: !isCI,
-      timeout: 120_000,
-      env: {
-        VITE_SHOW_SOURCES: "true",
-        VITE_SHOW_DEBUG_SOURCES: "true",
-      },
-    },
+    ...(runVisual
+      ? [
+          {
+            command: "npm run dev -- --host 127.0.0.1 --port 5174 --strictPort",
+            url: "http://127.0.0.1:5174",
+            reuseExistingServer: !isCI,
+            timeout: 120_000,
+            env: {
+              VITE_SHOW_SOURCES: "true",
+              VITE_SHOW_DEBUG_SOURCES: "true",
+            },
+          },
+        ]
+      : []),
   ],
 });

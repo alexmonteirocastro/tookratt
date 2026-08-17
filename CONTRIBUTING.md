@@ -211,7 +211,7 @@ Shared jobs live in `.github/workflows/ci.yml`. `test.yml` runs them on pull req
 |-----|---------------------|
 | `unit-test` | `ruff check .`, `ruff format --check .`, `mypy .`, unit pytest |
 | `frontend-test` | `npm run lint`, Vitest |
-| `playwright` | Chromium E2E smoke (blocking); visual snapshot diffs uploaded as artifacts (non-blocking) |
+| `playwright` | Chromium E2E smoke (blocking); visual snapshots only when `frontend/` changed (PR comment + `playwright-visual-diffs` artifact, non-blocking) |
 | `retrieval-test` | retrieval/generation eval pytest only (no lint/type checks) |
 | `markdown-link-check` | lychee offline check on `**/*.md` (relative paths and anchors only) |
 | `deploy` (`deploy.yml` only) | POST to `RENDER_DEPLOY_HOOK_URL` after `ci` succeeds |
