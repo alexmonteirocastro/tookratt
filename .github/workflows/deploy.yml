@@ -6,6 +6,9 @@ on:
 
 permissions:
   contents: read
+  # Required so the reusable ci.yml workflow may request pull-requests: write
+  # (caller cannot grant less than the callee asks). The playwright comment
+  # step itself only runs on pull_request, so this is unused on push-to-main.
   pull-requests: write
 
 jobs:

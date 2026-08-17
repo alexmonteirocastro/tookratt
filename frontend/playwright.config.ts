@@ -1,6 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const isCI = Boolean(process.env.CI);
+/**
+ * PLAYWRIGHT_VISUAL is a Playwright-process toggle (this file): "0" drops the
+ * debug-sources project and its :5174 Vite server so the CI smoke step does
+ * not boot an unused server. Distinct from the ci.yml input `run_visual_tests`,
+ * which decides whether the visual job step runs at all (frontend/ path filter).
+ */
 const runVisual = process.env.PLAYWRIGHT_VISUAL !== "0";
 
 /**

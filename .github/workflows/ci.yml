@@ -196,13 +196,14 @@ jobs:
         run: echo "Skipping visual snapshots (no frontend/ changes)"
 
       - name: Run visual snapshot tests
+        id: visual
         if: ${{ !inputs.skip_heavy_tests && inputs.run_visual_tests }}
         continue-on-error: true
         working-directory: frontend
         run: npx playwright test --grep @visual --retries=0
 
       - name: Collect visual diff images
-        if: ${{ always() && !inputs.skip_heavy_tests && inputs.run_visual_tests }}
+        if: ${{ always() && !inputs.skip_heavy_tests && (steps.visual.outcome == 'success' || steps.visual.outcome == 'failure') }}
         working-directory: frontend
         run: |
           mkdir -p visual-diffs
@@ -221,7 +222,7 @@ jobs:
           retention-days: 14
 
       - name: Upload visual diff images
-        if: ${{ always() && !inputs.skip_heavy_tests && inputs.run_visual_tests }}
+        if: ${{ always() && !inputs.skip_heavy_tests && (steps.visual.outcome == 'success' || steps.visual.outcome == 'failure') }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-visual-diffs
@@ -237,23 +238,29 @@ jobs:
             const fs = require('fs');
             const marker = '<!-- playwright-visual-report -->';
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const visualRan = ${{ inputs.run_visual_tests }};
+            const visualRequested = ${{ inputs.run_visual_tests }};
+            // outcome, not conclusion: continue-on-error rewrites conclusion to success.
+            const visualOutcome = '${{ steps.visual.outcome }}';
             const diffsDir = 'frontend/visual-diffs';
             let diffFiles = [];
-            if (visualRan && fs.existsSync(diffsDir)) {
+            if (fs.existsSync(diffsDir)) {
               diffFiles = fs.readdirSync(diffsDir).filter((name) => name.endsWith('-diff.png')).sort();
             }
 
             let body = `${marker}\n## Playwright visual snapshots\n\n`;
-            if (!visualRan) {
+            if (!visualRequested) {
               body += 'Skipped — no `frontend/` changes on this PR.\n';
-            } else if (diffFiles.length === 0) {
-              body += `No pixel diffs. Full HTML report: [this run's \`playwright-report\` artifact](${runUrl}).\n`;
-            } else {
+            } else if (visualOutcome !== 'success' && visualOutcome !== 'failure') {
+              body += `Visual tests did not run (earlier step failed or was cancelled). See [this run](${runUrl}).\n`;
+            } else if (diffFiles.length > 0) {
               body += `${diffFiles.length} snapshot(s) differed (often local vs CI font rendering — ADR-0017). `;
               body += `Open the **\`playwright-visual-diffs\`** artifact on [this run](${runUrl}) and click a PNG to preview it in the browser — no unzip.\n\n`;
               body += diffFiles.map((name) => `- \`${name}\``).join('\n');
               body += '\n';
+            } else if (visualOutcome === 'success') {
+              body += `No pixel diffs. Full HTML report: [this run's \`playwright-report\` artifact](${runUrl}).\n`;
+            } else {
+              body += `Visual tests failed before producing snapshot diffs (install, timeout, or crash). See [this run](${runUrl}).\n`;
             }
 
             const { data: comments } = await github.rest.issues.listComments({
