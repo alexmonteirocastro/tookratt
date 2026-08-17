@@ -68,6 +68,39 @@ def test_ollama_generate_returns_trimmed_text():
     assert request_body["think"] is False
     assert request_body["options"]["num_predict"] == 256
     assert "job context" in request_body["messages"][0]["content"]
+    assert "Authorization" not in responses.calls[0].request.headers
+
+
+@responses.activate
+def test_ollama_generate_sends_bearer_when_api_key_set():
+    responses.add(
+        responses.POST,
+        _CHAT_URL,
+        body=_stream_body(["ok"]),
+        stream=True,
+        content_type="application/x-ndjson",
+    )
+    generator = OllamaGenerator(_settings(ollama_api_key="cloud-key"))
+
+    generator.generate("job context", "what roles?")
+
+    assert responses.calls[0].request.headers["Authorization"] == "Bearer cloud-key"
+
+
+@responses.activate
+def test_ollama_generate_omits_authorization_when_api_key_blank():
+    responses.add(
+        responses.POST,
+        _CHAT_URL,
+        body=_stream_body(["ok"]),
+        stream=True,
+        content_type="application/x-ndjson",
+    )
+    generator = OllamaGenerator(_settings(ollama_api_key="   "))
+
+    generator.generate("job context", "what roles?")
+
+    assert "Authorization" not in responses.calls[0].request.headers
 
 
 @responses.activate

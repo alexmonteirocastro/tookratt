@@ -334,6 +334,18 @@ def test_get_llm_settings_allows_missing_gemini_key_for_ollama(monkeypatch, tmp_
 
     assert settings.llm_provider == "ollama"
     assert settings.ollama_model == "qwen3:8b"
+    assert settings.ollama_api_key == ""
+
+
+def test_get_llm_settings_loads_ollama_api_key_from_env(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("OLLAMA_API_KEY", "cloud-key")
+
+    settings = get_llm_settings()
+
+    assert settings.ollama_api_key == "cloud-key"
 
 
 def test_get_generator_returns_ollama_when_configured(monkeypatch, tmp_path):
