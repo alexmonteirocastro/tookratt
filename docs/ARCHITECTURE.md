@@ -226,6 +226,22 @@ npm test
 
 Component tests (Vitest + React Testing Library) cover message rendering (including markdown in assistant replies), loading state, network/HTTP error handling, and the `generated: false` no-match case. They run in CI via the `frontend-test` job in `.github/workflows/ci.yml`.
 
+**Frontend E2E / visual tests**
+
+```bash
+cd frontend
+npx playwright install chromium   # first time only
+npm run test:e2e
+```
+
+Update snapshot baselines after intentional UI changes:
+
+```bash
+npm run test:e2e:update
+```
+
+Playwright covers a Chromium-only chat-flow smoke test (question → loading → markdown answer → sources) plus visual snapshots of the empty chat view, `SourceList` compact/debug variants, and the API-key auth modal ([ADR-0017](adr/0017-frontend-e2e-visual-testing.md)). Tests mock `/api/chat`, so they do not need a running backend. They run in CI via the `playwright` job in `.github/workflows/ci.yml`: the smoke test blocks merges; visual snapshot diffs are uploaded as artifacts for manual review and do not fail the build (local vs CI font rendering can differ — ADR-0017 Decision 3). `test:e2e` starts the Vite dev server automatically when one is not already running.
+
 ### Marketing site (`marketing/`)
 
 Separate Vite (vanilla TypeScript) static site for the apex domain ([ADR-0016](adr/0016-marketing-site-topology-and-capture.md)). Tokens are duplicated from `frontend/src/styles/tokens.css` by design. Waitlist/contact forms POST to the capture Worker (`workers/capture`, ALE-177) when `VITE_CAPTURE_URL` is set; otherwise they fall back to `mailto:hello@tookratt.com`. See [`marketing/README.md`](../marketing/README.md) and [`workers/capture/README.md`](../workers/capture/README.md).
@@ -247,6 +263,7 @@ tookratt/
 │   │   ├── api/                 # Typed API client and request/response types
 │   │   ├── components/          # Chat view, messages, sources, input
 │   │   └── styles/              # Design tokens (tokens.css) and global styles
+│   ├── e2e/                     # Playwright E2E smoke + visual snapshots (ADR-0017)
 │   ├── Dockerfile
 │   └── package.json
 ├── marketing/                   # Apex landing page (Vite vanilla; ADR-0016)
@@ -361,9 +378,11 @@ During ingestion, a job that still fails after bounded retries is skipped; the o
 
 ## Testing
 
-Töökratt has three test layers:
+Töökratt has five test layers:
 
 - **Unit tests** — mock The Hub API responses and verify parsing logic. No network or Qdrant required.
+- **Frontend component tests** — Vitest + React Testing Library (`frontend-test` CI job). See the Frontend tests subsection above.
+- **Frontend E2E / visual tests** — Playwright Chromium smoke + screenshot baselines (`playwright` CI job). See the Frontend E2E / visual tests subsection above.
 - **Retrieval golden-set tests** — evaluate semantic search quality against a fixed query set in the dev Qdrant collection (`JOBS_DEV`). See [tests/README.md](../tests/README.md).
 - **Generation eval tests** — evaluate `/chat` wiring (retrieval → context → `Generator`) against the same dev collection with a scripted generator. No live Gemini calls. See [tests/README.md](../tests/README.md).
 

@@ -135,6 +135,68 @@ jobs:
         working-directory: frontend
         run: npm run lint
 
+  playwright:
+    # ADR-0017: Chromium-only E2E smoke (blocking) + visual snapshots
+    # (artifact-only; diffs do not fail the job).
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-playwright
+      cancel-in-progress: true
+    steps:
+      - name: Skipping checks (docs-only PR)
+        if: inputs.skip_heavy_tests
+        run: echo "Skipping checks (docs-only PR)"
+
+      - uses: actions/checkout@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+
+      - uses: actions/setup-node@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: frontend
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        if: ${{ !inputs.skip_heavy_tests }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E smoke tests
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: frontend
+        run: npx playwright test --grep @smoke
+
+      - name: Run visual snapshot tests
+        if: ${{ !inputs.skip_heavy_tests }}
+        continue-on-error: true
+        working-directory: frontend
+        run: npx playwright test --grep @visual
+
+      - name: Upload Playwright report and visual diffs
+        if: ${{ always() && !inputs.skip_heavy_tests }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
   marketing-test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
