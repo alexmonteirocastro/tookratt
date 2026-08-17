@@ -189,6 +189,15 @@ def test_build_generator_ollama_model_label() -> None:
     assert generator.settings.llm_provider == "ollama"
 
 
+def test_build_generator_preserves_ollama_api_key() -> None:
+    base = _llm_settings(ollama_api_key="cloud-key")
+    generator = build_generator("ollama:gpt-oss:20b-cloud", base_settings=base)
+    assert isinstance(generator, OllamaGenerator)
+    assert generator.settings.ollama_model == "gpt-oss:20b-cloud"
+    assert generator.settings.ollama_api_key == "cloud-key"
+    assert generator._session.headers["Authorization"] == "Bearer cloud-key"
+
+
 def test_build_generator_gemini_model_label() -> None:
     base = _llm_settings(llm_provider="gemini", gemini_model="gemini-2.5-flash")
     generator = build_generator("gemini:gemini-2.0-flash", base_settings=base)

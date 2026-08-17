@@ -28,6 +28,7 @@ class LLMSettings(BaseSettings):
         default="http://localhost:11434/v1",
         validation_alias="OLLAMA_BASE_URL",
     )
+    ollama_api_key: str = Field(default="", validation_alias="OLLAMA_API_KEY")
     ollama_model: str = Field(
         default="qwen3:8b",
         validation_alias="OLLAMA_MODEL",

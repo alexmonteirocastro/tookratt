@@ -15,6 +15,15 @@ from llm_client.exceptions import GenerationUnavailableError
 from llm_client.settings import LLMSettings
 
 
+def session_for_settings(settings: LLMSettings) -> requests.Session:
+    """Build a Session that sends Bearer auth only when OLLAMA_API_KEY is set."""
+    session = requests.Session()
+    api_key = settings.ollama_api_key.strip()
+    if api_key:
+        session.headers["Authorization"] = f"Bearer {api_key}"
+    return session
+
+
 def native_ollama_base_url(base_url: str) -> str:
     """Map OpenAI-compatible base (…/v1) to Ollama native root.
 
@@ -38,7 +47,7 @@ class OllamaGenerator(Generator):
         session: requests.Session | None = None,
     ):
         self._settings = settings
-        self._session = session or requests.Session()
+        self._session = session or session_for_settings(settings)
 
     @property
     def settings(self) -> LLMSettings:
