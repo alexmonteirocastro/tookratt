@@ -172,6 +172,31 @@ The Ollama adapter calls Ollama's native `/api/chat` endpoint with streaming and
 
 Use `LLM_PROVIDER=stub` for rapid UI iteration; use Ollama when you specifically need to validate end-to-end generation quality against a real local model.
 
+### Ollama Cloud (optional)
+
+Cloud-hosted generation for eval/comparison ([ALE-181](https://linear.app/alex-projects/issue/ALE-181), [ALE-149 findings](docs/findings/0004-ollama-cloud-generation-hosting-spike-findings.md)). Local Ollama (`http://localhost:11434`) needs no key — leave `OLLAMA_API_KEY` unset.
+
+**Setup:**
+
+1. Create an account at [ollama.com](https://ollama.com).
+2. Create an API key at [ollama.com/settings/keys](https://ollama.com/settings/keys).
+3. In `.env`:
+
+```bash
+OLLAMA_BASE_URL=https://ollama.com
+OLLAMA_API_KEY=your-ollama-cloud-key
+```
+
+`evals.generation.build_generator` / `scripts/compare_generators.py` pick the key up automatically. Example (Free-tier model confirmed in the spike):
+
+```bash
+uv run python scripts/compare_generators.py --providers ollama:gpt-oss:20b-cloud
+```
+
+See [scripts/README.md](scripts/README.md#3-generation-model-comparison). Cloud does not host this project's local `qwen3:8b` — do not point `LLM_PROVIDER=ollama` `/chat` at Cloud while leaving `OLLAMA_MODEL` at the local default. A missing Cloud key surfaces as HTTP 401 (`GenerationUnavailableError`); there is no settings validator requiring the key.
+
+`gpt-oss` is a reasoning model: the local-CPU default `OLLAMA_NUM_PREDICT=256` can return an empty response. Raise it for Cloud calls, e.g. `OLLAMA_NUM_PREDICT=1024`.
+
 ### CI summary
 
 Shared jobs live in `.github/workflows/ci.yml`. `test.yml` runs them on pull requests; `deploy.yml` runs them on pushes to `main` and triggers Render deploy after CI passes.

@@ -131,6 +131,8 @@ uv run python scripts/compare_generators.py --providers stub
 uv run python scripts/compare_generators.py --providers gemini ollama:qwen3:8b
 # Lower top-k for Ollama (CPU-bound); mirrors CONTRIBUTING.md local-dev guidance
 uv run python scripts/compare_generators.py --providers ollama:qwen3:8b --top-k 3
+# Ollama Cloud — set OLLAMA_BASE_URL=https://ollama.com and OLLAMA_API_KEY (CONTRIBUTING.md#ollama-cloud-optional)
+uv run python scripts/compare_generators.py --providers ollama:gpt-oss:20b-cloud
 ```
 
 Per answer the harness records:
