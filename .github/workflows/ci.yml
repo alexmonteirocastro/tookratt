@@ -185,6 +185,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E smoke tests
+        id: smoke
         if: ${{ !inputs.skip_heavy_tests }}
         working-directory: frontend
         env:
@@ -237,7 +238,7 @@ jobs:
         # No gitHubToken: wrangler would create a GitHub Deployment ("Preview").
         # The report is a test artifact, not an app preview — the PR comment
         # posts the link instead.
-        if: ${{ always() && !inputs.skip_heavy_tests }}
+        if: ${{ always() && !inputs.skip_heavy_tests && (steps.smoke.outcome == 'success' || steps.smoke.outcome == 'failure') }}
         continue-on-error: true
         uses: cloudflare/wrangler-action@v4
         with:
@@ -258,7 +259,10 @@ jobs:
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const visualRequested = ${{ inputs.run_visual_tests }};
             // outcome, not conclusion: continue-on-error rewrites conclusion to success.
+            const smokeOutcome = '${{ steps.smoke.outcome }}';
             const visualOutcome = '${{ steps.visual.outcome }}';
+            const smokeRan = smokeOutcome === 'success' || smokeOutcome === 'failure';
+            const visualRan = visualOutcome === 'success' || visualOutcome === 'failure';
             const hostedReport =
               '${{ steps.pages.outputs.pages-deployment-alias-url }}'.trim() ||
               '${{ steps.pages.outputs.deployment-url }}'.trim();
@@ -272,19 +276,25 @@ jobs:
             }
 
             let body = `${marker}\n## Playwright tests\n\n`;
-            body += `Tests have run. Open the ${reportLink} for traces and snapshot diffs.\n\n`;
-            if (!visualRequested) {
-              body += 'Visual snapshots skipped — no `frontend/` changes on this PR.\n';
-            } else if (visualOutcome !== 'success' && visualOutcome !== 'failure') {
-              body += `Visual tests did not run (earlier step failed or was cancelled). See [this run](${runUrl}).\n`;
-            } else if (diffFiles.length > 0) {
-              body += `${diffFiles.length} snapshot(s) differed (often local vs CI font rendering — ADR-0017):\n\n`;
-              body += diffFiles.map((name) => `- \`${name}\``).join('\n');
-              body += '\n';
-            } else if (visualOutcome === 'success') {
-              body += 'Visual snapshots: no pixel diffs.\n';
+            if (!smokeRan) {
+              body += `Playwright did not run (earlier step failed or was cancelled). See [this run](${runUrl}).\n`;
             } else {
-              body += `Visual tests failed before producing snapshot diffs (install, timeout, or crash). See [this run](${runUrl}).\n`;
+              body += smokeOutcome === 'failure'
+                ? `Smoke tests failed. Open the ${reportLink} for traces.\n\n`
+                : `Tests have run. Open the ${reportLink} for traces and snapshot diffs.\n\n`;
+              if (!visualRequested) {
+                body += 'Visual snapshots skipped — no `frontend/` changes on this PR.\n';
+              } else if (!visualRan) {
+                body += `Visual tests did not run (smoke failed or the job was cancelled). See [this run](${runUrl}).\n`;
+              } else if (diffFiles.length > 0) {
+                body += `${diffFiles.length} snapshot(s) differed (often local vs CI font rendering — ADR-0017):\n\n`;
+                body += diffFiles.map((name) => `- \`${name}\``).join('\n');
+                body += '\n';
+              } else if (visualOutcome === 'success') {
+                body += 'Visual snapshots: no pixel diffs.\n';
+              } else {
+                body += `Visual tests failed before producing snapshot diffs (install, timeout, or crash). See [this run](${runUrl}).\n`;
+              }
             }
 
             const { data: comments } = await github.rest.issues.listComments({
