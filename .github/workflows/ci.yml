@@ -233,7 +233,9 @@ jobs:
 
       - name: Deploy Playwright report to Cloudflare Pages
         id: pages
-        if: ${{ always() && !inputs.skip_heavy_tests && (steps.visual.outcome == 'success' || steps.visual.outcome == 'failure') && secrets.CLOUDFLARE_API_TOKEN != '' }}
+        # Do not gate on `secrets.*` here — reusable workflows reject that
+        # context in `if` and the whole Test workflow fails to start.
+        if: ${{ always() && !inputs.skip_heavy_tests && (steps.visual.outcome == 'success' || steps.visual.outcome == 'failure') }}
         continue-on-error: true
         uses: cloudflare/wrangler-action@v4
         with:
