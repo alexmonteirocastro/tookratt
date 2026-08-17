@@ -176,12 +176,11 @@ Use `LLM_PROVIDER=stub` for rapid UI iteration; use Ollama when you specifically
 
 Cloud-hosted generation for eval/comparison ([ALE-181](https://linear.app/alex-projects/issue/ALE-181), [ALE-149 findings](docs/findings/0004-ollama-cloud-generation-hosting-spike-findings.md)). Local Ollama (`http://localhost:11434`) needs no key — leave `OLLAMA_API_KEY` unset.
 
-This project already has an Ollama Cloud account. The API key is in local `.env` as `OLLAMA_API_KEY` (not committed; `.env.example` only shows the empty placeholder). Do not create a new account or key unless that local value is missing or revoked.
-
-To use Cloud, point the base URL at it (the key is already in `.env`):
+Sign up at [ollama.com](https://ollama.com), create a key at [ollama.com/settings/keys](https://ollama.com/settings/keys), and add it to your local `.env` — never commit it:
 
 ```bash
 OLLAMA_BASE_URL=https://ollama.com
+OLLAMA_API_KEY=your-ollama-cloud-key
 ```
 
 `evals.generation.build_generator` / `scripts/compare_generators.py` pick both vars up automatically. Example (Free-tier model confirmed in the spike):
