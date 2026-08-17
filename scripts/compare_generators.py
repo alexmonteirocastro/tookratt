@@ -35,9 +35,12 @@ def _print_results(result: GenerationComparisonResult) -> None:
     print(f"Generators: {', '.join(result.generator_labels)}")
 
     for case_result in result.results:
+        status = f"generated={case_result.generated}"
+        if case_result.duration_seconds is not None:
+            status += f", {case_result.duration_seconds:.1f}s"
         print(
             f"\n--- [{case_result.case_id}] {case_result.generator_label} "
-            f"(generated={case_result.generated}) ---"
+            f"({status}) ---"
         )
         print(f"  query: {case_result.query!r}")
         print(
@@ -57,6 +60,26 @@ def _print_results(result: GenerationComparisonResult) -> None:
             print(f"  ⚠️  ungrounded phrases: {case_result.ungrounded_phrases}")
         preview = case_result.answer.replace("\n", " ")[:200]
         print(f"  answer: {preview}{'…' if len(case_result.answer) > 200 else ''}")
+
+
+def _print_latency_summary(result: GenerationComparisonResult) -> None:
+    print("\n" + "=" * 100)
+    print("LATENCY SUMMARY")
+    print("=" * 100)
+    for label in result.generator_labels:
+        durations = [
+            r.duration_seconds
+            for r in result.results
+            if r.generator_label == label and r.duration_seconds is not None
+        ]
+        if not durations:
+            print(f"  {label}: no timed calls")
+            continue
+        avg = sum(durations) / len(durations)
+        print(
+            f"  {label}: n={len(durations)} "
+            f"avg={avg:.1f}s min={min(durations):.1f}s max={max(durations):.1f}s"
+        )
 
 
 def main() -> int:
@@ -106,6 +129,7 @@ def main() -> int:
         return 1
 
     _print_results(result)
+    _print_latency_summary(result)
     return 0
 
 
