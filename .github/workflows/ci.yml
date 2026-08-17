@@ -23,6 +23,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  deployments: write
 
 jobs:
   unit-test:
@@ -230,6 +231,20 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      - name: Deploy Playwright report to Cloudflare Pages
+        id: pages
+        if: ${{ always() && !inputs.skip_heavy_tests && (steps.visual.outcome == 'success' || steps.visual.outcome == 'failure') && secrets.CLOUDFLARE_API_TOKEN != '' }}
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy frontend/playwright-report
+            --project-name=tookratt-playwright-reports
+            --branch=${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'main' }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Comment visual results on PR
         if: ${{ always() && !inputs.skip_heavy_tests && github.event_name == 'pull_request' }}
         uses: actions/github-script@v7
@@ -241,6 +256,12 @@ jobs:
             const visualRequested = ${{ inputs.run_visual_tests }};
             // outcome, not conclusion: continue-on-error rewrites conclusion to success.
             const visualOutcome = '${{ steps.visual.outcome }}';
+            const hostedReport =
+              '${{ steps.pages.outputs.pages-deployment-alias-url }}'.trim() ||
+              '${{ steps.pages.outputs.deployment-url }}'.trim();
+            const reportLink = hostedReport
+              ? `[Playwright HTML report](${hostedReport})`
+              : `[this run's \`playwright-report\` artifact](${runUrl})`;
             const diffsDir = 'frontend/visual-diffs';
             let diffFiles = [];
             if (fs.existsSync(diffsDir)) {
@@ -254,11 +275,11 @@ jobs:
               body += `Visual tests did not run (earlier step failed or was cancelled). See [this run](${runUrl}).\n`;
             } else if (diffFiles.length > 0) {
               body += `${diffFiles.length} snapshot(s) differed (often local vs CI font rendering — ADR-0017). `;
-              body += `Open the **\`playwright-visual-diffs\`** artifact on [this run](${runUrl}) and click a PNG to preview it in the browser — no unzip.\n\n`;
+              body += `Open the ${reportLink} for side-by-side diffs and traces.\n\n`;
               body += diffFiles.map((name) => `- \`${name}\``).join('\n');
               body += '\n';
             } else if (visualOutcome === 'success') {
-              body += `No pixel diffs. Full HTML report: [this run's \`playwright-report\` artifact](${runUrl}).\n`;
+              body += `No pixel diffs. See ${reportLink}.\n`;
             } else {
               body += `Visual tests failed before producing snapshot diffs (install, timeout, or crash). See [this run](${runUrl}).\n`;
             }

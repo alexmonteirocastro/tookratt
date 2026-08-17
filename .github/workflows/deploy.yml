@@ -6,10 +6,11 @@ on:
 
 permissions:
   contents: read
-  # Required so the reusable ci.yml workflow may request pull-requests: write
-  # (caller cannot grant less than the callee asks). The playwright comment
-  # step itself only runs on pull_request, so this is unused on push-to-main.
+  # Required so the reusable ci.yml workflow may request these (caller cannot
+  # grant less than the callee asks). Comment/Pages deploy steps no-op on
+  # push-to-main except the report upload to tookratt-playwright-reports.
   pull-requests: write
+  deployments: write
 
 jobs:
   ci:
