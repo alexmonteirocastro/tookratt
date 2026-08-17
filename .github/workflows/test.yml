@@ -7,7 +7,6 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  deployments: write
 
 jobs:
   # Detect docs-only PRs so ci.yml can no-op heavy jobs while still
