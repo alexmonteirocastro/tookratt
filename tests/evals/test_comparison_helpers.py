@@ -295,9 +295,13 @@ def test_run_generators_for_case_records_error_and_continues() -> None:
     assert by_label["failing"].generated is False
     assert by_label["failing"].error is not None
     assert "GenerationUnavailableError" in by_label["failing"].error
+    assert by_label["failing"].duration_seconds is not None
+    assert by_label["failing"].duration_seconds >= 0.0
     assert by_label["ok"].generated is True
     assert by_label["ok"].answer == "all good"
     assert by_label["ok"].error is None
+    assert by_label["ok"].duration_seconds is not None
+    assert by_label["ok"].duration_seconds >= 0.0
 
 
 def test_run_generators_for_case_empty_retrieval() -> None:
@@ -311,6 +315,30 @@ def test_run_generators_for_case_empty_retrieval() -> None:
     assert len(results) == 1
     assert results[0].generated is False
     assert results[0].missing_expected_source_ids == ["abc"]
+    assert results[0].duration_seconds is None
+
+
+def test_run_generators_for_case_records_duration_seconds() -> None:
+    points = [
+        _FakePoint(
+            score=0.9,
+            payload={
+                "job_url_identifier": "abc123",
+                "document_text": "Backend engineer role in Copenhagen.",
+            },
+        )
+    ]
+    results = run_generators_for_case(
+        case_id="backend_copenhagen",
+        query="backend",
+        expected_source_job_ids=["abc123"],
+        usable_points=points,
+        generators={"stub": StubGenerator()},
+    )
+    assert len(results) == 1
+    assert results[0].generated is True
+    assert results[0].duration_seconds is not None
+    assert results[0].duration_seconds >= 0.0
 
 
 def test_generation_case_result_fields_omit_mock_substring() -> None:
@@ -320,5 +348,6 @@ def test_generation_case_result_fields_omit_mock_substring() -> None:
     assert "mock_answer_substring" not in fields
     assert "answer" in fields
     assert "error" in fields
+    assert "duration_seconds" in fields
     assert "ungrounded_urls" in fields
     assert "ungrounded_phrases" in fields

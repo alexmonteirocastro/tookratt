@@ -8,6 +8,7 @@ a real Gemini/Ollama call will output. Do not wire it into live-model scoring.
 
 from __future__ import annotations
 
+import time
 from collections.abc import Mapping, Sequence
 from typing import Any, Protocol, cast
 
@@ -156,6 +157,7 @@ def run_generators_for_case(
                 ungrounded_phrases=[],
                 generated=False,
                 error=None,
+                duration_seconds=None,
             )
             for label in generators
         ]
@@ -165,9 +167,11 @@ def run_generators_for_case(
 
     for label, generator in generators.items():
         context = format_context_for_generator(payloads, generator)
+        start = time.perf_counter()
         try:
             answer = generator.generate(context=context, question=query)
         except GenerationError as exc:
+            duration = time.perf_counter() - start
             results.append(
                 GenerationCaseResult(
                     case_id=case_id,
@@ -181,10 +185,12 @@ def run_generators_for_case(
                     ungrounded_phrases=[],
                     generated=False,
                     error=f"{type(exc).__name__}: {exc}",
+                    duration_seconds=duration,
                 )
             )
             continue
 
+        duration = time.perf_counter() - start
         results.append(
             GenerationCaseResult(
                 case_id=case_id,
@@ -200,6 +206,7 @@ def run_generators_for_case(
                 ),
                 generated=True,
                 error=None,
+                duration_seconds=duration,
             )
         )
 

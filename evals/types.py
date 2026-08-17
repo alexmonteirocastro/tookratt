@@ -57,6 +57,7 @@ class GenerationCaseResult:
     ungrounded_phrases: list[str]
     generated: bool
     error: str | None = None
+    duration_seconds: float | None = None
 
 
 @dataclass
