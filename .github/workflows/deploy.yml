@@ -6,6 +6,10 @@ on:
 
 permissions:
   contents: read
+  # Required so the reusable ci.yml workflow may request pull-requests: write
+  # (caller cannot grant less than the callee asks). The PR comment no-ops on
+  # push-to-main; the report still uploads to tookratt-playwright-reports.
+  pull-requests: write
 
 jobs:
   ci:

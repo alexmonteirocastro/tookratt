@@ -11,9 +11,18 @@ on:
         type: boolean
         required: false
         default: false
+      run_visual_tests:
+        description: >-
+          When false, skip Playwright visual snapshots (no frontend/ changes
+          on the PR). Smoke still runs. deploy.yml omits this — main always
+          runs visuals.
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   unit-test:
@@ -134,6 +143,181 @@ jobs:
         if: ${{ !inputs.skip_heavy_tests }}
         working-directory: frontend
         run: npm run lint
+
+  playwright:
+    # ADR-0017: Chromium-only E2E smoke (blocking) + visual snapshots
+    # (artifact-only; diffs do not fail the job).
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-playwright
+      cancel-in-progress: true
+    steps:
+      - name: Skipping checks (docs-only PR)
+        if: inputs.skip_heavy_tests
+        run: echo "Skipping checks (docs-only PR)"
+
+      - uses: actions/checkout@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+
+      - uses: actions/setup-node@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: frontend
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        if: ${{ !inputs.skip_heavy_tests }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E smoke tests
+        id: smoke
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_VISUAL: "0"
+        run: npx playwright test --grep @smoke
+
+      - name: Skipping visual snapshots (no frontend changes)
+        if: ${{ !inputs.skip_heavy_tests && !inputs.run_visual_tests }}
+        run: echo "Skipping visual snapshots (no frontend/ changes)"
+
+      - name: Run visual snapshot tests
+        id: visual
+        if: ${{ !inputs.skip_heavy_tests && inputs.run_visual_tests }}
+        continue-on-error: true
+        working-directory: frontend
+        run: npx playwright test --grep @visual --retries=0
+
+      - name: Collect visual diff images
+        if: ${{ always() && !inputs.skip_heavy_tests && (steps.visual.outcome == 'success' || steps.visual.outcome == 'failure') }}
+        working-directory: frontend
+        run: |
+          mkdir -p visual-diffs
+          find test-results -type f \( \
+            -name '*-diff.png' -o -name '*-actual.png' -o -name '*-expected.png' \
+          \) -exec cp {} visual-diffs/ \; || true
+          ls -la visual-diffs || true
+
+      - name: Upload Playwright HTML report
+        if: ${{ always() && !inputs.skip_heavy_tests }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload visual diff images
+        if: ${{ always() && !inputs.skip_heavy_tests && (steps.visual.outcome == 'success' || steps.visual.outcome == 'failure') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-visual-diffs
+          path: frontend/visual-diffs/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Deploy Playwright report to Cloudflare Pages
+        id: pages
+        # Do not gate on `secrets.*` here — reusable workflows reject that
+        # context in `if` and the whole Test workflow fails to start.
+        # No gitHubToken: wrangler would create a GitHub Deployment ("Preview").
+        # The report is a test artifact, not an app preview — the PR comment
+        # posts the link instead.
+        if: ${{ always() && !inputs.skip_heavy_tests && (steps.smoke.outcome == 'success' || steps.smoke.outcome == 'failure') }}
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy frontend/playwright-report
+            --project-name=tookratt-playwright-reports
+            --branch=${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'main' }}
+
+      - name: Comment Playwright results on PR
+        if: ${{ always() && !inputs.skip_heavy_tests && github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- playwright-visual-report -->';
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const visualRequested = ${{ inputs.run_visual_tests }};
+            // outcome, not conclusion: continue-on-error rewrites conclusion to success.
+            const smokeOutcome = '${{ steps.smoke.outcome }}';
+            const visualOutcome = '${{ steps.visual.outcome }}';
+            const smokeRan = smokeOutcome === 'success' || smokeOutcome === 'failure';
+            const visualRan = visualOutcome === 'success' || visualOutcome === 'failure';
+            const hostedReport =
+              '${{ steps.pages.outputs.pages-deployment-alias-url }}'.trim() ||
+              '${{ steps.pages.outputs.deployment-url }}'.trim();
+            const reportLink = hostedReport
+              ? `[HTML report](${hostedReport})`
+              : `[this run's \`playwright-report\` artifact](${runUrl})`;
+            const diffsDir = 'frontend/visual-diffs';
+            let diffFiles = [];
+            if (fs.existsSync(diffsDir)) {
+              diffFiles = fs.readdirSync(diffsDir).filter((name) => name.endsWith('-diff.png')).sort();
+            }
+
+            let body = `${marker}\n## Playwright tests\n\n`;
+            if (!smokeRan) {
+              body += `Playwright did not run (earlier step failed or was cancelled). See [this run](${runUrl}).\n`;
+            } else {
+              body += smokeOutcome === 'failure'
+                ? `Smoke tests failed. Open the ${reportLink} for traces.\n\n`
+                : `Tests have run. Open the ${reportLink} for traces and snapshot diffs.\n\n`;
+              if (!visualRequested) {
+                body += 'Visual snapshots skipped — no `frontend/` changes on this PR.\n';
+              } else if (!visualRan) {
+                body += `Visual tests did not run (smoke failed or the job was cancelled). See [this run](${runUrl}).\n`;
+              } else if (diffFiles.length > 0) {
+                body += `${diffFiles.length} snapshot(s) differed (often local vs CI font rendering — ADR-0017):\n\n`;
+                body += diffFiles.map((name) => `- \`${name}\``).join('\n');
+                body += '\n';
+              } else if (visualOutcome === 'success') {
+                body += 'Visual snapshots: no pixel diffs.\n';
+              } else {
+                body += `Visual tests failed before producing snapshot diffs (install, timeout, or crash). See [this run](${runUrl}).\n`;
+              }
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
 
   marketing-test:
     runs-on: ubuntu-latest

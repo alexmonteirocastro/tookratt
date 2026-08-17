@@ -33,6 +33,14 @@ When `frontend/` changed:
 cd frontend && npm run lint && npm test
 ```
 
+Playwright E2E smoke (blocking in the `playwright` CI job). First time: `npx playwright install chromium`.
+
+```bash
+cd frontend && npm run test:e2e -- --grep @smoke
+```
+
+Visual snapshots run in CI only when the PR touches `frontend/` (non-blocking). Review the PR comment / `playwright-visual-diffs` artifact, or re-record with `npm run test:e2e:update` after intentional UI changes.
+
 ## Optional: pre-commit (commit time)
 
 Pre-commit is configured in `.pre-commit-config.yaml` but opt-in (`uv run pre-commit install`). It runs Ruff + oxlint on commit — **not** mypy or pytest. Pre-push checks above still required.

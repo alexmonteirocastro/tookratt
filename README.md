@@ -62,7 +62,7 @@ Interactive docs: [http://localhost:8000/docs](http://localhost:8000/docs) when 
 
 ## Dev workflow
 
-See [CONTRIBUTING.md](CONTRIBUTING.md#code-quality) for Ruff, mypy, oxlint, pre-commit setup, and the CI checks to run locally before opening a PR.
+See [CONTRIBUTING.md](CONTRIBUTING.md#code-quality) for Ruff, mypy, oxlint, pre-commit setup, and the CI checks to run locally before opening a PR. Frontend E2E and visual snapshots: `cd frontend && npm run test:e2e` ([ADR-0017](docs/adr/0017-frontend-e2e-visual-testing.md)).
 
 ## Known limitations
 

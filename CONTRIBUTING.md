@@ -48,6 +48,16 @@ npm run lint
 
 CI runs oxlint in the `frontend-test` job alongside Vitest.
 
+E2E smoke and visual snapshots (Playwright, Chromium-only — [ADR-0017](docs/adr/0017-frontend-e2e-visual-testing.md)):
+
+```bash
+cd frontend
+npx playwright install chromium   # first time only
+npm run test:e2e
+```
+
+`npm run test:e2e:update` re-records visual snapshot baselines after intentional UI changes.
+
 ### Pre-commit hooks (optional)
 
 Local hooks catch most issues at commit time. They run Ruff (check + format) on Python files and oxlint when `frontend/` paths change. mypy stays CI-only.
@@ -201,6 +211,8 @@ Shared jobs live in `.github/workflows/ci.yml`. `test.yml` runs them on pull req
 |-----|---------------------|
 | `unit-test` | `ruff check .`, `ruff format --check .`, `mypy .`, unit pytest |
 | `frontend-test` | `npm run lint`, Vitest |
+| `playwright` | Chromium E2E smoke (blocking); visual snapshots only when `frontend/` changed (PR comment + Cloudflare Pages HTML report, non-blocking) |
 | `retrieval-test` | retrieval/generation eval pytest only (no lint/type checks) |
 | `markdown-link-check` | lychee offline check on `**/*.md` (relative paths and anchors only) |
 | `deploy` (`deploy.yml` only) | POST to `RENDER_DEPLOY_HOOK_URL` after `ci` succeeds |
+
