@@ -1,6 +1,6 @@
 # ADR-0008: Multi-Turn Conversation Memory for `/chat`
 
-* **Status:** Proposed
+* **Status:** Accepted
 * **Date:** 2026-08-18
 * **Related:** ALE-103 (spike, this ADR's deliverable), ALE-184 (backend implementation), ALE-185 (frontend implementation), ADR-0001 Decision 4 (statelessness — the revisit trigger this ADR fires), ADR-0002 Decision 3 (deterministic filter extraction — precedent this ADR extends), ADR-0004 Decision 3 (frontend history is display-only — superseded by this ADR once implemented), ADR-0006 (in-memory rate limiting — same multi-worker caveat applies here), ADR-0009/ADR-0012 (prompt structuring precedent for untrusted content), ADR-0011 (API key auth — no per-user identity today), ADR-0014 (Render memory-crash precedent), ALE-183 (embedding-model context-window spike — related but not a dependency), PRODUCT_VISION.md (Phase 2 candidate profile)
 
@@ -149,3 +149,12 @@ Precedence, per field, highest to lowest:
 - **Cookie-based session identification** — rejected: reintroduces cross-origin cookie complexity (SameSite/secure-flag handling across the Cloudflare Pages ↔ Render origin split, ADR-0004 Decision 5) for no benefit over a field already carried in the typed JSON contract the frontend already parses on every response.
 - **LLM-based query condensation / intent-driven filter inference now, bundled into this ADR** — rejected per Decision 8; the explicit scoping decision behind this ADR is to ship the deterministic version first and defer the probabilistic upgrade until evidence calls for it, mirroring ADR-0002 Decision 3's Option B precedent exactly.
 - **Deriving session identity from the shared API key (ADR-0011)** — rejected: the key identifies an approved caller, not an individual, and multiple collaborators can hold independent keys; using it as a session key would merge unrelated conversations together.
+
+## Implementation notes (post-acceptance)
+
+These reflect what shipped in ALE-184 (backend). ALE-185 (frontend `session_id` wiring) is a separate follow-up; ADR-0004 Decision 3 remains in force for the UI until that ticket lands.
+
+- **Declined turns are recorded.** A `/chat` response that takes the deterministic "no matching jobs found" path still appends a `ChatTurn` (question + fallback message) and updates `last_filters`. Follow-ups such as "any others?" therefore inherit both conversational context and the previous turn's country/remote scope. Generation errors (429/502/500) do not record a turn.
+- **Prior conversation delimiting.** `build_generation_prompt` wraps history in `<<PRIOR_CONVERSATION>>` / `<<END_PRIOR_CONVERSATION>>`, structurally separate from `<<JOB_DATA>>` blocks, matching ADR-0012's "this is data, not instructions" principle.
+- **Package layout.** Session state lives in `session/` (`models.py`, `store.py`, `filters.py`). `get_session_store()` is an `@lru_cache` singleton, injectable via FastAPI `Depends` the same way `get_chat_generator` is.
+

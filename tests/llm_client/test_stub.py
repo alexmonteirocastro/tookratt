@@ -1,3 +1,4 @@
+from llm_client.base import ChatTurn
 from llm_client.stub import StubGenerator
 
 
@@ -38,3 +39,13 @@ def test_stub_generator_works_without_job_title():
 
     assert "hello?" in answer
     assert "**Senior Backend Engineer**" in answer
+
+
+def test_stub_generator_accepts_history_without_changing_answer():
+    generator = StubGenerator()
+    history = [ChatTurn(question="prior?", answer="prior answer")]
+
+    without_history = generator.generate("", "hello?")
+    with_history = generator.generate("", "hello?", history=history)
+
+    assert with_history == without_history

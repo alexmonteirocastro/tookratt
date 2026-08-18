@@ -5,11 +5,12 @@ cut off by the ~5 minute non-streaming server limit.
 """
 
 import json
+from collections.abc import Sequence
 from urllib.parse import urlparse
 
 import requests
 
-from llm_client.base import Generator
+from llm_client.base import ChatTurn, Generator
 from llm_client.context import build_generation_prompt
 from llm_client.exceptions import GenerationUnavailableError
 from llm_client.settings import LLMSettings
@@ -56,8 +57,13 @@ class OllamaGenerator(Generator):
     def max_chars_per_job(self) -> int | None:
         return self._settings.ollama_max_chars_per_job
 
-    def generate(self, context: str, question: str) -> str:
-        prompt = build_generation_prompt(context, question)
+    def generate(
+        self,
+        context: str,
+        question: str,
+        history: Sequence[ChatTurn] | None = None,
+    ) -> str:
+        prompt = build_generation_prompt(context, question, history)
         url = f"{native_ollama_base_url(self._settings.ollama_base_url)}/api/chat"
         payload = {
             "model": self._settings.ollama_model,

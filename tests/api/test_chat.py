@@ -1,4 +1,5 @@
 import ast
+from collections.abc import Sequence
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -9,7 +10,7 @@ from pydantic import ValidationError
 
 from api.main import app, get_chat_generator
 from db.settings import get_settings
-from llm_client.base import Generator
+from llm_client.base import ChatTurn, Generator
 from llm_client.context import NO_MATCHING_JOBS_MESSAGE
 from llm_client.exceptions import GenerationRateLimitError, GenerationUnavailableError
 from tests.api_auth import AUTH_HEADERS
@@ -23,9 +24,16 @@ class FakeGenerator(Generator):
     def __init__(self, answer: str = "Grounded answer from fake generator."):
         self.answer = answer
         self.calls: list[tuple[str, str]] = []
+        self.history_calls: list[tuple[ChatTurn, ...] | None] = []
 
-    def generate(self, context: str, question: str) -> str:
+    def generate(
+        self,
+        context: str,
+        question: str,
+        history: Sequence[ChatTurn] | None = None,
+    ) -> str:
         self.calls.append((context, question))
+        self.history_calls.append(None if history is None else tuple(history))
         return self.answer
 
 
@@ -83,6 +91,8 @@ def test_chat_returns_grounded_answer_via_injected_generator(
     assert body["question"] == "any backend roles?"
     assert body["answer"] == "Grounded answer from fake generator."
     assert body["generated"] is True
+    assert body["session_id"]
+    assert len(body["session_id"]) == 32
     assert body["sources"] == [
         {
             "score": 0.88,
@@ -488,7 +498,7 @@ def test_chat_returns_429_when_generator_is_rate_limited(
     mock_query_jobs,
 ):
     class RateLimitedGenerator(Generator):
-        def generate(self, context: str, question: str) -> str:
+        def generate(self, context: str, question: str, history=None) -> str:
             raise GenerationRateLimitError("rate limited")
 
     app.dependency_overrides[get_chat_generator] = lambda: RateLimitedGenerator()
@@ -522,7 +532,7 @@ def test_chat_returns_502_when_generator_is_unavailable(
     mock_query_jobs,
 ):
     class UnavailableGenerator(Generator):
-        def generate(self, context: str, question: str) -> str:
+        def generate(self, context: str, question: str, history=None) -> str:
             raise GenerationUnavailableError("upstream down")
 
     app.dependency_overrides[get_chat_generator] = lambda: UnavailableGenerator()
@@ -1039,7 +1049,7 @@ def test_chat_logs_generation_rate_limit_error_type_distinctly(
     from logging_config import CHAT_LOGGER_NAME
 
     class RateLimitedGenerator(Generator):
-        def generate(self, context: str, question: str) -> str:
+        def generate(self, context: str, question: str, history=None) -> str:
             raise GenerationRateLimitError("rate limited")
 
     app.dependency_overrides[get_chat_generator] = lambda: RateLimitedGenerator()
@@ -1162,3 +1172,217 @@ def test_chat_logs_unexpected_exception_as_error(
     assert payload["status"] == "error"
     assert payload["error_type"] == "RuntimeError"
     assert payload["response"] is None
+
+
+def _post_chat(payload: dict) -> dict:
+    response = client.post("/chat", json=payload)
+    assert response.status_code == 200
+    return response.json()
+
+
+@patch("api.main.query_jobs_in_qdrant")
+@patch("api.main.get_qdrant_client")
+@patch("api.main.get_settings")
+def test_chat_second_turn_passes_history_and_current_question_to_retrieval(
+    mock_get_settings,
+    mock_get_qdrant_client,
+    mock_query_jobs,
+):
+    fake_generator = FakeGenerator()
+    app.dependency_overrides[get_chat_generator] = lambda: fake_generator
+    mock_get_settings.return_value = api_settings_namespace()
+    mock_get_qdrant_client.return_value = object()
+    mock_query_jobs.return_value = SimpleNamespace(points=[_usable_point()])
+
+    first = _post_chat({"question": "Any backend roles in Sweden?"})
+    second = _post_chat(
+        {
+            "question": "any others?",
+            "session_id": first["session_id"],
+        }
+    )
+
+    assert second["session_id"] == first["session_id"]
+    assert len(fake_generator.calls) == 2
+    assert fake_generator.history_calls[0] is None
+    assert fake_generator.history_calls[1] == (
+        ChatTurn(
+            question="Any backend roles in Sweden?",
+            answer="Grounded answer from fake generator.",
+        ),
+    )
+    assert fake_generator.calls[1][1] == "any others?"
+    assert mock_query_jobs.call_count == 2
+    first_kwargs = mock_query_jobs.call_args_list[0].kwargs
+    second_kwargs = mock_query_jobs.call_args_list[1].kwargs
+    assert first_kwargs["query_text"] == "Any backend roles in Sweden?"
+    assert second_kwargs["query_text"] == "any others?"
+    assert "Sweden" not in second_kwargs["query_text"]
+    assert second_kwargs["country"] == CountryCode.SWEDEN
+    assert second["applied_country"] == "SE"
+
+
+@patch("api.main.query_jobs_in_qdrant")
+@patch("api.main.get_qdrant_client")
+@patch("api.main.get_settings")
+def test_chat_omitting_session_id_starts_fresh_sessions(
+    mock_get_settings,
+    mock_get_qdrant_client,
+    mock_query_jobs,
+):
+    fake_generator = FakeGenerator()
+    app.dependency_overrides[get_chat_generator] = lambda: fake_generator
+    mock_get_settings.return_value = api_settings_namespace()
+    mock_get_qdrant_client.return_value = object()
+    mock_query_jobs.return_value = SimpleNamespace(points=[_usable_point()])
+
+    first = _post_chat({"question": "backend roles?"})
+    second = _post_chat({"question": "frontend roles?"})
+
+    assert first["session_id"] != second["session_id"]
+    assert fake_generator.history_calls == [None, None]
+
+
+@patch("api.main.query_jobs_in_qdrant")
+@patch("api.main.get_qdrant_client")
+@patch("api.main.get_settings")
+def test_chat_unrecognized_session_id_starts_fresh_session(
+    mock_get_settings,
+    mock_get_qdrant_client,
+    mock_query_jobs,
+):
+    fake_generator = FakeGenerator()
+    app.dependency_overrides[get_chat_generator] = lambda: fake_generator
+    mock_get_settings.return_value = api_settings_namespace()
+    mock_get_qdrant_client.return_value = object()
+    mock_query_jobs.return_value = SimpleNamespace(points=[_usable_point()])
+
+    body = _post_chat(
+        {"question": "backend roles?", "session_id": "not-a-real-session"}
+    )
+
+    assert body["session_id"] != "not-a-real-session"
+    assert fake_generator.history_calls == [None]
+
+
+@patch("api.main.query_jobs_in_qdrant")
+@patch("api.main.get_qdrant_client")
+@patch("api.main.get_settings")
+def test_chat_follow_up_inherits_session_filter(
+    mock_get_settings,
+    mock_get_qdrant_client,
+    mock_query_jobs,
+):
+    fake_generator = FakeGenerator()
+    app.dependency_overrides[get_chat_generator] = lambda: fake_generator
+    mock_get_settings.return_value = api_settings_namespace()
+    mock_get_qdrant_client.return_value = object()
+    mock_query_jobs.return_value = SimpleNamespace(points=[_usable_point()])
+
+    first = _post_chat({"question": "remote backend roles in Sweden"})
+    second = _post_chat({"question": "any others?", "session_id": first["session_id"]})
+
+    _, second_kwargs = mock_query_jobs.call_args_list[1]
+    assert second_kwargs["country"] == CountryCode.SWEDEN
+    assert second_kwargs["remote"] is True
+    assert second["applied_country"] == "SE"
+    assert second["applied_remote"] is True
+
+
+@patch("api.main.query_jobs_in_qdrant")
+@patch("api.main.get_qdrant_client")
+@patch("api.main.get_settings")
+def test_chat_follow_up_text_overrides_session_filter(
+    mock_get_settings,
+    mock_get_qdrant_client,
+    mock_query_jobs,
+):
+    fake_generator = FakeGenerator()
+    app.dependency_overrides[get_chat_generator] = lambda: fake_generator
+    mock_get_settings.return_value = api_settings_namespace()
+    mock_get_qdrant_client.return_value = object()
+    mock_query_jobs.return_value = SimpleNamespace(points=[_usable_point()])
+
+    first = _post_chat({"question": "backend roles in Sweden"})
+    second = _post_chat(
+        {
+            "question": "what about Denmark?",
+            "session_id": first["session_id"],
+        }
+    )
+
+    _, second_kwargs = mock_query_jobs.call_args_list[1]
+    assert second_kwargs["country"] == CountryCode.DENMARK
+    assert second["applied_country"] == "DK"
+
+
+@patch("api.main.query_jobs_in_qdrant")
+@patch("api.main.get_qdrant_client")
+@patch("api.main.get_settings")
+def test_chat_explicit_filter_wins_over_session_and_text(
+    mock_get_settings,
+    mock_get_qdrant_client,
+    mock_query_jobs,
+):
+    fake_generator = FakeGenerator()
+    app.dependency_overrides[get_chat_generator] = lambda: fake_generator
+    mock_get_settings.return_value = api_settings_namespace()
+    mock_get_qdrant_client.return_value = object()
+    mock_query_jobs.return_value = SimpleNamespace(points=[_usable_point()])
+
+    first = _post_chat({"question": "backend roles in Sweden"})
+    second = _post_chat(
+        {
+            "question": "remote roles in Denmark",
+            "session_id": first["session_id"],
+            "country": "FI",
+            "remote": False,
+        }
+    )
+
+    _, second_kwargs = mock_query_jobs.call_args_list[1]
+    assert second_kwargs["country"] == CountryCode.FINLAND
+    assert second_kwargs["remote"] is False
+    assert second["applied_country"] == "FI"
+    assert second["applied_remote"] is False
+
+
+@patch("api.main.query_jobs_in_qdrant")
+@patch("api.main.get_qdrant_client")
+@patch("api.main.get_settings")
+def test_chat_records_declined_turn_in_session_history(
+    mock_get_settings,
+    mock_get_qdrant_client,
+    mock_query_jobs,
+):
+    fake_generator = FakeGenerator()
+    app.dependency_overrides[get_chat_generator] = lambda: fake_generator
+    mock_get_settings.return_value = api_settings_namespace()
+    mock_get_qdrant_client.return_value = object()
+    mock_query_jobs.side_effect = [
+        SimpleNamespace(points=[]),
+        SimpleNamespace(points=[_usable_point()]),
+    ]
+
+    first = _post_chat({"question": "underwater basket weaving in Sweden?"})
+    second = _post_chat(
+        {
+            "question": "any others?",
+            "session_id": first["session_id"],
+        }
+    )
+
+    assert first["generated"] is False
+    assert first["applied_country"] == "SE"
+    assert second["session_id"] == first["session_id"]
+    assert fake_generator.history_calls == [
+        (
+            ChatTurn(
+                question="underwater basket weaving in Sweden?",
+                answer=NO_MATCHING_JOBS_MESSAGE,
+            ),
+        )
+    ]
+    _, second_kwargs = mock_query_jobs.call_args_list[1]
+    assert second_kwargs["country"] == CountryCode.SWEDEN
+    assert second["applied_country"] == "SE"

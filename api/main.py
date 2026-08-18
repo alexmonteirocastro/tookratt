@@ -23,7 +23,7 @@ from api.schemas import (
 from db import get_qdrant_client, get_settings, query_jobs_in_qdrant
 from db.query_filters import resolve_chat_filters
 from llm_client import NO_MATCHING_JOBS_MESSAGE, get_generator, get_llm_settings
-from llm_client.base import Generator
+from llm_client.base import ChatTurn, Generator
 from llm_client.context import (
     filter_usable_points,
     format_job_context,
@@ -36,6 +36,8 @@ from llm_client.exceptions import (
 )
 from logging_config import configure_logging, log_chat_request, log_injection_detected
 from prompt_injection import find_injection_patterns
+from session import apply_filter_carry_forward, get_session_store
+from session.store import SessionStore
 from the_hub_client import CountryCode, get_full_jobs_picture_by_country
 from the_hub_client.models import JobOpenings
 
@@ -230,6 +232,7 @@ def chat(
     request: Request,
     chat_request: ChatRequest,
     generator: Generator = Depends(get_chat_generator),
+    session_store: SessionStore = Depends(get_session_store),
 ) -> ChatResponse:
     started = perf_counter()
     prompt = chat_request.question
@@ -255,11 +258,16 @@ def chat(
                     ),
                 )
             client = get_qdrant_client()
-            filters = resolve_chat_filters(
+            session_id, session_state = session_store.get_or_create(
+                chat_request.session_id
+            )
+            prior_history = tuple(session_state.turns) or None
+            resolved = resolve_chat_filters(
                 chat_request.question,
                 explicit_country=chat_request.country,
                 explicit_remote=chat_request.remote,
             )
+            filters = apply_filter_carry_forward(resolved, session_state.last_filters)
             search_results = query_jobs_in_qdrant(
                 db_client=client,
                 collection_name=settings.qdrant_collection_name,
@@ -286,6 +294,14 @@ def chat(
         if not usable_points:
             response_text = NO_MATCHING_JOBS_MESSAGE
             generated = False
+            session_store.record_turn(
+                session_id,
+                ChatTurn(
+                    question=chat_request.question,
+                    answer=NO_MATCHING_JOBS_MESSAGE,
+                ),
+                filters,
+            )
             return ChatResponse(
                 question=chat_request.question,
                 answer=NO_MATCHING_JOBS_MESSAGE,
@@ -293,6 +309,7 @@ def chat(
                 generated=False,
                 applied_country=filters.country,
                 applied_remote=filters.remote,
+                session_id=session_id,
             )
 
         sources = [
@@ -314,7 +331,11 @@ def chat(
         )
 
         try:
-            answer = generator.generate(context=context, question=chat_request.question)
+            answer = generator.generate(
+                context=context,
+                question=chat_request.question,
+                history=prior_history,
+            )
         except GenerationRateLimitError as exc:
             error_type = "GenerationRateLimitError"
             raise HTTPException(
@@ -340,6 +361,11 @@ def chat(
         answer = sanitize_answer_links(answer, allowed_job_urls)
         response_text = answer
         generated = True
+        session_store.record_turn(
+            session_id,
+            ChatTurn(question=chat_request.question, answer=answer),
+            filters,
+        )
 
         return ChatResponse(
             question=chat_request.question,
@@ -348,6 +374,7 @@ def chat(
             generated=True,
             applied_country=filters.country,
             applied_remote=filters.remote,
+            session_id=session_id,
         )
     except HTTPException:
         status = "error"

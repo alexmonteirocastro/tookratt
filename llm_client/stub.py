@@ -5,8 +5,9 @@ without calling Gemini or Ollama.
 """
 
 import re
+from collections.abc import Sequence
 
-from llm_client.base import Generator
+from llm_client.base import ChatTurn, Generator
 
 _JOB_URL_RE = re.compile(r"url:\s*(https://[^\s)]+)")
 
@@ -22,7 +23,12 @@ def _first_job_url(context: str) -> str | None:
 
 
 class StubGenerator(Generator):
-    def generate(self, context: str, question: str) -> str:
+    def generate(
+        self,
+        context: str,
+        question: str,
+        history: Sequence[ChatTurn] | None = None,
+    ) -> str:
         title = _first_job_title(context)
         job_url = _first_job_url(context)
         if title and job_url:

@@ -46,7 +46,7 @@ class ScriptedGenerator(Generator):
         self.answer = answer
         self.calls: list[tuple[str, str]] = []
 
-    def generate(self, context: str, question: str) -> str:
+    def generate(self, context: str, question: str, history=None) -> str:
         self.calls.append((context, question))
         return self.answer
 

@@ -5,6 +5,7 @@ import pytest
 import requests
 import responses
 
+from llm_client.base import ChatTurn
 from llm_client.exceptions import GenerationUnavailableError
 from llm_client.ollama import OllamaGenerator, native_ollama_base_url
 from llm_client.settings import LLMSettings
@@ -69,6 +70,27 @@ def test_ollama_generate_returns_trimmed_text():
     assert request_body["options"]["num_predict"] == 256
     assert "job context" in request_body["messages"][0]["content"]
     assert "Authorization" not in responses.calls[0].request.headers
+
+
+@responses.activate
+def test_ollama_generate_includes_history_in_prompt():
+    responses.add(
+        responses.POST,
+        _CHAT_URL,
+        body=_stream_body(["ok"]),
+        stream=True,
+        content_type="application/x-ndjson",
+    )
+    generator = OllamaGenerator(_settings())
+    history = [ChatTurn(question="Any roles in Sweden?", answer="A few listings.")]
+
+    generator.generate("job context", "any others?", history=history)
+
+    request_body = json.loads(responses.calls[0].request.body)
+    prompt = request_body["messages"][0]["content"]
+    assert "<<PRIOR_CONVERSATION>>" in prompt
+    assert "Any roles in Sweden?" in prompt
+    assert "any others?" in prompt
 
 
 @responses.activate

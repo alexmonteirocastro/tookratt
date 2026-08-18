@@ -40,6 +40,9 @@ Copy `.env.example` to `.env` before running anything locally or via Compose.
 | `OLLAMA_TIMEOUT_SECONDS` | Per-request timeout in seconds for Ollama (optional; default may 502 on CPU with full RAG context — see [CONTRIBUTING.md](../CONTRIBUTING.md#timeouts-on-cpu)) | `60.0` |
 | `OLLAMA_MAX_CHARS_PER_JOB` | Max characters of `document_text` per job sent to Ollama (optional) | `1200` |
 | `OLLAMA_NUM_PREDICT` | Max output tokens per Ollama request (optional) | `256` |
+| `CHAT_SESSION_TTL_SECONDS` | Inactivity TTL for in-memory `/chat` sessions ([ADR-0008](adr/0008-multi-turn-conversation-memory.md)) | `1800` |
+| `CHAT_HISTORY_MAX_TURNS` | Sliding window of prior turns kept per session and sent to the Generator | `5` |
+| `CHAT_MAX_SESSIONS` | Hard ceiling on concurrent in-memory `/chat` sessions (oldest-touched eviction) | `1000` |
 | `HUB_CLIENT_MAX_RETRIES` | Retries for transient Hub API failures (optional) | `3` |
 | `HUB_CLIENT_BACKOFF_FACTOR` | Exponential backoff base between retries (optional) | `1.0` |
 | `HUB_CLIENT_REQUEST_DELAY` | Minimum seconds between outbound Hub requests (optional) | `0.25` |
@@ -275,11 +278,15 @@ tookratt/
 │   ├── main.py                  # FastAPI app (jobs stats, semantic search, /chat)
 │   └── schemas.py               # API request/response models
 ├── llm_client/
-│   ├── base.py                  # Generator interface
+│   ├── base.py                  # Generator interface + ChatTurn
 │   ├── gemini.py                # Gemini 2.5 Flash implementation
 │   ├── ollama.py                # Ollama (native /api/chat, streaming)
 │   ├── stub.py                  # Deterministic stub for local UI testing
 │   └── settings.py              # LLM settings (pydantic-settings)
+├── session/
+│   ├── models.py                # SessionState for /chat conversation memory
+│   ├── store.py                 # Bounded in-memory session store (ADR-0008)
+│   └── filters.py               # Deterministic country/remote carry-forward
 ├── Dockerfile                   # Multi-stage image (uv build, slim runtime)
 ├── docker-compose.yml           # Qdrant + API + frontend + ingestion/test profiles
 ├── docker-compose.override.yml  # Dev bind mounts (auto-loaded)
@@ -415,7 +422,7 @@ After changing dependencies in `pyproject.toml` / `uv.lock`, rebuild the shared 
 docker compose --profile test build test
 ```
 
-The test containers bind-mount source packages (`tests/`, `the_hub_client/`, `api/`, `db/`) but use the Linux virtualenv baked into the image — not your host `.venv`. This avoids stale cached volumes when dependencies change. Unit tests need no Qdrant or network access. With `docker-compose.override.yml` active, edits under the mounted source packages apply without rebuilding the image (rebuild only when dependencies change).
+The test containers bind-mount source packages (`tests/`, `the_hub_client/`, `api/`, `db/`, `llm_client/`, `session/`) but use the Linux virtualenv baked into the image — not your host `.venv`. This avoids stale cached volumes when dependencies change. Unit tests need no Qdrant or network access. With `docker-compose.override.yml` active, edits under the mounted source packages apply without rebuilding the image (rebuild only when dependencies change).
 
 Retrieval golden-set and generation eval tests require Qdrant Cloud credentials on the host (see [tests/README.md](../tests/README.md)):
 
@@ -431,7 +438,7 @@ Tests live under `tests/` and use `responses` to mock HTTP at the Hub client bou
 - [x] Dockerize the full stack (API + frontend + ingestion; vector store is Qdrant Cloud)
 - [x] FastAPI backend for job stats and semantic search
 - [x] `/chat` RAG endpoint with provider-agnostic generation layer (see [ADR-0001](adr/0001-llm-provider-strategy.md))
-- [ ] Server-side multi-turn conversation memory for `/chat` (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md); tracked in ALE-184 / ALE-185)
+- [ ] Server-side multi-turn conversation memory for `/chat` (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md); backend ALE-184, frontend ALE-185)
 - [x] Incremental sync (skip already-ingested jobs instead of full reset)
 - [x] Revisit frontend dev proxy + client timeouts (Vite / `CHAT_REQUEST_TIMEOUT_MS`) — ALE-130 (nginx) + ALE-131 (client)
 - [ ] Split dev/eval tooling (`seed_dev_qdrant_db`) out of `db/db_utils.py` into its own module

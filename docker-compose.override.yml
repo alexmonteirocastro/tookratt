@@ -29,6 +29,7 @@ services:
       - ./api:/app/api
       - ./db:/app/db
       - ./llm_client:/app/llm_client
+      - ./session:/app/session
 
   frontend:
     build:

@@ -14,6 +14,9 @@ DEFAULT_CHAT_RATE_LIMIT = "10/minute"
 # expected golden hits top-1 ~0.838–0.879, rank-5 ~0.832–0.874;
 # 0.85 sits between rank-5 median (0.853) and mean (0.852).
 DEFAULT_CHAT_SOURCE_MIN_SCORE = 0.85
+DEFAULT_CHAT_SESSION_TTL_SECONDS = 1800
+DEFAULT_CHAT_HISTORY_MAX_TURNS = 5
+DEFAULT_CHAT_MAX_SESSIONS = 1000
 # qdrant-client default is 5s. Hybrid query_batch_points issues multiple Cloud
 # Inference embeds (dense prefetch + BM25 + companion dense); free-tier RTT
 # under CI retrieval-suite load routinely exceeds 5s (ADR-0010 Decision 7).
@@ -79,6 +82,33 @@ class Settings(BaseSettings):
         description=(
             "Eval/sweep only (ADR-0018). Unused by POST /chat — sourcing "
             "eligibility is fused RRF top-k plus usable document_text."
+        ),
+    )
+    chat_session_ttl_seconds: int = Field(
+        default=DEFAULT_CHAT_SESSION_TTL_SECONDS,
+        ge=1,
+        validation_alias="CHAT_SESSION_TTL_SECONDS",
+        description=(
+            "Inactivity TTL for in-memory /chat sessions (ADR-0008). "
+            "A session unused for this many seconds is dropped on next access."
+        ),
+    )
+    chat_history_max_turns: int = Field(
+        default=DEFAULT_CHAT_HISTORY_MAX_TURNS,
+        ge=1,
+        validation_alias="CHAT_HISTORY_MAX_TURNS",
+        description=(
+            "Sliding window of prior turns kept per /chat session and sent "
+            "to the Generator (ADR-0008)."
+        ),
+    )
+    chat_max_sessions: int = Field(
+        default=DEFAULT_CHAT_MAX_SESSIONS,
+        ge=1,
+        validation_alias="CHAT_MAX_SESSIONS",
+        description=(
+            "Hard ceiling on concurrent in-memory /chat sessions (ADR-0008). "
+            "The least-recently-touched session is evicted to make room."
         ),
     )
     tookratt_api_keys: Annotated[set[str], NoDecode] = Field(
