@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-07-05
-* **Related:** ALE-73 (spike), ALE-76 (implementation), ALE-68 (retrieval golden-set tests), ALE-72 (Settings pattern)
+* **Related:** ALE-73 (spike), ALE-76 (implementation), ALE-68 (retrieval golden-set tests), ALE-72 (Settings pattern), ADR-0008 (revisits Decision 4 — multi-turn conversation memory, proposed)
 
 ## Context
 
@@ -89,6 +89,8 @@ llm_client/
 **Decision:** No server-side conversation history or session management in the initial implementation. Each request to `/chat` is self-contained.
 
 **Rationale:** Multi-turn conversation is a legitimate future need, but it introduces session storage and state-security questions (where is history kept, how long, scoped to whom) that nothing about the current product justifies solving yet. Scoping it out explicitly, rather than building a partial version of it, keeps the v1 surface small and testable. Revisit as a dedicated follow-up ticket if/when it's actually needed.
+
+**Follow-up (ALE-103 / ADR-0008):** This revisit has fired. Decision 4 remains the current shipped behavior. The recommended design is recorded in [ADR-0008](0008-multi-turn-conversation-memory.md); implementation is ALE-184 (backend) / ALE-185 (frontend).
 
 ## Decision 5: Generation-quality evaluation is separate from retrieval evaluation
 

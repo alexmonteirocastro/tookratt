@@ -2,7 +2,7 @@
 
 * **Status:** Proposed
 * **Date:** 2026-07-07
-* **Related:** ALE-74 (implementation), ALE-69 (FastAPI contract), ALE-76 (`/chat` + `Generator` layer), ADR-0001 Decision 3 & 4 (anti-hallucination guardrail, statelessness), ADR-0002 (retrieval filtering, accepted risks), ADR-0005 (visual design tokens), ALE-84 (applied-filter visibility on `ChatResponse`)
+* **Related:** ALE-74 (implementation), ALE-69 (FastAPI contract), ALE-76 (`/chat` + `Generator` layer), ADR-0001 Decision 3 & 4 (anti-hallucination guardrail, statelessness), ADR-0002 (retrieval filtering, accepted risks), ADR-0005 (visual design tokens), ALE-84 (applied-filter visibility on `ChatResponse`), ADR-0008 (revisits Decision 3 — multi-turn conversation memory, proposed)
 
 ## Context
 
@@ -99,7 +99,7 @@ What *is* still open, confirmed by reading `db/query_filters.py` and ADR-0002's 
 ## Revisit triggers
 
 - If `ALE-84` ships, revisit Decision 4 (source suppression/labeling by applied-filter status).
-- If `/chat` gains multi-turn/session support, revisit Decision 3.
+- **Addressed (ALE-103 / ADR-0008):** `/chat` multi-turn/session support is now designed in [ADR-0008](0008-multi-turn-conversation-memory.md). Decision 3 remains the current shipped behavior; it is superseded once ALE-184 (backend) and ALE-185 (frontend) implement that ADR. The design is recorded there rather than rewritten here, matching the ADR-0013 → ADR-0016 revision-via-follow-up convention.
 - If `Generator` gains streaming support, revisit Decision 2.
 - If a second real view is needed (stats dashboard, human-eval tooling, history, settings), revisit Decision 1 (routing/Next.js) and Decision 6 (whether to reintroduce Streamlit for internal tooling or build the view in React).
 

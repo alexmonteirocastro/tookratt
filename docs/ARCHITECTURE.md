@@ -431,6 +431,7 @@ Tests live under `tests/` and use `responses` to mock HTTP at the Hub client bou
 - [x] Dockerize the full stack (API + frontend + ingestion; vector store is Qdrant Cloud)
 - [x] FastAPI backend for job stats and semantic search
 - [x] `/chat` RAG endpoint with provider-agnostic generation layer (see [ADR-0001](adr/0001-llm-provider-strategy.md))
+- [ ] Server-side multi-turn conversation memory for `/chat` (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md); tracked in ALE-184 / ALE-185)
 - [x] Incremental sync (skip already-ingested jobs instead of full reset)
 - [x] Revisit frontend dev proxy + client timeouts (Vite / `CHAT_REQUEST_TIMEOUT_MS`) — ALE-130 (nginx) + ALE-131 (client)
 - [ ] Split dev/eval tooling (`seed_dev_qdrant_db`) out of `db/db_utils.py` into its own module

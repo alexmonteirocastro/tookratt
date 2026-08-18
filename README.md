@@ -100,6 +100,7 @@ Workflow guide (how to read `separation_margin`, judgments, sweeps, etc.):
   - [ADR-0005](docs/adr/0005-visual-design-tokens-for-the-chat-ui.md) — visual design tokens for the chat UI
   - [ADR-0006](docs/adr/0006-chat-endpoint-hardening.md) — chat endpoint hardening
   - [ADR-0007](docs/adr/0007-local-generation-fallback-ollama-qwen3.md) — local generation fallback via Ollama
+  - [ADR-0008](docs/adr/0008-multi-turn-conversation-memory.md) — multi-turn conversation memory for `/chat` (proposed; ALE-184 / ALE-185)
   - [ADR-0009](docs/adr/0009-grounded-inline-job-hyperlinks.md) — grounded inline job hyperlinks in generated answers
   - [ADR-0014](docs/adr/0014-embedding-model-migration.md) — E5-small via Qdrant Cloud Inference
   - [ADR-0015](docs/adr/0015-observability-logging-and-alerting.md) — structured Loki logging and prompt-injection alerting
