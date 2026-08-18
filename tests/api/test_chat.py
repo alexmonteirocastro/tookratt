@@ -347,11 +347,15 @@ def test_chat_skips_generation_when_document_text_is_missing(
 @patch("api.main.query_jobs_in_qdrant")
 @patch("api.main.get_qdrant_client")
 @patch("api.main.get_settings")
-def test_chat_omits_weak_similarity_sources(
+def test_chat_includes_weak_similarity_fused_hits(
     mock_get_settings,
     mock_get_qdrant_client,
     mock_query_jobs,
 ):
+    """ADR-0018: fused hits with document_text are sourced regardless of dense score.
+
+    Retires the ALE-91 omit-by-cosine gate. A 0.62 hit is the accepted risk.
+    """
     fake_generator = FakeGenerator()
     app.dependency_overrides[get_chat_generator] = lambda: fake_generator
     mock_get_settings.return_value = api_settings_namespace()
@@ -382,20 +386,24 @@ def test_chat_omits_weak_similarity_sources(
     assert response.status_code == 200
     body = response.json()
     assert body["generated"] is True
-    assert [source["job_id"] for source in body["sources"]] == ["strong-match"]
+    assert [source["job_id"] for source in body["sources"]] == [
+        "strong-match",
+        "weak-match",
+    ]
     context, _question = fake_generator.calls[0]
     assert "strong-match" in context
-    assert "weak-match" not in context
+    assert "weak-match" in context
 
 
 @patch("api.main.query_jobs_in_qdrant")
 @patch("api.main.get_qdrant_client")
 @patch("api.main.get_settings")
-def test_chat_respects_custom_source_min_score(
+def test_chat_ignores_chat_source_min_score(
     mock_get_settings,
     mock_get_qdrant_client,
     mock_query_jobs,
 ):
+    """CHAT_SOURCE_MIN_SCORE is eval/sweep-only and does not gate POST /chat."""
     fake_generator = FakeGenerator()
     app.dependency_overrides[get_chat_generator] = lambda: fake_generator
     mock_get_settings.return_value = api_settings_namespace(chat_source_min_score=0.95)
@@ -417,19 +425,20 @@ def test_chat_respects_custom_source_min_score(
 
     assert response.status_code == 200
     body = response.json()
-    assert body["generated"] is False
-    assert body["sources"] == []
-    assert fake_generator.calls == []
+    assert body["generated"] is True
+    assert [source["job_id"] for source in body["sources"]] == ["below-custom-floor"]
+    assert fake_generator.calls
 
 
 @patch("api.main.query_jobs_in_qdrant")
 @patch("api.main.get_qdrant_client")
 @patch("api.main.get_settings")
-def test_chat_skips_generation_when_only_weak_similarity_matches(
+def test_chat_includes_under_floor_and_missing_dense_fused_hits(
     mock_get_settings,
     mock_get_qdrant_client,
     mock_query_jobs,
 ):
+    """Under-0.85 cosine and MISSING_DENSE_SCORE=-1.0 still source when text exists."""
     fake_generator = FakeGenerator()
     app.dependency_overrides[get_chat_generator] = lambda: fake_generator
     mock_get_settings.return_value = api_settings_namespace()
@@ -437,13 +446,21 @@ def test_chat_skips_generation_when_only_weak_similarity_matches(
     mock_query_jobs.return_value = SimpleNamespace(
         points=[
             SimpleNamespace(
-                score=0.62,
+                score=0.84,
                 payload={
-                    "job_url_identifier": "weak-match",
-                    "job_role": "Sales Representative",
-                    "document_text": "B2B sales role",
+                    "job_url_identifier": "under-floor",
+                    "job_role": "Backend Developer",
+                    "document_text": "Backend APIs in Copenhagen",
                 },
-            )
+            ),
+            SimpleNamespace(
+                score=-1.0,
+                payload={
+                    "job_url_identifier": "bm25-only",
+                    "job_role": "Backend Developer",
+                    "document_text": "Copenhagen backend role, BM25-only fused hit",
+                },
+            ),
         ]
     )
 
@@ -454,10 +471,12 @@ def test_chat_skips_generation_when_only_weak_similarity_matches(
 
     assert response.status_code == 200
     body = response.json()
-    assert body["generated"] is False
-    assert body["sources"] == []
-    assert body["answer"] == NO_MATCHING_JOBS_MESSAGE
-    assert fake_generator.calls == []
+    assert body["generated"] is True
+    assert [source["job_id"] for source in body["sources"]] == [
+        "under-floor",
+        "bm25-only",
+    ]
+    assert fake_generator.calls
 
 
 @patch("api.main.query_jobs_in_qdrant")

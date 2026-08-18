@@ -96,14 +96,18 @@ def main() -> int:
         type=int,
         default=5,
         metavar="N",
-        help="Retrieval limit before min-score filter (default: 5). Lower for Ollama.",
+        help="Retrieval limit (default: 5). Lower for Ollama.",
     )
     parser.add_argument(
         "--min-score",
         type=float,
         default=None,
         metavar="T",
-        help="Override CHAT_SOURCE_MIN_SCORE (default: value from settings).",
+        help=(
+            "Optional dense-cosine floor for this run only. Default (omit) "
+            "matches production /chat: no floor (ADR-0018). "
+            "CHAT_SOURCE_MIN_SCORE is eval/sweep-only and is not applied here."
+        ),
     )
     parser.add_argument(
         "--keep-collection",

@@ -365,7 +365,8 @@ def test_query_jobs_in_qdrant_uses_rrf_prefetch_and_companion_batch(monkeypatch)
     assert fused_request.prefetch[0].using == "fast-bge-small-en"
     assert fused_request.prefetch[1].using == BM25_SPARSE_VECTOR_NAME
     assert fused_request.prefetch[1].query.model == BM25_SPARSE_MODEL
-    assert companion_request.limit == 3
+    assert companion_request.limit == 20
+    assert companion_request.limit == fused_request.prefetch[0].limit
     assert companion_request.using == "fast-bge-small-en"
     assert fused_request.prefetch[0].limit == 20
     assert fused_request.prefetch[1].limit == 20

@@ -26,7 +26,9 @@ do not replace these with production screenshots.
 | Compare page + `evals/` + `scripts/` | Same comparison/sweep logic as the Embeddings / Generation / Sweep tabs, as UI or CLI. |
 
 Use pytest as the regression gate. Use Review when tagging queries; use Compare
-(or the CLI wrappers) when comparing models/providers or tuning `CHAT_SOURCE_MIN_SCORE`.
+(or the CLI wrappers) when comparing models/providers or exploring
+`CHAT_SOURCE_MIN_SCORE` as an eval-only floor (it does not gate `/chat` —
+[ADR-0018](../docs/adr/0018-chat-sourcing-follows-rrf-rank.md)).
 
 ---
 
@@ -47,13 +49,13 @@ outcome. The query box clears after save so the next case is ready.
 | **Query** | Free-text question (same shape as `/chat`). |
 | **Collection** | `JOBS_DEV` and/or `JOBS_ON_THE_HUB` if they exist on this Qdrant cluster. |
 | **Country / Remote** | Optional payload filters (same semantics as `/chat`). |
-| **Limit** | Max retrieval hits before the min-score floor is applied (default 5). |
+| **Limit** | Max fused RRF hits to return (default 5). |
 
 ### What "Run query" actually calls
 
 Not HTTP `POST /chat`. Review calls `query_jobs_in_qdrant` + `get_generator`
-directly (same building blocks as the API), then applies
-`filter_chat_retrieval_points` with `CHAT_SOURCE_MIN_SCORE` and
+directly (same building blocks as the API), then applies `filter_usable_points`
+(usable `document_text` only — no dense-score floor; ADR-0018) and
 `sanitize_answer_links`. That means you need Qdrant + LLM credentials in `.env`,
 but you do **not** need the FastAPI server running.
 
@@ -61,16 +63,16 @@ but you do **not** need the FastAPI server running.
 
 ![Review — Sources / Answer split after a JOBS_DEV query](assets/02-review-sources-answer.png)
 
-- **Sources** (left): hits that survived the min-score floor, with score and
-  expandable `document_text`. Empty → "No sources above the min-score floor" and
+- **Sources** (left): fused hits with usable `document_text`, with score and
+  expandable `document_text`. Empty → "No sources with usable document_text" and
   the answer is the standard no-match fallback (`generated=false`).
 - **Answer** (right): model output grounded on those sources, or the fallback
-  message when nothing cleared the floor.
+  message when nothing usable was retrieved.
 
-A **good** result: expected job(s) appear as top sources with scores comfortably
-above the floor; the answer cites only those jobs and does not invent roles.
-A **concerning** result: wrong role/company in the top sources, scores clustered
-near the floor, or an answer that names a job/URL not present in Sources.
+A **good** result: expected job(s) appear as top sources; the answer cites only
+those jobs and does not invent roles.
+A **concerning** result: wrong role/company in the top sources, or an answer
+that names a job/URL not present in Sources.
 
 The screenshot above is a concerning Review hit on purpose: the golden query asks
 for a remote backend engineer in Copenhagen, but the top source is a
@@ -177,8 +179,8 @@ Side-by-side generator comparison via `evals.compare_generators` on
 | Control | Meaning |
 |---------|---------|
 | **Providers** | Presets such as `stub`, `gemini`, `ollama`, `ollama:qwen3:8b`, `gemini:gemini-2.0-flash`. |
-| **Top-k** | Retrieval depth before min-score filtering. |
-| **Min score override** | Empty → use settings default; otherwise override for this run only. |
+| **Top-k** | Retrieval depth (fused RRF limit). |
+| **Min score override** | Empty → no floor (matches production `/chat`); otherwise apply a dense-cosine floor for this run only. |
 | **Keep generation collection** | Keep disposable `JOBS_COMPARE_GENERATION` after the run. |
 
 Explicit Run only (same caveat as Embeddings).
@@ -219,7 +221,8 @@ ticket); do not rely on a one-off production screenshot.
 ### Min-score sweep
 
 Explore candidate `CHAT_SOURCE_MIN_SCORE` values without re-embedding on every
-slider move.
+slider move. This is analysis-only: production `/chat` does not apply the floor
+([ADR-0018](../docs/adr/0018-chat-sourcing-follows-rrf-rank.md)).
 
 ![Min-score sweep — before Run retrieval](assets/07-sweep-form.png)
 

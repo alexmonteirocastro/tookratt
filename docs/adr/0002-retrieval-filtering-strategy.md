@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-07-06
-* **Related:** ALE-76 (generation layer), ALE-77 (filter mechanism), ALE-78 (filter derivation), ALE-84 (expose applied filters), ALE-91 (similarity-score floor for `/chat` sources), ADR-0001 (LLM provider strategy)
+* **Related:** ALE-76 (generation layer), ALE-77 (filter mechanism), ALE-78 (filter derivation), ALE-84 (expose applied filters), ALE-91 (similarity-score floor for `/chat` sources), ADR-0001 (LLM provider strategy), ADR-0018 / ALE-186 (revises Decision 4 — the floor no longer gates `/chat`)
 
 ## Context
 
@@ -98,3 +98,13 @@ They differ on every axis that matters for how carefully each should be designed
 - **Sparse/BM25 hybrid vector search** — rejected as the primary fix because it targets keyword-ranking precision, not the confirmed root cause (missing categorical signal), and carries a full-reindex cost the confirmed problem doesn't justify paying. Not rejected permanently — see Revisit triggers.
 - **LLM-based filter extraction from question text** — rejected as the starting approach for ALE-78 on cost, latency, and determinism grounds; a closed-set lookup table fully covers the evidence in hand. Not rejected permanently — see Revisit triggers.
 - **Re-embedding `document_text` to include country/location inline** — would let plain semantic search pick up location signal without a separate filter mechanism, but requires reindexing the entire collection for a problem structured filtering solves with zero reindexing and full determinism. Rejected as strictly worse than Decision 1 for this specific field, since `Country`/`Remote` are categorical, not prose the embedding model needs to reason about.
+
+## Follow-up notes (post-acceptance)
+
+### Decision 4 revision — cosine floor no longer gates `/chat` (ADR-0018 / ALE-186)
+
+This is a scoped revision to Decision 4's hard-omit cosine floor on `POST /chat` sources, recorded in [ADR-0018](0018-chat-sourcing-follows-rrf-rank.md) rather than rewritten in place, to preserve the decision-history thread.
+
+**What changed:** The floor **no longer gates `/chat`**. Eligibility is fused RRF top-k plus usable `document_text`. `CHAT_SOURCE_MIN_SCORE` still exists for evals/sweep; it is not gone. `/jobs/search` is unchanged (raw scores remain visible).
+
+**Why not edit Decision 4 silently:** project convention is revision-via-follow-up ADR when a later ticket changes a prior decision's scope, so readers of this file still see what was originally decided and where the later change lives.

@@ -22,8 +22,8 @@ DEFAULT_QDRANT_TIMEOUT_SECONDS = 30
 # ADR-0010: sparse BM25 via Qdrant Cloud Inference (not in-process FastEmbed).
 BM25_SPARSE_VECTOR_NAME = "bm25"
 BM25_SPARSE_MODEL = "qdrant/bm25"
-# Attached when an RRF hit has no companion dense score (BM25-only). Fails any
-# CHAT_SOURCE_MIN_SCORE floor — see ADR-0010 Decision 7.
+# Attached when an RRF hit has no companion dense score (BM25-only). Display
+# fallback only — not an omit-gate (ADR-0018).
 MISSING_DENSE_SCORE = -1.0
 
 
@@ -77,8 +77,8 @@ class Settings(BaseSettings):
         le=1.0,
         validation_alias="CHAT_SOURCE_MIN_SCORE",
         description=(
-            "Minimum cosine similarity for a retrieval hit to be included in "
-            "POST /chat sources and generation context; weaker matches are omitted."
+            "Eval/sweep only (ADR-0018). Unused by POST /chat — sourcing "
+            "eligibility is fused RRF top-k plus usable document_text."
         ),
     )
     tookratt_api_keys: Annotated[set[str], NoDecode] = Field(

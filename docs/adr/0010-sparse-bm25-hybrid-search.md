@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-07-11 (Decision 7 landed 2026-07-16 with ALE-143; Decision 7 continuation folded 2026-07-18 via ALE-157; ALE-158 cancellation folded 2026-07-31 via ALE-164)
-* **Related:** ADR-0002 (retrieval filtering strategy — this ADR's own revisit trigger), ADR-0014 (E5 + Cloud Inference — dense path this ADR builds on), ALE-92 (spike), ALE-143 (implementation), ALE-157 (folds Decision 7 continuation into this file), ALE-158 (raw-vector reuse — canceled 2026-07-31; see Decision 7), ALE-164 (folds ALE-158 cancellation into this file), docs/findings/0001-keyword-tech-stack-retrieval-gap-findings.md (evidence), ALE-116 (lands the findings doc)
+* **Related:** ADR-0002 (retrieval filtering strategy — this ADR's own revisit trigger), ADR-0014 (E5 + Cloud Inference — dense path this ADR builds on), ALE-92 (spike), ALE-143 (implementation), ALE-157 (folds Decision 7 continuation into this file), ALE-158 (raw-vector reuse — canceled 2026-07-31; see Decision 7), ALE-164 (folds ALE-158 cancellation into this file), ADR-0018 / ALE-186 (revises Decision 7 — dense cosine no longer gates `/chat`), docs/findings/0001-keyword-tech-stack-retrieval-gap-findings.md (evidence), ALE-116 (lands the findings doc)
 
 ## Context
 
@@ -115,3 +115,13 @@ One case in that evidence (Kubernetes/Six Robotics vs. Framna) carries a confoun
 - If the 3-pair adversarial golden set proves insufficient, expand it — this is explicitly the lighter-weight version of the fuller adversarial eval ALE-92 recommends as future work.
 - **Role/topic confusion (ALE-151):** The "frontend jobs in Copenhagen" case remains a distinct failure mode from keyword/tech-stack precision. **ALE-143 verification (2026-07-16):** `test_role_confusion_cases` still fails under fused RRF + dense-score floor (`cph002` ≈ 0.852 above 0.85). Documented in `docs/findings/0002-role-confusion-frontend-copenhagen-findings.md`. Follow-up directions there (role-aware payload filtering, query intent parsing, or post-retrieval role re-ranking) need a dedicated ADR/ticket — not silently dropped.
 - **Cloud Inference Document dedupe / raw-vector reuse (Decision 7 continuation / ALE-157, ALE-164):** Settled — no batch-level dedupe (Qdrant Support, 2026-07-18), and Cloud Inference exposes no raw-vector path (Qdrant Support, 2026-07-31); ALE-158 canceled. The double Cloud Inference call is the accepted outcome. Revisit only if a future spike verifies **both** the Render free-tier memory footprint **and** embedding parity of local FastEmbed for `intfloat/multilingual-e5-small` against Cloud Inference — at which point client-side embed-once becomes viable again, and stronger than originally scoped (it would remove both Cloud Inference dense embeds, not just collapse them into one). Alternatively, revisit if Qdrant ships an official embed-once / vector-return API.
+
+## Follow-up notes (post-acceptance)
+
+### Decision 7 revision — `/chat` sourcing follows fused RRF rank (ADR-0018 / ALE-186)
+
+This is a scoped revision to Decision 7's rule that `CHAT_SOURCE_MIN_SCORE` floors `/chat` on pre-fusion dense cosine, recorded in [ADR-0018](0018-chat-sourcing-follows-rrf-rank.md) rather than rewritten in place, to preserve the decision-history thread.
+
+**What changed:** Ranking remains fused RRF. `/chat` eligibility is fused top-k plus usable `document_text`; dense cosine is display-only. The companion dense query is padded to `prefetch_limit`. `CHAT_SOURCE_MIN_SCORE` remains for evals/sweep and no longer gates `/chat`.
+
+**Why not edit Decision 7 silently:** project convention is revision-via-follow-up ADR when a later ticket changes a prior decision's scope, so readers of this file still see what was originally decided and where the later change lives.

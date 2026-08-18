@@ -8,7 +8,7 @@ from typing import Any, cast
 import streamlit as st
 from qdrant_client.http.exceptions import UnexpectedResponse
 
-from db import get_qdrant_client, get_settings, query_jobs_in_qdrant
+from db import get_qdrant_client, query_jobs_in_qdrant
 from evals.fixtures import GOLDEN_QUERIES_PATH
 from evals.generation import format_context_for_generator
 from evals_system.golden_cases import (
@@ -32,7 +32,7 @@ from evals_system.review_collections import (
 )
 from evals_system.tag_shortcuts import consume_tag_shortcut
 from llm_client import NO_MATCHING_JOBS_MESSAGE, get_generator
-from llm_client.context import filter_chat_retrieval_points, sanitize_answer_links
+from llm_client.context import filter_usable_points, sanitize_answer_links
 from llm_client.exceptions import (
     GenerationConfigurationError,
     GenerationRateLimitError,
@@ -85,7 +85,6 @@ def run_review_query(
     limit: int,
 ) -> dict[str, Any]:
     """Retrieve + generate against an explicit collection (mirrors /chat)."""
-    settings = get_settings()
     client = get_qdrant_client()
     search_results = query_jobs_in_qdrant(
         db_client=client,
@@ -95,10 +94,7 @@ def run_review_query(
         country=country,
         remote=remote,
     )
-    usable_points = filter_chat_retrieval_points(
-        search_results.points,
-        min_score=settings.chat_source_min_score,
-    )
+    usable_points = filter_usable_points(search_results.points)
     sources = [
         _payload_source(point.score, dict(point.payload or {}))
         for point in usable_points
@@ -139,7 +135,7 @@ def _set_flash(message: str) -> None:
 
 def _render_sources(sources: list[dict[str, Any]]) -> None:
     if not sources:
-        st.info("No sources above the min-score floor.")
+        st.info("No sources with usable document_text.")
         return
     for src in sources:
         title = src.get("job_title") or src.get("job_role") or src.get("job_id")

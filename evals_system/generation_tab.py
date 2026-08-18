@@ -70,7 +70,7 @@ def render_generation_tab() -> None:
         )
     with col_b:
         min_score_raw = st.text_input(
-            "Min score override (empty = settings default)",
+            "Min score override (empty = no floor, matches /chat)",
             value="",
             key="gen_minscore",
         )
