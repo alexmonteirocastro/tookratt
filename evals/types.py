@@ -10,6 +10,38 @@ from dataclasses import dataclass, field
 
 
 @dataclass
+class StoredJob:
+    """A job already stored in Qdrant, keyed by Hub id + document_text.
+
+    Used to re-embed the production corpus into disposable JOBS_COMPARE_*
+    collections without rebuilding ``document_text`` from structured fields.
+    """
+
+    job_id: str
+    document_text: str
+    job_title: str = ""
+    company: str = ""
+    job_role: str = ""
+    country: str = "N/A"
+    locality: str = "N/A"
+    remote: bool = False
+    salary_type: str = ""
+    salary: str = "N/A"
+    equity: str = "N/A"
+
+
+@dataclass
+class RankedHit:
+    """One retrieval hit, in fused rank order."""
+
+    job_id: str
+    score: float
+    job_title: str = ""
+    company: str = ""
+    country: str = ""
+
+
+@dataclass
 class QueryResult:
     """Per-query embedding retrieval outcome against golden expectations."""
 
@@ -19,6 +51,9 @@ class QueryResult:
     expected_scores: dict[str, float | None] = field(default_factory=dict)
     top_noise_score: float | None = None
     all_missing: list[str] = field(default_factory=list)
+    top_hit_job_id: str | None = None
+    top_hit_score: float | None = None
+    ranked_hits: list[RankedHit] = field(default_factory=list)
 
 
 @dataclass
@@ -33,6 +68,30 @@ class ModelSummary:
 
 
 @dataclass
+class ExpectedTruncationRow:
+    """Whether a golden expected_job_id is a truncated production document."""
+
+    query_id: str
+    job_id: str
+    location: str
+    e5_tokens: int | None
+    over_512: bool | None
+
+
+@dataclass
+class CorpusSampleStats:
+    """Stratified production-sample accounting (ALE-183 phase 3)."""
+
+    sample_size: int
+    corpus_size: int
+    guaranteed_found: list[str]
+    guaranteed_missing: list[str]
+    bucket_available: dict[str, int]
+    bucket_sampled: dict[str, int]
+    expected_truncation: list[ExpectedTruncationRow]
+
+
+@dataclass
 class EmbeddingComparisonResult:
     """Side-by-side embedding model comparison against the golden set."""
 
@@ -40,6 +99,7 @@ class EmbeddingComparisonResult:
     results_by_model: dict[str, list[QueryResult]]
     summaries: dict[str, ModelSummary]
     collection_names: dict[str, str]
+    sample_stats: CorpusSampleStats | None = None
 
 
 @dataclass
