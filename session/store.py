@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
+from threading import Lock
 from uuid import uuid4
 
 from db.query_filters import ExtractedFilters
@@ -21,6 +22,11 @@ class SessionStore:
     Eviction is lazy: expired sessions are dropped on access, and the
     least-recently-touched session is dropped when inserting would exceed
     ``max_sessions``.
+
+    A ``threading.Lock`` serializes mutating access. FastAPI runs sync
+    ``/chat`` handlers on a thread pool, so concurrent requests in a
+    *single* worker can race on the shared dict — distinct from the
+    multi-worker Redis revisit trigger in ADR-0008.
     """
 
     def __init__(
@@ -36,23 +42,27 @@ class SessionStore:
         self._max_turns = max_turns
         self._clock = clock or _utc_now
         self._sessions: dict[str, SessionState] = {}
+        self._lock = Lock()
 
     def __len__(self) -> int:
-        return len(self._sessions)
+        with self._lock:
+            return len(self._sessions)
 
     def get_or_create(self, session_id: str | None) -> tuple[str, SessionState]:
         """Return ``(session_id, state)``, minting a new session when needed.
 
         A missing, blank, expired, or otherwise unrecognized ``session_id``
-        always starts a fresh session with a server-issued id.
+        always starts a fresh session with a server-issued id. The returned
+        ``SessionState`` is a snapshot — callers must not mutate it.
         """
-        self._evict_expired()
-        if session_id:
-            state = self._sessions.get(session_id)
-            if state is not None:
-                state.last_seen = self._clock()
-                return session_id, state
-        return self._create_session()
+        with self._lock:
+            self._evict_expired()
+            if session_id:
+                state = self._sessions.get(session_id)
+                if state is not None:
+                    state.last_seen = self._clock()
+                    return session_id, self._snapshot(state)
+            return self._create_session()
 
     def record_turn(
         self,
@@ -60,20 +70,38 @@ class SessionStore:
         turn: ChatTurn,
         filters: ExtractedFilters,
     ) -> None:
-        """Append a turn, trim to ``max_turns``, and store last-applied filters."""
-        state = self._sessions[session_id]
-        state.turns.append(turn)
-        if len(state.turns) > self._max_turns:
-            state.turns = state.turns[-self._max_turns :]
-        state.last_filters = filters
-        state.last_seen = self._clock()
+        """Append a turn, trim to ``max_turns``, and store last-applied filters.
+
+        If ``session_id`` was evicted between ``get_or_create`` and this call
+        (another request hitting ``CHAT_MAX_SESSIONS``), reinsert under the
+        same id so the id already issued to the caller stays valid.
+        """
+        with self._lock:
+            state = self._sessions.get(session_id)
+            if state is None:
+                self._evict_expired()
+                self._evict_oldest_if_full()
+                state = SessionState(last_seen=self._clock())
+                self._sessions[session_id] = state
+            state.turns.append(turn)
+            if len(state.turns) > self._max_turns:
+                state.turns = state.turns[-self._max_turns :]
+            state.last_filters = filters
+            state.last_seen = self._clock()
 
     def _create_session(self) -> tuple[str, SessionState]:
         self._evict_oldest_if_full()
         session_id = uuid4().hex
         state = SessionState(last_seen=self._clock())
         self._sessions[session_id] = state
-        return session_id, state
+        return session_id, self._snapshot(state)
+
+    def _snapshot(self, state: SessionState) -> SessionState:
+        return SessionState(
+            turns=list(state.turns),
+            last_filters=state.last_filters,
+            last_seen=state.last_seen,
+        )
 
     def _is_expired(self, state: SessionState) -> bool:
         return self._clock() - state.last_seen >= self._ttl
