@@ -42,6 +42,30 @@ function parseChatQuestionMaxLength(): number {
 /** Client-side textarea max length; mirrors backend `CHAT_QUESTION_MAX_LENGTH`. */
 export const CHAT_QUESTION_MAX_LENGTH = parseChatQuestionMaxLength();
 
+/**
+ * Default matches backend `DEFAULT_CHAT_HISTORY_MAX_TURNS` (db/settings.py).
+ * Keep `VITE_CHAT_HISTORY_MAX_TURNS` in sync with `CHAT_HISTORY_MAX_TURNS` if either is tuned.
+ */
+export const DEFAULT_CHAT_HISTORY_MAX_TURNS = 5;
+
+function parseChatHistoryMaxTurns(): number {
+  const raw = import.meta.env.VITE_CHAT_HISTORY_MAX_TURNS;
+  if (raw === undefined || raw === "") {
+    return DEFAULT_CHAT_HISTORY_MAX_TURNS;
+  }
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0 || !Number.isInteger(parsed)) {
+    return DEFAULT_CHAT_HISTORY_MAX_TURNS;
+  }
+  return parsed;
+}
+
+/**
+ * Sliding window advertised in the chat banner. Mirrors backend
+ * `CHAT_HISTORY_MAX_TURNS` (`db/settings.py`).
+ */
+export const CHAT_HISTORY_MAX_TURNS = parseChatHistoryMaxTurns();
+
 export class ApiNetworkError extends Error {
   constructor(message = "Unable to reach the API. Check your connection and try again.") {
     super(message);

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { ApiHttpError, ApiNetworkError, postChat } from "../api/client";
+import type { ChatRequest } from "../api/types";
 import { createMessageId } from "../utils/id";
 import { ChatInput } from "./ChatInput";
 import { ChatMessage, type DisplayMessage } from "./ChatMessage";
@@ -8,6 +9,7 @@ import styles from "./Chat.module.css";
 
 export function Chat() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +35,11 @@ export function Chat() {
       scrollToBottom();
 
       try {
-        const response = await postChat({ question });
+        const request: ChatRequest = sessionId
+          ? { question, session_id: sessionId }
+          : { question };
+        const response = await postChat(request);
+        setSessionId(response.session_id);
         const assistantMessage: DisplayMessage = {
           id: createMessageId(),
           role: "assistant",
@@ -62,7 +68,7 @@ export function Chat() {
         scrollToBottom();
       }
     },
-    [scrollToBottom],
+    [scrollToBottom, sessionId],
   );
 
   const showEmpty = messages.length === 0 && !isLoading;

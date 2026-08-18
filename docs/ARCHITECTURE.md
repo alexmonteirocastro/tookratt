@@ -173,7 +173,7 @@ Production chat SPA is hosted at `https://app.tookratt.com` ([ADR-0016](adr/0016
 
 ### Frontend (React chat UI)
 
-A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). Each question is sent independently — conversation history is display-only and never sent to the API (see [ADR-0004](adr/0004-frontend-architecture-for-chat-interface.md)). Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
+A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). The first turn omits `session_id`; later turns send the id from the previous `ChatResponse` so the backend can apply bounded, in-memory conversation history (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md)). `session_id` lives in React state alongside the message list — a refresh or "New conversation" starts a genuinely fresh session. Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
 
 Production is the Cloudflare Pages project `tookratt` (`app.tookratt.com`). Build watch paths include `frontend/*` only. Pushes that do not touch `frontend/` do not rebuild the chat app (ALE-178).
 
@@ -195,11 +195,12 @@ npm run dev
 | `VITE_API_BASE_URL` | Browser-reachable API base (same-origin `/api` proxy) | `/api` | *(Compose build arg / Cloudflare)* |
 | `VITE_CHAT_REQUEST_TIMEOUT_MS` | Browser `/chat` AbortController timeout | `600000` (local/Ollama) | `90000` |
 | `VITE_CHAT_QUESTION_MAX_LENGTH` | Chat textarea `maxLength` + live `{used}/{max}` counter ([ADR-0006](adr/0006-chat-endpoint-hardening.md)) | `500` | *(unset — same default)* |
+| `VITE_CHAT_HISTORY_MAX_TURNS` | Chat banner's advertised history window ([ADR-0008](adr/0008-multi-turn-conversation-memory.md)) | `5` | *(unset — same default)* |
 | `VITE_SHOW_SOURCES` | Render `SourceList` under assistant replies ([ADR-0009](adr/0009-grounded-inline-job-hyperlinks.md) Decision 5 revisit / ALE-155) | `true` | `false` |
 | `VITE_SHOW_DEBUG_SOURCES` | Full-size scored source cards instead of compact chips (only when sources are shown; [ADR-0009](adr/0009-grounded-inline-job-hyperlinks.md) Decision 5) | `false` | *(unset — compact)* |
 | `VITE_LOADING_MESSAGE` | Copy shown by `LoadingIndicator` while `/chat` is in flight | Local Ollama-aware message | Production-appropriate short wait copy |
 
-`VITE_CHAT_QUESTION_MAX_LENGTH` should track backend `CHAT_QUESTION_MAX_LENGTH` (`db/settings.py`) whenever that setting is tuned (ADR-0006 revisit trigger). The two env vars are set independently today — there is no shared config sync — so a mismatch would hard-stop typing in the UI at a different length than the API's 422 `string_too_long` check.
+`VITE_CHAT_QUESTION_MAX_LENGTH` should track backend `CHAT_QUESTION_MAX_LENGTH` (`db/settings.py`) whenever that setting is tuned (ADR-0006 revisit trigger). `VITE_CHAT_HISTORY_MAX_TURNS` should track backend `CHAT_HISTORY_MAX_TURNS` the same way (ADR-0008). The pairs are configured independently today — there is no shared config sync — so a mismatch would hard-stop typing in the UI at a different length than the API's 422 `string_too_long` check, or advertise a history window the Generator does not actually receive.
 
 Do **not** gate `VITE_SHOW_SOURCES` or `VITE_LOADING_MESSAGE` on `import.meta.env.PROD` / `DEV` — local `docker compose up` builds a production Vite bundle even when testing Ollama (same reasoning as `VITE_SHOW_DEBUG_SOURCES` / [ADR-0009](adr/0009-grounded-inline-job-hyperlinks.md) Decision 5). Compose keeps local defaults via `docker-compose.override.yml` build args.
 
@@ -243,7 +244,7 @@ Update snapshot baselines after intentional UI changes:
 npm run test:e2e:update
 ```
 
-Playwright covers a Chromium-only chat-flow smoke test (question → loading → markdown answer → sources) plus visual snapshots of the empty chat view, `SourceList` compact/debug variants, and the API-key auth modal ([ADR-0017](adr/0017-frontend-e2e-visual-testing.md)). Tests mock `/api/chat`, so they do not need a running backend. They run in CI via the `playwright` job in `.github/workflows/ci.yml`: the smoke test blocks merges; visual snapshots run only when the PR touches `frontend/` (always on `main`). The HTML report is Direct-Uploaded to the `tookratt-playwright-reports` Cloudflare Pages project (`pr-<n>.tookratt-playwright-reports.pages.dev` on PRs) and linked from a PR comment; PNG diffs are also uploaded as the `playwright-visual-diffs` artifact. Visual diffs do not fail the build (local vs CI font rendering can differ — ADR-0017 Decision 3). `test:e2e` starts the Vite dev server automatically when one is not already running.
+Playwright covers a Chromium-only chat-flow smoke test (question → loading → markdown answer → sources, plus a mocked multi-turn `session_id` path) plus visual snapshots of the empty chat view, `SourceList` compact/debug variants, and the API-key auth modal ([ADR-0017](adr/0017-frontend-e2e-visual-testing.md)). Tests mock `/api/chat`, so they do not need a running backend. They run in CI via the `playwright` job in `.github/workflows/ci.yml`: the smoke test blocks merges; visual snapshots run only when the PR touches `frontend/` (always on `main`). The HTML report is Direct-Uploaded to the `tookratt-playwright-reports` Cloudflare Pages project (`pr-<n>.tookratt-playwright-reports.pages.dev` on PRs) and linked from a PR comment; PNG diffs are also uploaded as the `playwright-visual-diffs` artifact. Visual diffs do not fail the build (local vs CI font rendering can differ — ADR-0017 Decision 3). `test:e2e` starts the Vite dev server automatically when one is not already running.
 
 ### Marketing site (`marketing/`)
 
@@ -438,7 +439,7 @@ Tests live under `tests/` and use `responses` to mock HTTP at the Hub client bou
 - [x] Dockerize the full stack (API + frontend + ingestion; vector store is Qdrant Cloud)
 - [x] FastAPI backend for job stats and semantic search
 - [x] `/chat` RAG endpoint with provider-agnostic generation layer (see [ADR-0001](adr/0001-llm-provider-strategy.md))
-- [ ] Server-side multi-turn conversation memory for `/chat` (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md); backend ALE-184, frontend ALE-185)
+- [x] Server-side multi-turn conversation memory for `/chat` (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md); backend ALE-184, frontend ALE-185)
 - [x] Incremental sync (skip already-ingested jobs instead of full reset)
 - [x] Revisit frontend dev proxy + client timeouts (Vite / `CHAT_REQUEST_TIMEOUT_MS`) — ALE-130 (nginx) + ALE-131 (client)
 - [ ] Split dev/eval tooling (`seed_dev_qdrant_db`) out of `db/db_utils.py` into its own module

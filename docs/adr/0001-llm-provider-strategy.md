@@ -90,7 +90,7 @@ llm_client/
 
 **Rationale:** Multi-turn conversation is a legitimate future need, but it introduces session storage and state-security questions (where is history kept, how long, scoped to whom) that nothing about the current product justifies solving yet. Scoping it out explicitly, rather than building a partial version of it, keeps the v1 surface small and testable. Revisit as a dedicated follow-up ticket if/when it's actually needed.
 
-**Follow-up (ALE-103 / ADR-0008):** This revisit has fired. Decision 4 remains the current shipped behavior. The recommended design is recorded in [ADR-0008](0008-multi-turn-conversation-memory.md); implementation is ALE-184 (backend) / ALE-185 (frontend).
+**Follow-up (ALE-103 / ADR-0008 / ALE-184 / ALE-185):** This revisit has fired and shipped. Decision 4 is superseded by [ADR-0008](0008-multi-turn-conversation-memory.md): `/chat` now keeps bounded, in-memory, session-scoped history. The original decision is left in place rather than rewritten, matching this project's revision-via-follow-up convention.
 
 ## Decision 5: Generation-quality evaluation is separate from retrieval evaluation
 

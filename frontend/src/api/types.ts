@@ -5,6 +5,7 @@ export interface ChatRequest {
   limit?: number;
   country?: CountryCode | null;
   remote?: boolean | null;
+  session_id?: string | null;
 }
 
 export interface ChatSource {
@@ -26,4 +27,5 @@ export interface ChatResponse {
   generated: boolean;
   applied_country?: CountryCode | null;
   applied_remote?: boolean | null;
+  session_id: string;
 }
