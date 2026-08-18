@@ -34,7 +34,7 @@ This is the most important section for engineering purposes: these four question
 | **1. Filtered lookup** | "Frontend jobs in Sweden" | Top-k dense retrieval + structured payload filter | Built ([ADR-0002](adr/0002-retrieval-filtering-strategy.md)) |
 | **2. Single-listing grounded Q&A** | "What does this team do?" | Top-k retrieval, answer grounded in one/few docs, decline if unsupported | Built ([ADR-0001](adr/0001-llm-provider-strategy.md)) |
 | **3. Corpus-level aggregation** | "What skills are most in-demand for a founding engineer in the Nordics?" | Reasoning across *many or most* listings, not a top-5 window — likely needs a pre-aggregated layer (e.g. skill/keyword frequency computed at ingestion time) that the LLM reasons over, rather than raw retrieval over `document_text` | **Not built — current retrieval architecture cannot see enough of the corpus at once to answer this class of question at all** |
-| **4. Personalized matching + advice** | "5 years Python, what's interesting in Finland?" | A candidate profile (experience, stack, preferences) held across turns and matched against many listings | Not built — `/chat` is deliberately single-turn/stateless today ([ADR-0001](adr/0001-llm-provider-strategy.md) Decision 4) |
+| **4. Personalized matching + advice** | "5 years Python, what's interesting in Finland?" | A candidate profile (experience, stack, preferences) held across turns and matched against many listings | Conversation memory designed in [ADR-0008](adr/0008-multi-turn-conversation-memory.md), not yet implemented (ALE-184 / ALE-185). Current `/chat` remains single-turn/stateless ([ADR-0001](adr/0001-llm-provider-strategy.md) Decision 4). The candidate profile itself is still Phase 2. |
 | **5. Generative drafting from one job + one candidate** | "Help me write a cover letter for company XYZ" | Grounded generation from a specific listing *plus* candidate-supplied material (CV) | Not built — needs CV ingestion |
 
 Tier 3 deserves its own callout: it is not "tier 1 with a bigger `limit`." Five nearest-neighbor jobs cannot tell you what's most in-demand across the Nordics — the honest answer requires either a much wider retrieval window with real aggregation, or a separate pre-computed structure built during ingestion (e.g. extracted-skill frequency counts). This needs its own architectural decision (its own ADR) when it's scheduled — it should not be quietly bolted onto the existing single-document RAG path.
@@ -45,7 +45,7 @@ For role-shaped concepts like "founding engineer," the corpus usually surfaces t
 
 **Phase 1 — Job search copilot (current focus).** Solidify tiers 1–2 (already the bulk of the work done to date, per ADR-0001/0002), and begin tier 3 (corpus-level aggregation) as the first genuinely new capability. This phase should feel like a substantially better version of searching The Hub — still anonymous, still no persistent user, but able to answer questions no filter could.
 
-**Phase 2 — Candidate profile.** Introduce a lightweight, **session-scoped** candidate profile (experience, stack, target countries/roles) — either elicited conversationally or entered directly — enabling tier 4. The profile does not persist across sessions in this phase; cross-session persistence may come later once the privacy/retention model is explicit. This is the point at which `/chat` statelessness (ADR-0001 Decision 4) needs to be revisited; that decision was correct for phase 1 and explicitly flagged its own revisit trigger ("if `/chat` gains multi-turn/session support").
+**Phase 2 — Candidate profile.** Introduce a lightweight, **session-scoped** candidate profile (experience, stack, target countries/roles) — either elicited conversationally or entered directly — enabling tier 4. The profile does not persist across sessions in this phase; cross-session persistence may come later once the privacy/retention model is explicit. Session identity and bounded conversation memory are already scoped in [ADR-0008](adr/0008-multi-turn-conversation-memory.md) (not yet implemented — ALE-184 / ALE-185); that ADR names `SessionState` as the natural carrier for the profile, so Phase 2 should extend it rather than invent a second session mechanism. ADR-0001 Decision 4's revisit trigger has fired; the decision remains correct for the current shipped surface.
 
 **Phase 3 — Application materials.** CV file ingestion (PDF/DOCX upload and parsing — not structured form input) and tier 5: grounded, job-specific drafting (cover letters, CV tailoring suggestions) that combines a specific listing with the candidate's own material. This is the most sensitive tier from a trust standpoint — see Section 7.
 
@@ -53,7 +53,7 @@ For role-shaped concepts like "founding engineer," the corpus usually surfaces t
 
 Explicitly out of scope right now, so scope creep has something to point at:
 
-* Multi-turn conversational memory (tier 4/5 prerequisite, not yet built)
+* Multi-turn conversational memory — designed in [ADR-0008](adr/0008-multi-turn-conversation-memory.md), not yet implemented (ALE-184 / ALE-185)
 * CV/resume ingestion or storage
 * Any corpus-level aggregation feature (tier 3) beyond the initial spike
 * Notifications, alerts, or any proactive/async behavior
