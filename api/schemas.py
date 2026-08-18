@@ -50,6 +50,13 @@ class ChatRequest(BaseModel):
             "Optional remote-work filter (true = remote only, false = on-site only)"
         ),
     )
+    session_id: str | None = Field(
+        default=None,
+        description=(
+            "Opaque server-issued session id from a prior ChatResponse. "
+            "Omit (or send an unrecognized id) to start a fresh session."
+        ),
+    )
 
 
 class ChatSource(BaseModel):
@@ -81,14 +88,20 @@ class ChatResponse(BaseModel):
     applied_country: CountryCode | None = Field(
         default=None,
         description=(
-            "Country filter actually applied to retrieval (explicit or derived); "
-            "null when none resolved."
+            "Country filter actually applied to retrieval (explicit, derived, "
+            "or carried forward from the session); null when none resolved."
         ),
     )
     applied_remote: bool | None = Field(
         default=None,
         description=(
-            "Remote filter actually applied to retrieval (explicit or derived); "
-            "null when none resolved."
+            "Remote filter actually applied to retrieval (explicit, derived, "
+            "or carried forward from the session); null when none resolved."
+        ),
+    )
+    session_id: str = Field(
+        description=(
+            "Server-issued session id. Send this value on the next turn to "
+            "continue the conversation."
         ),
     )

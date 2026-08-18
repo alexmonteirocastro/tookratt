@@ -81,6 +81,9 @@ def test_get_settings_loads_from_env(monkeypatch):
     assert settings.chat_question_max_length == 500
     assert settings.chat_rate_limit == "10/minute"
     assert settings.chat_source_min_score == 0.85
+    assert settings.chat_session_ttl_seconds == 1800
+    assert settings.chat_history_max_turns == 5
+    assert settings.chat_max_sessions == 1000
     assert settings.tookratt_api_keys == {"abc123", "def456"}
     assert settings.grafana_loki_url is None
     assert settings.grafana_loki_user_id is None
@@ -258,6 +261,41 @@ def test_settings_rejects_empty_collection_name(monkeypatch):
     monkeypatch.setenv("QDRANT_COLLECTION_NAME", "")
     monkeypatch.setenv("EMBEDDING_MODEL", E5_MODEL)
     monkeypatch.setenv("TOOKRATT_API_KEYS", "test-key")
+
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_get_settings_loads_chat_session_bounds_from_env(monkeypatch):
+    monkeypatch.setenv("QDRANT_URL", "http://localhost:6333")
+    monkeypatch.setenv("QDRANT_COLLECTION_NAME", "JOBS_ON_THE_HUB")
+    monkeypatch.setenv("EMBEDDING_MODEL", E5_MODEL)
+    monkeypatch.setenv("TOOKRATT_API_KEYS", "test-key")
+    monkeypatch.setenv("CHAT_SESSION_TTL_SECONDS", "60")
+    monkeypatch.setenv("CHAT_HISTORY_MAX_TURNS", "3")
+    monkeypatch.setenv("CHAT_MAX_SESSIONS", "10")
+
+    settings = get_settings()
+
+    assert settings.chat_session_ttl_seconds == 60
+    assert settings.chat_history_max_turns == 3
+    assert settings.chat_max_sessions == 10
+
+
+@pytest.mark.parametrize(
+    "env_name",
+    (
+        "CHAT_SESSION_TTL_SECONDS",
+        "CHAT_HISTORY_MAX_TURNS",
+        "CHAT_MAX_SESSIONS",
+    ),
+)
+def test_settings_rejects_non_positive_chat_session_bounds(monkeypatch, env_name):
+    monkeypatch.setenv("QDRANT_URL", "http://localhost:6333")
+    monkeypatch.setenv("QDRANT_COLLECTION_NAME", "JOBS_ON_THE_HUB")
+    monkeypatch.setenv("EMBEDDING_MODEL", E5_MODEL)
+    monkeypatch.setenv("TOOKRATT_API_KEYS", "test-key")
+    monkeypatch.setenv(env_name, "0")
 
     with pytest.raises(ValidationError):
         Settings()

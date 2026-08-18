@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from google.genai import errors as genai_errors
 
+from llm_client.base import ChatTurn
 from llm_client.exceptions import (
     GenerationConfigurationError,
     GenerationUnavailableError,
@@ -48,6 +49,20 @@ def test_gemini_generate_returns_trimmed_text():
 
     assert answer == "hello world"
     client.models.generate_content.assert_called_once()
+
+
+def test_gemini_generate_includes_history_in_prompt():
+    client = MagicMock()
+    client.models.generate_content.return_value = _mock_response("follow-up")
+    generator = GeminiGenerator(_settings(), client=client)
+    history = [ChatTurn(question="Any roles in Sweden?", answer="A few listings.")]
+
+    generator.generate("job context", "any others?", history=history)
+
+    prompt = client.models.generate_content.call_args.kwargs["contents"]
+    assert "<<PRIOR_CONVERSATION>>" in prompt
+    assert "Any roles in Sweden?" in prompt
+    assert "any others?" in prompt
 
 
 def test_gemini_retries_transient_server_error_before_succeeding():

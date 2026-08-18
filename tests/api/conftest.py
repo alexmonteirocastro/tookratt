@@ -2,6 +2,7 @@ import pytest
 
 from db.settings import get_qdrant_client, get_settings
 from llm_client import get_llm_settings, reset_generator
+from session import reset_session_store
 from tests.api_auth import TEST_API_KEY
 
 
@@ -20,11 +21,13 @@ def clear_settings_caches():
     get_qdrant_client.cache_clear()
     get_llm_settings.cache_clear()
     reset_generator()
+    reset_session_store()
     yield
     get_settings.cache_clear()
     get_qdrant_client.cache_clear()
     get_llm_settings.cache_clear()
     reset_generator()
+    reset_session_store()
 
 
 @pytest.fixture(autouse=True)

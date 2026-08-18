@@ -5,11 +5,12 @@ non-retryable client errors (4xx other than 429).
 """
 
 import time
+from collections.abc import Sequence
 
 from google import genai
 from google.genai import errors as genai_errors
 
-from llm_client.base import Generator
+from llm_client.base import ChatTurn, Generator
 from llm_client.context import build_generation_prompt
 from llm_client.exceptions import (
     GenerationConfigurationError,
@@ -56,8 +57,13 @@ class GeminiGenerator(Generator):
     def settings(self) -> LLMSettings:
         return self._settings
 
-    def generate(self, context: str, question: str) -> str:
-        prompt = build_generation_prompt(context, question)
+    def generate(
+        self,
+        context: str,
+        question: str,
+        history: Sequence[ChatTurn] | None = None,
+    ) -> str:
+        prompt = build_generation_prompt(context, question, history)
         return self._generate_with_retry(prompt)
 
     def _generate_with_retry(self, prompt: str) -> str:

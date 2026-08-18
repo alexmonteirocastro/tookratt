@@ -62,13 +62,13 @@ class _RecordingGenerator(Generator):
         self.answer = answer
         self.contexts: list[str] = []
 
-    def generate(self, context: str, question: str) -> str:
+    def generate(self, context: str, question: str, history=None) -> str:
         self.contexts.append(context)
         return self.answer
 
 
 class _FailingGenerator(Generator):
-    def generate(self, context: str, question: str) -> str:
+    def generate(self, context: str, question: str, history=None) -> str:
         raise GenerationUnavailableError("ollama timed out")
 
 

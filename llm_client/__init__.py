@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from llm_client.base import Generator
+from llm_client.base import ChatTurn, Generator
 from llm_client.context import NO_MATCHING_JOBS_MESSAGE
 from llm_client.gemini import GeminiGenerator
 from llm_client.ollama import OllamaGenerator
@@ -8,6 +8,7 @@ from llm_client.settings import LLMSettings, get_llm_settings
 from llm_client.stub import StubGenerator
 
 __all__ = [
+    "ChatTurn",
     "Generator",
     "GeminiGenerator",
     "LLMSettings",
