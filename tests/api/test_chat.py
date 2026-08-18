@@ -466,7 +466,7 @@ def test_chat_includes_under_floor_and_missing_dense_fused_hits(
 
     response = client.post(
         "/chat",
-        json={"question": "python developer jobs in Sweden?"},
+        json={"question": "backend roles in Copenhagen?"},
     )
 
     assert response.status_code == 200

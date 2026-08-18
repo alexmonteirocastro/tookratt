@@ -156,6 +156,15 @@ def test_chat_eligibility_follows_fused_rank_not_dense_floor(retrieval_qdrant):
             f"Case '{case['id']}' expected job(s) {missing} not /chat-eligible "
             f"after fused retrieval. Eligible: {eligible_ids}"
         )
+        returned_ids = _job_ids_from_hits(results.points)
+        for confuser_id in case.get("confuser_job_ids", []):
+            if confuser_id not in returned_ids:
+                continue
+            assert confuser_id in eligible_ids, (
+                f"Case '{case['id']}': confuser {confuser_id} made fused top-k "
+                f"but is not /chat-eligible (dense floor must not drop it). "
+                f"Eligible: {eligible_ids}"
+            )
 
 
 @pytest.mark.retrieval

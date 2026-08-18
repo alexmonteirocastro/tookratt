@@ -39,7 +39,7 @@ Dense cosine remains attached to `hit.score` for display (`/chat` sources, `/job
 **Positive:**
 
 - Well-ranked RRF hits reach `/chat` sources even when dense cosine is under 0.85 or missing.
-- Companion padding makes `-1.0` in the UI rare without a second request.
+- Companion padding makes `-1.0` in the API rare without a second request. Residual negative scores are omitted from `SourceList` (compact chips and debug cards) so they do not render as `-1.00`.
 - Eval/sweep tooling can still apply a floor when explicitly requested.
 
 **Negative / accepted risks:**
@@ -58,5 +58,4 @@ This accepted risk is **monitored**, not hope-based. `log_chat_request` already 
 
 * Embedding-model swap (ALE-183 NO-GO).
 * Recalibrating a numeric RRF or dense floor.
-* Frontend formatting of residual `-1.0` display scores.
 * Fixing role-confusion (ALE-151).
