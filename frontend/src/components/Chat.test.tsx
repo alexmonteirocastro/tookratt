@@ -38,6 +38,7 @@ const successResponse: ChatResponse = {
   question: "backend roles in Denmark",
   answer: "Here are some backend roles in Denmark.",
   generated: true,
+  session_id: "session-aaa",
   sources: [
     {
       score: 0.91,
@@ -57,6 +58,7 @@ const noMatchResponse: ChatResponse = {
   question: "underwater basket weaving",
   answer: "No matching jobs found for your question. Try broadening your search terms.",
   generated: false,
+  session_id: "session-bbb",
   sources: [],
 };
 
@@ -65,6 +67,7 @@ const declinedWithSourcesResponse: ChatResponse = {
   answer:
     "I cannot find matching frontend roles in Sweden based on the listings provided.",
   generated: false,
+  session_id: "session-ccc",
   sources: [
     {
       score: 0.42,
@@ -89,6 +92,16 @@ describe("Chat", () => {
     cleanup();
   });
 
+  async function submitQuestion(question: string) {
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/ask a question about jobs/i), question);
+    await user.click(screen.getByRole("button", { name: /ask/i }));
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    return user;
+  }
+
   it("renders user and assistant messages after a successful request", async () => {
     mockPostChat.mockResolvedValue(successResponse);
     const user = userEvent.setup();
@@ -110,6 +123,7 @@ describe("Chat", () => {
     expect(screen.getByText("0.91")).toBeInTheDocument();
     expect(screen.getByText(/^sources$/i)).toBeInTheDocument();
     expect(mockPostChat).toHaveBeenCalledWith({ question: "backend roles in Denmark" });
+    expect(mockPostChat.mock.calls[0][0]).not.toHaveProperty("session_id");
   });
 
   it("shows a loading state while waiting for the API", async () => {
@@ -236,5 +250,66 @@ describe("Chat", () => {
     expect(
       screen.getByText(/no matching jobs — answer from search, not generated/i),
     ).toBeInTheDocument();
+  });
+
+  it("omits session_id on the first request and sends the returned id on the next", async () => {
+    mockPostChat
+      .mockResolvedValueOnce(successResponse)
+      .mockResolvedValueOnce({ ...successResponse, session_id: "session-aaa" });
+
+    render(<Chat />);
+
+    await submitQuestion("backend roles in Denmark");
+    expect(screen.getByText(successResponse.answer)).toBeInTheDocument();
+
+    await submitQuestion("any others?");
+
+    expect(mockPostChat).toHaveBeenNthCalledWith(1, {
+      question: "backend roles in Denmark",
+    });
+    expect(mockPostChat).toHaveBeenNthCalledWith(2, {
+      question: "any others?",
+      session_id: "session-aaa",
+    });
+  });
+
+  it("adopts a replacement session_id from the response without showing an error", async () => {
+    mockPostChat
+      .mockResolvedValueOnce({ ...successResponse, session_id: "session-old" })
+      .mockResolvedValueOnce({ ...successResponse, session_id: "session-new" })
+      .mockResolvedValueOnce({ ...successResponse, session_id: "session-new" });
+
+    render(<Chat />);
+
+    await submitQuestion("first");
+    await submitQuestion("second");
+    await submitQuestion("third");
+
+    expect(mockPostChat).toHaveBeenNthCalledWith(1, { question: "first" });
+    expect(mockPostChat).toHaveBeenNthCalledWith(2, {
+      question: "second",
+      session_id: "session-old",
+    });
+    expect(mockPostChat).toHaveBeenNthCalledWith(3, {
+      question: "third",
+      session_id: "session-new",
+    });
+    expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument();
+  });
+
+  it("omits session_id after a remount, matching a page refresh", async () => {
+    mockPostChat.mockResolvedValue(successResponse);
+
+    const { unmount } = render(<Chat />);
+    await submitQuestion("before refresh");
+    expect(mockPostChat).toHaveBeenCalledWith({ question: "before refresh" });
+
+    unmount();
+    mockPostChat.mockClear();
+    render(<Chat />);
+
+    await submitQuestion("after refresh");
+    expect(mockPostChat).toHaveBeenCalledWith({ question: "after refresh" });
+    expect(mockPostChat.mock.calls[0][0]).not.toHaveProperty("session_id");
   });
 });

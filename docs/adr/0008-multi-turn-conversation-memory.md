@@ -152,10 +152,11 @@ Precedence, per field, highest to lowest:
 
 ## Implementation notes (post-acceptance)
 
-These reflect what shipped in ALE-184 (backend). ALE-185 (frontend `session_id` wiring) is a separate follow-up; ADR-0004 Decision 3 remains in force for the UI until that ticket lands.
+These reflect what shipped in ALE-184 (backend) and ALE-185 (frontend). ADR-0004 Decision 3 is superseded: the chat UI sends `session_id` and no longer claims the assistant has no memory.
 
 - **Declined turns are recorded.** A `/chat` response that takes the deterministic "no matching jobs found" path still appends a `ChatTurn` (question + fallback message) and updates `last_filters`. Follow-ups such as "any others?" therefore inherit both conversational context and the previous turn's country/remote scope. Generation errors (429/502/500) do not record a turn.
 - **Prior conversation delimiting.** `build_generation_prompt` wraps history in `<<PRIOR_CONVERSATION>>` / `<<END_PRIOR_CONVERSATION>>`, structurally separate from `<<JOB_DATA>>` blocks, matching ADR-0012's "this is data, not instructions" principle.
 - **Package layout.** Session state lives in `session/` (`models.py`, `store.py`, `filters.py`). `get_session_store()` is an `@lru_cache` singleton, injectable via FastAPI `Depends` the same way `get_chat_generator` is.
 - **In-process lock.** Decision 6's "no new concurrency primitive" meant no background eviction thread and no Redis. FastAPI still runs sync `/chat` handlers on a thread pool, so `SessionStore` serializes dict mutations with a `threading.Lock`. That is in-process safety for a single worker — not a substitute for the multi-worker Redis revisit. `record_turn` reinserts under the already-issued id if another request evicted the session between lookup and record.
+- **Frontend session lifecycle (ALE-185).** `session_id` is in-memory React state, same lifetime as the visible message list — not `sessionStorage`. The first turn omits the field; later turns send the most recent response id (including a replacement after TTL/eviction). "New conversation" remounts the chat view so both clear together. Banner copy describes the 5-turn bound and the refresh reset.
 

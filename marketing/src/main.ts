@@ -97,8 +97,8 @@ root.innerHTML = `
             <p class="eyebrow">Features</p>
             <h2 id="features-heading">What it can do today</h2>
             <p>
-              Honest about the current MVP: single-turn chat, no resume upload,
-              no application tracking, no auto-apply.
+              Honest about the current MVP: session-scoped follow-ups, no resume
+              upload, no application tracking, no auto-apply.
             </p>
           </div>
           <div class="features">
@@ -148,15 +148,16 @@ root.innerHTML = `
                 <p class="eyebrow">Capability</p>
                 <h3>Limits you can see</h3>
                 <p>
-                  Today's chat is single-turn and anonymous. No persistent profile,
-                  no CV ingestion, no corpus-wide “in-demand skills” dashboard yet —
-                  those are sequenced phases, not silent claims on this page.
+                  Today's chat remembers this session for follow-ups, then forgets
+                  on refresh. No persistent profile, no CV ingestion, no corpus-wide
+                  “in-demand skills” dashboard yet — those are sequenced phases, not
+                  silent claims on this page.
                 </p>
               </div>
               <div class="feature-panel" aria-hidden="true">
                 <p class="limit-note">
-                  Built now: filtered lookup and grounded Q&amp;A over retrieved jobs.
-                  Not built yet: multi-turn memory, resume upload, auto-apply, or pricing tiers.
+                  Built now: filtered lookup, grounded Q&amp;A, and bounded multi-turn memory.
+                  Not built yet: resume upload, auto-apply, or pricing tiers.
                 </p>
               </div>
             </article>

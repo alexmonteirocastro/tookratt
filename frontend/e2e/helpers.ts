@@ -9,6 +9,9 @@ export const MOCK_CHAT_RESPONSE: ChatResponse = {
   answer:
     "Here are **backend** roles in Denmark:\n\n- [Senior Backend Developer](https://thehub.io/jobs/job-1) at Acme",
   generated: true,
+  applied_country: "DK",
+  applied_remote: null,
+  session_id: "e2e-session-1",
   sources: [
     {
       score: 0.91,
@@ -40,7 +43,7 @@ export async function seedApiKey(page: Page): Promise<void> {
 
 export async function mockChat(
   page: Page,
-  options?: { holdUntil?: Promise<void> },
+  options?: { holdUntil?: Promise<void>; response?: ChatResponse },
 ): Promise<void> {
   await page.route("**/api/chat", async (route: Route) => {
     if (options?.holdUntil) {
@@ -49,7 +52,7 @@ export async function mockChat(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      json: MOCK_CHAT_RESPONSE,
+      json: options?.response ?? MOCK_CHAT_RESPONSE,
     });
   });
 }

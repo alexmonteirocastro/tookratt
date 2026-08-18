@@ -99,7 +99,7 @@ What *is* still open, confirmed by reading `db/query_filters.py` and ADR-0002's 
 ## Revisit triggers
 
 - If `ALE-84` ships, revisit Decision 4 (source suppression/labeling by applied-filter status).
-- **Addressed (ALE-103 / ADR-0008):** `/chat` multi-turn/session support is now designed in [ADR-0008](0008-multi-turn-conversation-memory.md). Decision 3 remains the current shipped behavior; it is superseded once ALE-184 (backend) and ALE-185 (frontend) implement that ADR. The design is recorded there rather than rewritten here, matching the ADR-0013 → ADR-0016 revision-via-follow-up convention.
+- **Addressed (ALE-103 / ADR-0008 / ALE-184 / ALE-185):** `/chat` multi-turn/session support is designed in [ADR-0008](0008-multi-turn-conversation-memory.md) and shipped in ALE-184 (backend) and ALE-185 (frontend). Decision 3 is superseded: the UI now sends `session_id` and describes bounded, session-scoped memory. The design is recorded in ADR-0008 rather than rewritten here, matching the ADR-0013 → ADR-0016 revision-via-follow-up convention.
 - If `Generator` gains streaming support, revisit Decision 2.
 - If a second real view is needed (stats dashboard, human-eval tooling, history, settings), revisit Decision 1 (routing/Next.js) and Decision 6 (whether to reintroduce Streamlit for internal tooling or build the view in React).
 
@@ -109,3 +109,4 @@ What *is* still open, confirmed by reading `db/query_filters.py` and ADR-0002's 
 - **Markdown rendering:** Assistant `ChatResponse.answer` values render through `react-markdown` (no raw HTML). User-typed questions remain plain text. See [ARCHITECTURE.md](../ARCHITECTURE.md#frontend-react-chat-ui).
   - **No raw HTML (`rehype-raw` excluded):** `message.content` ultimately originates from an LLM and must not be trusted with arbitrary HTML tags.
   - **Images disallowed (`disallowedElements={["img"]}`):** Even without `rehype-raw`, standard Markdown images (`![alt](url)`) would render as `<img>` and trigger a GET to an attacker-controlled URL on paint (tracking-pixel risk). Nothing in the `/chat` prompt asks for images; blocking them closes that gap at no UX cost. See ALE-112.
+- **Session id (Decision 3 superseded by ADR-0008 / ALE-185):** `Chat.tsx` keeps `sessionId` in the same in-memory React state as `messages`. The first `postChat` omits `session_id`; every later turn sends the id from the most recent response (including when the backend mints a replacement after TTL/eviction). The header "New conversation" control remounts `Chat`, clearing both together. `sessionStorage` is not used for `session_id` — persisting the id while `messages` reset on refresh would let the backend remember a conversation the UI no longer shows.

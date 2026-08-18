@@ -42,6 +42,12 @@ function parseChatQuestionMaxLength(): number {
 /** Client-side textarea max length; mirrors backend `CHAT_QUESTION_MAX_LENGTH`. */
 export const CHAT_QUESTION_MAX_LENGTH = parseChatQuestionMaxLength();
 
+/**
+ * Sliding window advertised in the chat banner. Mirrors backend
+ * `DEFAULT_CHAT_HISTORY_MAX_TURNS` (`db/settings.py`).
+ */
+export const CHAT_HISTORY_MAX_TURNS = 5;
+
 export class ApiNetworkError extends Error {
   constructor(message = "Unable to reach the API. Check your connection and try again.") {
     super(message);

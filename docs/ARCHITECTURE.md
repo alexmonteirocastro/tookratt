@@ -173,7 +173,7 @@ Production chat SPA is hosted at `https://app.tookratt.com` ([ADR-0016](adr/0016
 
 ### Frontend (React chat UI)
 
-A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). Each question is sent independently — conversation history is display-only and never sent to the API (see [ADR-0004](adr/0004-frontend-architecture-for-chat-interface.md)). Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
+A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). The first turn omits `session_id`; later turns send the id from the previous `ChatResponse` so the backend can apply bounded, in-memory conversation history (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md)). `session_id` lives in React state alongside the message list — a refresh or "New conversation" starts a genuinely fresh session. Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
 
 Production is the Cloudflare Pages project `tookratt` (`app.tookratt.com`). Build watch paths include `frontend/*` only. Pushes that do not touch `frontend/` do not rebuild the chat app (ALE-178).
 
@@ -243,7 +243,7 @@ Update snapshot baselines after intentional UI changes:
 npm run test:e2e:update
 ```
 
-Playwright covers a Chromium-only chat-flow smoke test (question → loading → markdown answer → sources) plus visual snapshots of the empty chat view, `SourceList` compact/debug variants, and the API-key auth modal ([ADR-0017](adr/0017-frontend-e2e-visual-testing.md)). Tests mock `/api/chat`, so they do not need a running backend. They run in CI via the `playwright` job in `.github/workflows/ci.yml`: the smoke test blocks merges; visual snapshots run only when the PR touches `frontend/` (always on `main`). The HTML report is Direct-Uploaded to the `tookratt-playwright-reports` Cloudflare Pages project (`pr-<n>.tookratt-playwright-reports.pages.dev` on PRs) and linked from a PR comment; PNG diffs are also uploaded as the `playwright-visual-diffs` artifact. Visual diffs do not fail the build (local vs CI font rendering can differ — ADR-0017 Decision 3). `test:e2e` starts the Vite dev server automatically when one is not already running.
+Playwright covers a Chromium-only chat-flow smoke test (question → loading → markdown answer → sources, plus a mocked multi-turn `session_id` path) plus visual snapshots of the empty chat view, `SourceList` compact/debug variants, and the API-key auth modal ([ADR-0017](adr/0017-frontend-e2e-visual-testing.md)). Tests mock `/api/chat`, so they do not need a running backend. They run in CI via the `playwright` job in `.github/workflows/ci.yml`: the smoke test blocks merges; visual snapshots run only when the PR touches `frontend/` (always on `main`). The HTML report is Direct-Uploaded to the `tookratt-playwright-reports` Cloudflare Pages project (`pr-<n>.tookratt-playwright-reports.pages.dev` on PRs) and linked from a PR comment; PNG diffs are also uploaded as the `playwright-visual-diffs` artifact. Visual diffs do not fail the build (local vs CI font rendering can differ — ADR-0017 Decision 3). `test:e2e` starts the Vite dev server automatically when one is not already running.
 
 ### Marketing site (`marketing/`)
 
@@ -438,7 +438,7 @@ Tests live under `tests/` and use `responses` to mock HTTP at the Hub client bou
 - [x] Dockerize the full stack (API + frontend + ingestion; vector store is Qdrant Cloud)
 - [x] FastAPI backend for job stats and semantic search
 - [x] `/chat` RAG endpoint with provider-agnostic generation layer (see [ADR-0001](adr/0001-llm-provider-strategy.md))
-- [ ] Server-side multi-turn conversation memory for `/chat` (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md); backend ALE-184, frontend ALE-185)
+- [x] Server-side multi-turn conversation memory for `/chat` (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md); backend ALE-184, frontend ALE-185)
 - [x] Incremental sync (skip already-ingested jobs instead of full reset)
 - [x] Revisit frontend dev proxy + client timeouts (Vite / `CHAT_REQUEST_TIMEOUT_MS`) — ALE-130 (nginx) + ALE-131 (client)
 - [ ] Split dev/eval tooling (`seed_dev_qdrant_db`) out of `db/db_utils.py` into its own module
