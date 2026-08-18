@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API_KEY_STORAGE_KEY, setStoredApiKey } from "./api/authStorage";
+import { CHAT_HISTORY_MAX_TURNS } from "./api/client";
 import App from "./App";
 
 const chatSuccessBody = {
@@ -76,7 +77,7 @@ describe("App conversation memory", () => {
 
     const banner = screen.getByRole("note");
     expect(banner).toHaveTextContent(/remembers this conversation/i);
-    expect(banner).toHaveTextContent(/last 5 turns/i);
+    expect(banner).toHaveTextContent(new RegExp(`last ${CHAT_HISTORY_MAX_TURNS} turns`, "i"));
     expect(banner).toHaveTextContent(/resets if you refresh or start a new conversation/i);
     expect(
       screen.queryByText(/doesn't remember previous messages/i),

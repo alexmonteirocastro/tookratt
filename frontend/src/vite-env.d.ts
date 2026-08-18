@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_LOADING_MESSAGE?: string;
   readonly VITE_CHAT_REQUEST_TIMEOUT_MS?: string;
   readonly VITE_CHAT_QUESTION_MAX_LENGTH?: string;
+  readonly VITE_CHAT_HISTORY_MAX_TURNS?: string;
 }
 
 interface ImportMeta {
