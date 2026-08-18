@@ -88,6 +88,12 @@ uv run python scripts/compare_embedding_models.py --keep-collections
 # Compare a different pair — e.g. baseline vs candidate
 uv run python scripts/compare_embedding_models.py \
   --models BAAI/bge-small-en-v1.5 intfloat/multilingual-e5-small
+
+# Ollama-hosted candidates (ALE-183): local embed, disposable JOBS_COMPARE_*
+# collections sized to each model's dim (768/1024). First model is the baseline.
+uv run python scripts/compare_embedding_models.py \
+  --models intfloat/multilingual-e5-small nomic-embed-text \
+  bge-m3 snowflake-arctic-embed2 qwen3-embedding:0.6b
 ```
 
 ### Reading the output
@@ -117,6 +123,21 @@ The **summary** section gives, per model:
 | `intfloat/multilingual-e5-small` | Yes |
 
 Local FastEmbed is not used for Töökratt embedding under ADR-0014 — compare models against Qdrant Cloud.
+
+### Production sample (ALE-183)
+
+`--production-sample` queries live `JOBS_ON_THE_HUB` for e5-small (no re-embed) and seeds a stratified subset into disposable `JOBS_COMPARE_*` for Ollama candidates. Golden `expected_job_ids` are fixture-only and typically miss production Hub ids — use the truncation eval below for the 10 real-document pairs.
+
+## 2b. Truncation eval on 10 production jobs (ALE-183)
+
+Compares live e5-small against Ollama candidates on conversational queries whose matching signal sits past e5-small's 512-token window. Does **not** write `golden_queries.json` or production.
+
+```bash
+uv run python scripts/run_truncation_eval.py --tokenizer-check-only
+uv run python scripts/run_truncation_eval.py
+```
+
+e5-small queries `JOBS_ON_THE_HUB` read-only. Candidates embed a ~80-doc stratified pool (seed 183, targets guaranteed) into `JOBS_COMPARE_*`. Dense vectors are cached under `tmp/ale-183-embed-cache/` so a later tag (e.g. `qwen3-embedding:8b`) can reuse the pool.
 
 ## 3. Generation model comparison
 

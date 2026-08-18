@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-from evals.collections import collection_name_for_model
-from evals.embeddings import summarize_query_results
+from evals.collections import collection_name_for_model, stored_jobs_from_opportunities
+from evals.embeddings import _query_result_from_response, summarize_query_results
+from evals.fixtures import load_golden_jobs
 from evals.generation import (
     build_generator,
     format_context_for_generator,
@@ -87,6 +89,53 @@ def test_collection_name_for_model_does_not_produce_e5_prod_default() -> None:
     assert collection_name_for_model("intfloat/multilingual-e5-small") != (
         "JOBS_COMPARE_E5_PROD"
     )
+    assert collection_name_for_model("intfloat/multilingual-e5-small") != (
+        "JOBS_ON_THE_HUB"
+    )
+
+
+def test_stored_jobs_from_opportunities_keeps_fixture_ids() -> None:
+    jobs = load_golden_jobs()
+    stored = stored_jobs_from_opportunities(jobs)
+    assert {row.job_id for row in stored} == {job.job_id for job in jobs}
+    assert all(row.document_text for row in stored)
+
+
+def test_query_result_from_response_records_top_hit_and_noise() -> None:
+    case = {
+        "id": "backend-copenhagen",
+        "query": "backend",
+        "expected_job_ids": ["abc123"],
+    }
+    response = SimpleNamespace(
+        points=[
+            SimpleNamespace(
+                score=0.91,
+                payload={
+                    "job_url_identifier": "prod1",
+                    "job_title": "Backend",
+                    "company": "Hub Co",
+                    "Country": "Denmark",
+                },
+            ),
+            SimpleNamespace(
+                score=0.80,
+                payload={
+                    "job_url_identifier": "abc123",
+                    "job_title": "Fixture",
+                    "company": "Acme",
+                    "Country": "Denmark",
+                },
+            ),
+        ]
+    )
+    result = _query_result_from_response(case, response)  # type: ignore[arg-type]
+    assert result.top_hit_job_id == "prod1"
+    assert result.top_hit_score == pytest.approx(0.91)
+    assert result.expected_scores["abc123"] == pytest.approx(0.80)
+    assert result.all_missing == []
+    assert result.top_noise_score == pytest.approx(0.91)
+    assert result.ranked_hits[0].job_title == "Backend"
 
 
 def test_summarize_query_results_margin() -> None:
