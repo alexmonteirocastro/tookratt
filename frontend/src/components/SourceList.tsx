@@ -6,7 +6,10 @@ interface SourceListProps {
   variant?: "compact" | "debug";
 }
 
-function formatScore(score: number): string {
+function formatScore(score: number): string | null {
+  if (score < 0) {
+    return null;
+  }
   return score.toFixed(2);
 }
 
@@ -34,28 +37,33 @@ export function SourceList({ sources, variant }: SourceListProps) {
       <div className={`${styles.wrapper} ${styles.debug}`}>
         <p className={styles.heading}>Retrieved sources</p>
         <ul className={styles.list}>
-          {sources.map((source) => (
-            <li key={source.job_id} className={styles.item}>
-              <div className={styles.header}>
-                <a
-                  className={styles.role}
-                  href={source.job_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {source.job_title ?? source.job_role}
-                </a>
-                <span className={styles.score}>score {formatScore(source.score)}</span>
-              </div>
-              {(source.company || source.location || source.country) && (
-                <p className={styles.meta}>
-                  {[source.company, source.location, source.country]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              )}
-            </li>
-          ))}
+          {sources.map((source) => {
+            const scoreLabel = formatScore(source.score);
+            return (
+              <li key={source.job_id} className={styles.item}>
+                <div className={styles.header}>
+                  <a
+                    className={styles.role}
+                    href={source.job_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {source.job_title ?? source.job_role}
+                  </a>
+                  {scoreLabel !== null && (
+                    <span className={styles.score}>score {scoreLabel}</span>
+                  )}
+                </div>
+                {(source.company || source.location || source.country) && (
+                  <p className={styles.meta}>
+                    {[source.company, source.location, source.country]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
     );
@@ -65,19 +73,24 @@ export function SourceList({ sources, variant }: SourceListProps) {
     <div className={`${styles.wrapper} ${styles.compact}`}>
       <p className={styles.heading}>Sources</p>
       <ul className={styles.chipList}>
-        {sources.map((source) => (
-          <li key={source.job_id} className={styles.chip}>
-            <a
-              className={styles.chipLink}
-              href={source.job_url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {source.job_title ?? source.job_role}
-            </a>
-            <span className={styles.chipScore}>{formatScore(source.score)}</span>
-          </li>
-        ))}
+        {sources.map((source) => {
+          const scoreLabel = formatScore(source.score);
+          return (
+            <li key={source.job_id} className={styles.chip}>
+              <a
+                className={styles.chipLink}
+                href={source.job_url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {source.job_title ?? source.job_role}
+              </a>
+              {scoreLabel !== null && (
+                <span className={styles.chipScore}>{scoreLabel}</span>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

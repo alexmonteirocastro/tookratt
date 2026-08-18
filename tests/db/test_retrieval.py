@@ -5,6 +5,7 @@ import pytest
 
 from db.database import query_jobs_in_qdrant
 from db.settings import DEFAULT_CHAT_SOURCE_MIN_SCORE
+from llm_client.context import filter_usable_points
 from the_hub_client.models import (
     EU_COUNTRY_FILTER_EXCLUSIONS,
     CountryCode,
@@ -80,10 +81,11 @@ def test_golden_queries_hit_expected_jobs_in_top_k(retrieval_qdrant):
 
 @pytest.mark.retrieval
 def test_golden_queries_expected_jobs_survive_chat_source_min_score(retrieval_qdrant):
-    """Calibration guard: /chat floor keeps every golden expected hit.
+    """Dense-score quality guard: golden expected hits still clear the old floor.
 
-    Uses fixture_chat_source_min_score from golden_queries.json when set — the
-    7-job dev corpus scores below the production E5 band (ADR-0014 / ALE-138).
+    Not a /chat eligibility check (ADR-0018). Uses fixture_chat_source_min_score
+    from golden_queries.json when set — the 7-job dev corpus scores below the
+    production E5 band (ADR-0014 / ALE-138).
     """
     client, collection_name = retrieval_qdrant
     golden_set = _load_golden_queries()
@@ -115,9 +117,54 @@ def test_golden_queries_expected_jobs_survive_chat_source_min_score(retrieval_qd
 
         assert not missing, (
             f"Golden query '{case['id']}' lost expected job(s) {missing} "
-            f"below CHAT_SOURCE_MIN_SCORE={min_score}. "
+            f"below the dense-score quality floor={min_score}. "
             f"Surviving: {surviving_job_ids}"
         )
+
+
+@pytest.mark.retrieval
+def test_chat_eligibility_follows_fused_rank_not_dense_floor(retrieval_qdrant):
+    """ADR-0018: /chat sources are fused top-k with usable text, not min_score.
+
+    Expected jobs must appear in the fused ranking. Hits with document_text
+    stay eligible even when dense cosine is under CHAT_SOURCE_MIN_SCORE.
+    Role-confusion confusers that make top-k are also eligible — this does
+    not claim ALE-151 is fixed.
+    """
+    client, collection_name = retrieval_qdrant
+    golden_set = _load_golden_queries()
+    top_k = golden_set["top_k"]
+    cases = list(golden_set["queries"]) + list(
+        golden_set.get("role_confusion_cases", [])
+    )
+
+    for case in cases:
+        country_filter = case.get("country")
+        country_code = CountryCode(country_filter) if country_filter else None
+        results = query_jobs_in_qdrant(
+            db_client=client,
+            collection_name=collection_name,
+            query_text=case["query"],
+            limit=top_k,
+            country=country_code,
+        )
+        eligible_ids = _job_ids_from_hits(filter_usable_points(results.points))
+        missing = [
+            job_id for job_id in case["expected_job_ids"] if job_id not in eligible_ids
+        ]
+        assert not missing, (
+            f"Case '{case['id']}' expected job(s) {missing} not /chat-eligible "
+            f"after fused retrieval. Eligible: {eligible_ids}"
+        )
+        returned_ids = _job_ids_from_hits(results.points)
+        for confuser_id in case.get("confuser_job_ids", []):
+            if confuser_id not in returned_ids:
+                continue
+            assert confuser_id in eligible_ids, (
+                f"Case '{case['id']}': confuser {confuser_id} made fused top-k "
+                f"but is not /chat-eligible (dense floor must not drop it). "
+                f"Eligible: {eligible_ids}"
+            )
 
 
 @pytest.mark.retrieval

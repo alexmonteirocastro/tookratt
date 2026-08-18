@@ -263,10 +263,12 @@ def _attach_dense_scores_to_fused_hits(
     fused_points: list[models.ScoredPoint],
     dense_scores_by_id: dict[str | int | UUID, float],
 ) -> list[models.ScoredPoint]:
-    """Rewrite RRF-ordered hits to carry dense cosine scores (ADR-0010 Decision 7).
+    """Rewrite RRF-ordered hits to carry dense cosine scores for display.
 
-    Hits present in the fused ranking but absent from the companion dense query
-    receive MISSING_DENSE_SCORE so CHAT_SOURCE_MIN_SCORE excludes them.
+    Ranking stays RRF (ADR-0010 Decision 3). Scores are pre-fusion dense cosine
+    for ``/chat`` and ``/jobs/search`` display (ADR-0018). Hits present in the
+    fused ranking but still absent from the padded companion receive
+    ``MISSING_DENSE_SCORE`` as a display fallback — not an omit-gate.
     """
     merged: list[models.ScoredPoint] = []
     for point in fused_points:
@@ -285,14 +287,15 @@ def query_jobs_in_qdrant(
     country: CountryCode | None = None,
     remote: bool | None = None,
 ) -> QueryResponse:
-    """Hybrid dense+BM25 RRF retrieval with dense scores for the chat floor.
+    """Hybrid dense+BM25 RRF retrieval with dense scores for display.
 
-    Ranks via a single fused query (Decision 3). Attaches dense cosine scores via
-    a companion dense query in the same ``query_batch_points`` request, reusing
-    one E5 ``Document`` instance for the dense prefetch and companion legs as a
-    best-effort client-side shape (Cloud Inference request-level dedupe is not
-    confirmed — see ADR-0010 Decision 7). Ranking stays RRF; scoring for
-    ``CHAT_SOURCE_MIN_SCORE`` stays dense cosine (Decision 7).
+    Ranks via a single fused query (ADR-0010 Decision 3). Attaches dense cosine
+    scores via a companion dense query in the same ``query_batch_points``
+    request, reusing one E5 ``Document`` instance for the dense prefetch and
+    companion legs as a best-effort client-side shape (Cloud Inference
+    request-level dedupe is not confirmed — see ADR-0010 Decision 7). Ranking
+    stays RRF; ``/chat`` eligibility is fused top-k + usable text (ADR-0018),
+    not ``CHAT_SOURCE_MIN_SCORE``.
     """
     embedding_model = get_settings().embedding_model
     dense_vector_name = get_dense_vector_name(db_client, collection_name)
@@ -303,7 +306,8 @@ def query_jobs_in_qdrant(
     dense_query = models.Document(text=query_text, model=embedding_model)
     sparse_query = models.Document(text=query_text, model=BM25_SPARSE_MODEL)
     # Prefetch wider than final limit so RRF sees BM25-strong hits that sit
-    # outside the dense top-k; companion dense limit stays == limit (Decision 7).
+    # outside the dense top-k. Companion is padded to the same width so fused
+    # hits can carry a real dense cosine for display (ADR-0018).
     prefetch_limit = max(limit * 4, 20)
 
     fused_request = models.QueryRequest(
@@ -326,12 +330,11 @@ def query_jobs_in_qdrant(
         limit=limit,
         with_payload=True,
     )
-    # intentionally not padded — see ADR-0010 Decision 7 missing-dense rule
     companion_request = models.QueryRequest(
         query=dense_query,
         using=dense_vector_name,
         filter=query_filter,
-        limit=limit,
+        limit=prefetch_limit,
         with_payload=True,
     )
 

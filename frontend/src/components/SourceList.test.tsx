@@ -60,4 +60,29 @@ describe("SourceList", () => {
     expect(screen.getByText(/retrieved sources/i)).toBeInTheDocument();
     expect(screen.getByText(/score 0\.91/i)).toBeInTheDocument();
   });
+
+  it("hides negative dense scores in compact chips", () => {
+    render(
+      <SourceList
+        sources={[{ ...sampleSources[0], score: -1.0 }]}
+        variant="compact"
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: /senior backend developer/i })).toBeInTheDocument();
+    expect(screen.queryByText(/-1/)).not.toBeInTheDocument();
+  });
+
+  it("hides negative dense scores in debug cards", () => {
+    render(
+      <SourceList
+        sources={[{ ...sampleSources[0], score: -1.0 }]}
+        variant="debug"
+      />,
+    );
+
+    expect(screen.getByText(/retrieved sources/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^-1/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^score /i)).not.toBeInTheDocument();
+  });
 });

@@ -27,6 +27,7 @@ from evals.types import GenerationCaseResult, GenerationComparisonResult
 from llm_client.base import Generator
 from llm_client.context import (
     filter_chat_retrieval_points,
+    filter_usable_points,
     find_ungrounded_job_detail_phrases,
     find_ungrounded_link_urls,
     format_job_context,
@@ -233,6 +234,10 @@ def compare_generators(
     ``ollama_max_chars_per_job``, other providers pass full document text.
     Per-call generation failures are recorded on ``GenerationCaseResult.error``
     without aborting the rest of the run.
+
+    ``min_score=None`` (default) matches production ``/chat``: no dense
+    cosine omit-gate (ADR-0018). Pass an explicit float to apply a floor
+    for analysis only.
     """
     if not generators:
         raise ValueError("compare_generators requires at least one generator")
@@ -240,7 +245,6 @@ def compare_generators(
     validate_qdrant_config()
     settings = get_settings()
     model = embedding_model if embedding_model is not None else settings.embedding_model
-    score_floor = min_score if min_score is not None else settings.chat_source_min_score
     qdrant = client if client is not None else get_comparison_client()
     fixture = load_golden_generation()
     cases = fixture.get("cases", [])
@@ -266,9 +270,10 @@ def compare_generators(
                 query_text=query,
                 limit=top_k,
             )
-            usable_points = filter_chat_retrieval_points(
-                response.points,
-                min_score=score_floor,
+            usable_points = (
+                filter_chat_retrieval_points(response.points, min_score=min_score)
+                if min_score is not None
+                else filter_usable_points(response.points)
             )
             results.extend(
                 run_generators_for_case(
