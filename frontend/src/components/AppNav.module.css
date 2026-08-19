@@ -1,0 +1,36 @@
+/*
+ * ALE-192 Decision 3 — header text tabs, not a sidebar or amber pills.
+ * Active = ink + teal underline. Inactive = secondary text. No navy-on-amber
+ * at this size (ADR-0005 accepted-risk pair stays on Ask / user bubbles).
+ */
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-6);
+}
+
+.link {
+  padding: 0 0 var(--space-1);
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  line-height: var(--line-height-tight);
+}
+
+.link:hover {
+  color: var(--color-ink);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.link[aria-current="page"] {
+  color: var(--color-ink);
+  font-weight: var(--font-weight-heading);
+  border-bottom-color: var(--color-teal);
+}

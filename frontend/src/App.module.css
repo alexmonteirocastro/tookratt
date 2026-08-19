@@ -9,6 +9,8 @@
   box-sizing: border-box;
 }
 
+/* ALE-192: AppNav sits in a column under .brand (wordmark + tabs), not in
+   .headerActions, so lock / new-conversation stay un-squeezed on mobile. */
 .header {
   display: flex;
   align-items: flex-start;

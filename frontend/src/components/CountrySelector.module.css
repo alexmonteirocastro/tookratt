@@ -1,0 +1,77 @@
+/*
+ * ALE-192 Decision 2 — pill tabs inside existing radius/spacing tokens.
+ * Selected fill is teal + cream (5.62:1, AA pass), not amber, so small
+ * labels don't inherit ADR-0005's navy-on-amber accepted risk.
+ */
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.legend {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.option:hover:not(:has(:disabled)) {
+  background: var(--color-lock-hover);
+}
+
+.option:has(:checked) {
+  background: var(--color-teal);
+  border-color: var(--color-teal);
+  color: var(--color-surface);
+}
+
+.option:has(:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.option:has(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.code {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-heading);
+  line-height: var(--line-height-tight);
+}

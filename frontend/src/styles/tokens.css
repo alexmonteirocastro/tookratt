@@ -69,6 +69,7 @@
 
   /* Layout */
   --max-width-chat: 980px;
+  --size-chart-label: 11rem; /* ALE-192 jobs_per_role chart label column */
   --min-height-conversation: 420px;
   --size-mascot-header: 56px;
   --size-mascot-empty: 120px;
