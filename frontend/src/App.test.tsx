@@ -183,6 +183,16 @@ describe("App routing", () => {
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 
+  it("redirects /stats to /market", async () => {
+    renderApp("/stats");
+
+    expect(await screen.findByRole("link", { name: "Job market" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.queryByLabelText(/ask a question about jobs/i)).not.toBeInTheDocument();
+  });
+
   it("navigates to /market and loads jobs_per_role without chat chrome", async () => {
     const user = userEvent.setup();
     renderApp("/chat");
