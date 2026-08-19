@@ -9,6 +9,7 @@ export const COUNTRY_OPTIONS: readonly { code: CountryCode; name: string }[] = [
   { code: "EU", name: "Europe" },
 ];
 
+/** Sentence case, with acronyms (CXO, UX/UI, DevOps) spelled explicitly. */
 const ROLE_LABELS: Record<string, string> = {
   cxo: "CXO",
   human_resources: "Human resources",
@@ -36,6 +37,11 @@ const ROLE_LABELS: Record<string, string> = {
   other: "Other",
 };
 
+/**
+ * Unknown Hub keys stay sentence case so they match ROLE_LABELS
+ * ("Staff engineer", not "Staff Engineer"). Don't switch this fallback to
+ * title case without updating the map.
+ */
 export function formatRoleLabel(key: string): string {
   if (ROLE_LABELS[key]) {
     return ROLE_LABELS[key];

@@ -8,8 +8,9 @@ describe("formatRoleLabel", () => {
     expect(formatRoleLabel("cxo")).toBe("CXO");
   });
 
-  it("humanizes unknown snake_case keys", () => {
+  it("humanizes unknown snake_case keys in sentence case, matching ROLE_LABELS", () => {
     expect(formatRoleLabel("staff_engineer")).toBe("Staff engineer");
+    expect(formatRoleLabel("staff_engineer")).not.toBe("Staff Engineer");
   });
 });
 

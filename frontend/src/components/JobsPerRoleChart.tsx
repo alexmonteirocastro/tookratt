@@ -21,6 +21,11 @@ export function JobsPerRoleChart({ jobsPerRole }: JobsPerRoleChartProps) {
         <p className={styles.empty}>No roles to show for this country.</p>
       ) : (
         <table className={styles.table}>
+          <colgroup>
+            <col className={styles.labelCol} />
+            <col />
+            <col className={styles.countCol} />
+          </colgroup>
           <thead className={styles.srOnly}>
             <tr>
               <th scope="col">Role</th>
