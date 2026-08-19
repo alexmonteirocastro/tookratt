@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-07-07 (original); superseded palette/type 2026-08-10 (ALE-174 / ALE-172)
-* **Related:** ADR-0004 (frontend architecture), ALE-74 (initial implementation), ALE-172 (dashboard redesign handoff), ALE-174 (this rewrite)
+* **Related:** ADR-0004 (frontend architecture), ALE-74 (initial implementation), ALE-172 (dashboard redesign handoff), ALE-174 (this rewrite), ALE-192 (stats dashboard patterns)
 
 ## Context
 
@@ -89,7 +89,8 @@ dependency.
 - Radii: `--radius-sm: 12px` (lock), `--radius-md: 14px` (banner),
   `--radius-lg: 16px`, `--radius-xl: 18px` (input bar), `--radius-pill: 100px`
   (Ask), asymmetric `--radius-bubble-user` / `--radius-bubble-assistant`
-- Layout: `--max-width-chat: 980px`; `--min-height-conversation: 420px`;
+- Layout: `--max-width-chat: 980px`; `--size-chart-label: 11rem` (ALE-192
+  `jobs_per_role` label column); `--min-height-conversation: 420px`;
   mascot `--size-mascot-header: 56px`, `--size-mascot-empty: 120px`;
   `--size-lock-button: 44px`
 
@@ -112,6 +113,48 @@ part of the live language (bubbles / bordered cream panels instead).
   `--color-on-navy-*` tokens (no `--shadow-card`).
 - **Favicons / apple-touch** — sized mascot crops in `frontend/public/`
   (resolved under ALE-172; opaque parchment background).
+
+## Decision 6: Application to the stats dashboard (ALE-192)
+
+Bet 004 adds a second real view (`/stats`) without a new brand or token
+system. The three new patterns apply Decision 1–4 in code; ALE-193 wires
+routing and `GET /jobs/stats`. Presentational components live in
+`frontend/src/components/` (`AppNav`, `CountrySelector`, `JobsPerRoleChart`)
+with shared labels in `frontend/src/utils/statsLabels.ts`.
+
+**Chart (`jobs_per_role`) — CSS horizontal bars, no chart library.** Cream
+`--color-surface` panel, parchment `--color-surface-alt` track, `--color-teal`
+fill, `--radius-sm` on the bar. Role labels are `--color-ink` to the left;
+counts are `--color-accent` *text on cream*, never navy-on-amber on the fill
+(does not extend the accepted-risk pair below to small figures). Sort
+descending; omit zero-count roles; bar width is percent of the current
+country's max role, not of `total_jobs`. Markup is a `<table>` so the numbers
+are available without the visual bar.
+
+**Country selector — pill radios, not a dropdown.** The six codes (`DK`,
+`SE`, `NO`, `FI`, `IS`, `EU`) are equally weighted and always visible.
+`--radius-pill`, `--space-2`/`--space-4` padding, wrap on small viewports.
+Unselected: cream + ink + `--color-border`. Selected: `--color-teal` fill +
+`--color-surface` label (same 5.62:1 pair as the banner icon, AA pass). Native
+`<input type="radio">` for arrow-key behaviour; visible label is the code,
+accessible name is the country (`Denmark`, …, `Europe`).
+
+**Nav — two text tabs under the wordmark.** `Chat` / `Stats` in Karla
+`--font-size-sm`. Active: `--font-weight-heading`, `--color-ink`, 2px
+`--color-teal` underline. Inactive: `--color-text-secondary`. Not amber
+pills, not a sidebar. Place in a brand column *below* the wordmark/subtitle so
+header actions (new conversation, API key) stay un-squeezed. Chat-only chrome
+(memory banner, new-conversation control) stays off `/stats`.
+
+**KPI tiles (handoff, not a fourth invention):** total / remote / paid /
+unpaid reuse the same cream `--color-surface` panel as the chart. Figure in
+Sora `--font-size-xl`; uppercase Karla `--font-size-xs` muted label (same
+grammar as `SourceList` section headings). No new card shadow or accent fill.
+
+**Rejected:** chart-library defaults (rainbow palettes, axes chrome);
+dropdown country control; amber-filled active tabs or bar labels at small
+text sizes; a design-system library for this second view (ADR-0005 revisit
+trigger considered and declined — three patterns, existing tokens enough).
 
 ## Contrast audit (ALE-174)
 
@@ -156,7 +199,8 @@ spot check.
 
 **Positive:** docs match `tokens.css`; rebrand is documented; Decision 1’s
 seam remains the change vehicle; production loading/error states are named as
-intentional extensions of the prototype.
+intentional extensions of the prototype. `/stats` (Decision 6) reuses the
+same seam rather than introducing a second visual system.
 
 **Negative / accepted risks:** navy-on-amber contrast shortfall (see above);
 token set is larger than the 2026-07 indigo palette (more semantic aliases for
@@ -165,8 +209,10 @@ opacity and on-navy surfaces) — still one file.
 ## Revisit triggers
 
 - Contrast nudge for navy-on-amber (see Contrast audit).
-- If a second real view or dark mode appears, revisit whether a design-system
-  library beats hand-rolled tokens (same trigger as ADR-0004 for routing).
+- **Addressed in part (ALE-192):** the second view (`/stats`) stays on
+  hand-rolled tokens — see Decision 6. Dark mode, or a third distinct
+  surface, still revisits whether a design-system library beats this file
+  (same trigger as ADR-0004 for routing).
 - If a simplified monochrome mark is designed, prefer it for 16×16 favicon
   only (smile is illegible at that size with the current art — accepted under
   ALE-172).

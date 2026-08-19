@@ -1,0 +1,93 @@
+/*
+ * ALE-192 Decision 1 — CSS bars, not a chart-library default.
+ * Panel = cream surface (same as input bar). Track = parchment.
+ * Fill = teal. Count = accent text beside the bar, never on the fill
+ * (avoids extending ADR-0005's navy-on-amber shortfall to small figures).
+ */
+.panel {
+  margin: 0;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.caption {
+  margin: 0 0 var(--space-5);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-ink);
+  line-height: var(--line-height-tight);
+}
+
+.empty {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.row + .row .label,
+.row + .row .trackCell,
+.row + .row .count {
+  padding-top: var(--space-3);
+}
+
+.label {
+  width: var(--size-chart-label);
+  max-width: var(--size-chart-label);
+  padding: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-ink);
+  text-align: left;
+  line-height: var(--line-height-tight);
+}
+
+.trackCell {
+  padding: 0 var(--space-3);
+  width: 100%;
+}
+
+.track {
+  width: 100%;
+  height: var(--space-5);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  min-width: var(--space-1);
+  background: var(--color-teal);
+  border-radius: var(--radius-sm);
+}
+
+.count {
+  padding: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-accent);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
