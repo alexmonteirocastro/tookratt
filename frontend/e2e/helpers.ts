@@ -73,7 +73,7 @@ export const MOCK_JOBS_STATS: JobOpenings = {
 
 export async function mockJobsStats(
   page: Page,
-  options?: { country?: string; response?: JobOpenings },
+  options?: { country?: string; response?: JobOpenings; holdUntil?: Promise<void> },
 ): Promise<void> {
   await page.route("**/api/jobs/stats**", async (route: Route) => {
     const url = new URL(route.request().url());
@@ -81,6 +81,9 @@ export async function mockJobsStats(
     if (options?.country && requested !== options.country) {
       await route.continue();
       return;
+    }
+    if (options?.holdUntil) {
+      await options.holdUntil;
     }
     await route.fulfill({
       status: 200,
@@ -90,8 +93,8 @@ export async function mockJobsStats(
   });
 }
 
-export async function openApp(page: Page): Promise<void> {
-  await page.goto("/");
+export async function openApp(page: Page, path = "/"): Promise<void> {
+  await page.goto(path);
   await page.getByRole("heading", { name: "töökratt" }).waitFor();
   await page.evaluate(async () => {
     await document.fonts.ready;

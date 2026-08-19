@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   MOCK_CHAT_QUESTION,
   mockChat,
+  mockJobsStats,
   openApp,
   seedApiKey,
   sourceListLocator,
@@ -39,5 +40,15 @@ test.describe("visual snapshots", { tag: "@visual" }, () => {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("heading", { name: "API access" })).toBeVisible();
     await expect(page).toHaveScreenshot("api-key-modal.png", { fullPage: true });
+  });
+
+  test("stats dashboard", async ({ page }) => {
+    await seedApiKey(page);
+    await mockJobsStats(page);
+    await openApp(page, "/stats");
+
+    await expect(page.getByRole("link", { name: "Stats" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("rowheader", { name: "Backend developer" })).toBeVisible();
+    await expect(page).toHaveScreenshot("stats-dashboard.png", { fullPage: true });
   });
 });
