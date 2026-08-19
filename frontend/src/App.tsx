@@ -106,10 +106,11 @@ export default function App() {
 
       <main className={styles.main}>
         <Routes>
-          <Route path="/" element={<Navigate to="/chat" replace />} />
+          <Route path="/" element={<Navigate to="/market" replace />} />
+          <Route path="/market" element={<Stats enabled={hasApiKey} />} />
+          <Route path="/stats" element={<Navigate to="/market" replace />} />
           <Route path="/chat" element={<Chat key={chatKey} />} />
-          <Route path="/stats" element={<Stats enabled={hasApiKey} />} />
-          <Route path="*" element={<Navigate to="/chat" replace />} />
+          <Route path="*" element={<Navigate to="/market" replace />} />
         </Routes>
       </main>
       <ApiKeyModal

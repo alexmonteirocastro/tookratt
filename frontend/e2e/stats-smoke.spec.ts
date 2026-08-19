@@ -13,9 +13,13 @@ test("stats page shows country selector and jobs_per_role", { tag: "@smoke" }, a
   const gate = createGate();
   await seedApiKey(page);
   await mockJobsStats(page, { holdUntil: gate.promise });
-  await openApp(page, "/stats");
+  await openApp(page, "/");
 
-  await expect(page.getByRole("link", { name: "Stats" })).toHaveAttribute("aria-current", "page");
+  await expect(page).toHaveURL(/\/market$/);
+  await expect(page.getByRole("link", { name: "Job market" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
   const loading = page.getByRole("status");
   await expect(loading).toBeVisible();
   await expect(loading).toContainText(/loading job stats/i);
@@ -48,7 +52,7 @@ test("stats page shows an error when jobs/stats fails", { tag: "@smoke" }, async
       json: { detail: "boom" },
     }),
   );
-  await openApp(page, "/stats");
+  await openApp(page, "/market");
 
   await expect(page.getByRole("alert")).toHaveText("boom");
   await expect(page.getByText("Jobs per role")).toHaveCount(0);

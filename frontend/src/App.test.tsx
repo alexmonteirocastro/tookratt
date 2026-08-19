@@ -170,23 +170,30 @@ describe("App routing", () => {
     vi.unstubAllGlobals();
   });
 
-  it("redirects / to /chat and keeps chat chrome", () => {
+  it("redirects / to /market without chat chrome", async () => {
     renderApp("/");
 
-    expect(screen.getByRole("link", { name: "Chat" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByLabelText(/ask a question about jobs/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /new conversation/i })).toBeInTheDocument();
-    expect(screen.getByRole("note")).toBeInTheDocument();
+    expect(await screen.findByRole("rowheader", { name: "Backend developer" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Job market" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.queryByLabelText(/ask a question about jobs/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /new conversation/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 
-  it("navigates to /stats and loads jobs_per_role without chat chrome", async () => {
+  it("navigates to /market and loads jobs_per_role without chat chrome", async () => {
     const user = userEvent.setup();
     renderApp("/chat");
 
-    await user.click(screen.getByRole("link", { name: "Stats" }));
+    await user.click(screen.getByRole("link", { name: "Job market" }));
 
     expect(await screen.findByRole("rowheader", { name: "Backend developer" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Stats" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Job market" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     expect(screen.getByText("8")).toBeInTheDocument();
     expect(screen.queryByLabelText(/ask a question about jobs/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /new conversation/i })).not.toBeInTheDocument();

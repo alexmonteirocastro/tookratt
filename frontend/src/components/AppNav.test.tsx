@@ -16,24 +16,29 @@ describe("AppNav", () => {
     cleanup();
   });
 
-  it("marks Chat as the current page and points Stats at /stats", () => {
+  it("marks Chat as the current page and points Job market at /market", () => {
     renderNav("/chat");
 
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(nav).toBeInTheDocument();
 
+    const market = screen.getByRole("link", { name: "Job market" });
     const chat = screen.getByRole("link", { name: "Chat" });
-    const stats = screen.getByRole("link", { name: "Stats" });
+    const links = screen.getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual(["Job market", "Chat"]);
+    expect(market).toHaveAttribute("href", "/market");
+    expect(market).not.toHaveAttribute("aria-current");
     expect(chat).toHaveAttribute("href", "/chat");
     expect(chat).toHaveAttribute("aria-current", "page");
-    expect(stats).toHaveAttribute("href", "/stats");
-    expect(stats).not.toHaveAttribute("aria-current");
   });
 
-  it("marks Stats as the current page", () => {
-    renderNav("/stats");
+  it("marks Job market as the current page", () => {
+    renderNav("/market");
 
-    expect(screen.getByRole("link", { name: "Stats" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Job market" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     expect(screen.getByRole("link", { name: "Chat" })).not.toHaveAttribute("aria-current");
   });
 });

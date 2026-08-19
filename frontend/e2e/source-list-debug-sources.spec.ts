@@ -15,7 +15,7 @@ test.describe("debug sources", { tag: "@visual" }, () => {
   test("source list debug variant", async ({ page }) => {
     await seedApiKey(page);
     await mockChat(page);
-    await openApp(page);
+    await openApp(page, "/chat");
     await submitQuestion(page, MOCK_CHAT_QUESTION);
 
     const sources = sourceListLocator(page, "Retrieved sources");
