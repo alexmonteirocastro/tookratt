@@ -15,7 +15,7 @@ test("chat flow shows loading, markdown answer, and sources", { tag: "@smoke" },
   const gate = createGate();
   await seedApiKey(page);
   await mockChat(page, { holdUntil: gate.promise });
-  await openApp(page);
+  await openApp(page, "/chat");
 
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
@@ -58,7 +58,7 @@ test("multi-turn follow-up sends session_id and keeps the scoped sources", { tag
       },
     });
   });
-  await openApp(page);
+  await openApp(page, "/chat");
 
   await submitQuestion(page, MOCK_CHAT_QUESTION);
   const firstAnswer = page.getByRole("article", { name: "Assistant reply" });
@@ -98,7 +98,7 @@ test("new conversation and a page refresh both omit session_id on the next ask",
       },
     });
   });
-  await openApp(page);
+  await openApp(page, "/chat");
 
   await submitQuestion(page, MOCK_CHAT_QUESTION);
   await expect(page.getByRole("article", { name: "Assistant reply" })).toBeVisible();

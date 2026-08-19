@@ -10,6 +10,7 @@ import {
   ApiHttpError,
   ApiNetworkError,
   ApiTimeoutError,
+  getJobsStats,
   postChat,
   setUnauthorizedHandler,
   verifyApiKey,
@@ -84,6 +85,7 @@ describe("postChat", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     setUnauthorizedHandler(null);
   });
 
@@ -267,6 +269,60 @@ describe("postChat", () => {
     } as Response);
 
     await expect(postChat({ question: "hello" })).rejects.toMatchObject({ status: 401 });
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("getJobsStats", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+    sessionStorage.clear();
+    setUnauthorizedHandler(null);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    setUnauthorizedHandler(null);
+  });
+
+  it("requests /jobs/stats for the given country", async () => {
+    const body = {
+      total_jobs: 8,
+      remote_jobs: 3,
+      paid_jobs: 7,
+      unpaid_jobs: 1,
+      jobs_per_role: { backend_developer: 5 },
+    };
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(body),
+    } as Response);
+
+    await expect(getJobsStats("DK")).resolves.toEqual(body);
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/jobs/stats?country=DK",
+      expect.objectContaining({
+        headers: expect.objectContaining({ Accept: "application/json" }),
+      }),
+    );
+  });
+
+  it("clears storage and invokes the unauthorized handler on 401", async () => {
+    setStoredApiKey("old-key");
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () =>
+        Promise.resolve({
+          detail: { message: "API key is not authorized.", code: "invalid_api_key" },
+        }),
+    } as Response);
+
+    await expect(getJobsStats("SE")).rejects.toBeInstanceOf(ApiHttpError);
+    expect(sessionStorage.getItem(API_KEY_STORAGE_KEY)).toBeNull();
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,40 +1,21 @@
+import { NavLink } from "react-router-dom";
 import styles from "./AppNav.module.css";
 
-export type AppNavView = "chat" | "stats";
-
-interface AppNavProps {
-  current: AppNavView;
-  chatHref?: string;
-  statsHref?: string;
-}
-
 /**
- * ALE-192: lightweight primary nav between /chat and /stats.
+ * ALE-192 / ALE-193: lightweight primary nav between /market and /chat.
+ * Job market is first (left) — it is also the `/` landing view.
  * Place under the wordmark (brand column), not between brand and header
  * actions, so lock / new-conversation controls stay un-squeezed on mobile.
- * ALE-193 should swap these anchors for React Router NavLinks.
  */
-export function AppNav({
-  current,
-  chatHref = "/",
-  statsHref = "/stats",
-}: AppNavProps) {
+export function AppNav() {
   return (
     <nav aria-label="Primary" className={styles.nav}>
-      <a
-        href={chatHref}
-        className={styles.link}
-        aria-current={current === "chat" ? "page" : undefined}
-      >
+      <NavLink to="/market" className={styles.link}>
+        Job market
+      </NavLink>
+      <NavLink to="/chat" className={styles.link} end>
         Chat
-      </a>
-      <a
-        href={statsHref}
-        className={styles.link}
-        aria-current={current === "stats" ? "page" : undefined}
-      >
-        Stats
-      </a>
+      </NavLink>
     </nav>
   );
 }

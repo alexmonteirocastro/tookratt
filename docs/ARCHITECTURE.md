@@ -159,7 +159,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) for the chat UI. Job stats are available via `GET /jobs/stats` on the API ([Swagger UI](http://localhost:8000/docs)).
+Open [http://localhost:5173](http://localhost:5173) for the job market (`/market`; `/` redirects here) and chat UI (`/chat`).
 
 ### REST API (local details)
 
@@ -173,7 +173,7 @@ Production chat SPA is hosted at `https://app.tookratt.com` ([ADR-0016](adr/0016
 
 ### Frontend (React chat UI)
 
-A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). The first turn omits `session_id`; later turns send the id from the previous `ChatResponse` so the backend can apply bounded, in-memory conversation history (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md)). `session_id` lives in React state alongside the message list — a refresh or "New conversation" starts a genuinely fresh session. Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
+A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). React Router (`react-router-dom`) serves `/market` (live `GET /jobs/stats` snapshot: country selector, KPI tiles, `jobs_per_role` bars — ALE-193 / [ADR-0005](adr/0005-visual-design-tokens-for-the-chat-ui.md) Decision 6) and `/chat` (the conversation). `/` redirects to `/market`. The first chat turn omits `session_id`; later turns send the id from the previous `ChatResponse` so the backend can apply bounded, in-memory conversation history (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md)). `session_id` lives in React state alongside the message list — a refresh or "New conversation" starts a genuinely fresh session. Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
 
 Production is the Cloudflare Pages project `tookratt` (`app.tookratt.com`). Build watch paths include `frontend/*` only. Pushes that do not touch `frontend/` do not rebuild the chat app (ALE-178).
 
@@ -244,7 +244,7 @@ Update snapshot baselines after intentional UI changes:
 npm run test:e2e:update
 ```
 
-Playwright covers a Chromium-only chat-flow smoke test (question → loading → markdown answer → sources, plus a mocked multi-turn `session_id` path) plus visual snapshots of the empty chat view, `SourceList` compact/debug variants, and the API-key auth modal ([ADR-0017](adr/0017-frontend-e2e-visual-testing.md)). Tests mock `/api/chat`, so they do not need a running backend. They run in CI via the `playwright` job in `.github/workflows/ci.yml`: the smoke test blocks merges; visual snapshots run only when the PR touches `frontend/` (always on `main`). The HTML report is Direct-Uploaded to the `tookratt-playwright-reports` Cloudflare Pages project (`pr-<n>.tookratt-playwright-reports.pages.dev` on PRs) and linked from a PR comment; PNG diffs are also uploaded as the `playwright-visual-diffs` artifact. Visual diffs do not fail the build (local vs CI font rendering can differ — ADR-0017 Decision 3). `test:e2e` starts the Vite dev server automatically when one is not already running.
+Playwright covers Chromium-only smoke tests for chat (question → loading → markdown answer → sources, plus a mocked multi-turn `session_id` path) and `/market` (`/` redirect, loading, country selector, `jobs_per_role`, error) plus visual snapshots of the empty chat view, job market, `SourceList` compact/debug variants, and the API-key auth modal ([ADR-0017](adr/0017-frontend-e2e-visual-testing.md)). Tests mock `/api/chat` and `/api/jobs/stats`, so they do not need a running backend. They run in CI via the `playwright` job in `.github/workflows/ci.yml`: the smoke test blocks merges; visual snapshots run only when the PR touches `frontend/` (always on `main`). The HTML report is Direct-Uploaded to the `tookratt-playwright-reports` Cloudflare Pages project (`pr-<n>.tookratt-playwright-reports.pages.dev` on PRs) and linked from a PR comment; PNG diffs are also uploaded as the `playwright-visual-diffs` artifact. Visual diffs do not fail the build (local vs CI font rendering can differ — ADR-0017 Decision 3). `test:e2e` starts the Vite dev server automatically when one is not already running.
 
 ### Marketing site (`marketing/`)
 

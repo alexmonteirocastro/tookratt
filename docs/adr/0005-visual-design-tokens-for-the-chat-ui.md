@@ -116,7 +116,7 @@ part of the live language (bubbles / bordered cream panels instead).
 
 ## Decision 6: Application to the stats dashboard (ALE-192)
 
-Bet 004 adds a second real view (`/stats`) without a new brand or token
+Bet 004 adds a second real view (`/market`) without a new brand or token
 system. The three new patterns apply Decision 1–4 in code; ALE-193 wires
 routing and `GET /jobs/stats`. Presentational components live in
 `frontend/src/components/` (`AppNav`, `CountrySelector`, `JobsPerRoleChart`)
@@ -139,12 +139,12 @@ Unselected: cream + ink + `--color-border`. Selected: `--color-teal` fill +
 `<input type="radio">` for arrow-key behaviour; visible label is the code,
 accessible name is the country (`Denmark`, …, `Europe`).
 
-**Nav — two text tabs under the wordmark.** `Chat` / `Stats` in Karla
-`--font-size-sm`. Active: `--font-weight-heading`, `--color-ink`, 2px
+**Nav — two text tabs under the wordmark.** `Job market` / `Chat` in Karla
+`--font-size-sm`, Job market first (left) as the landing view. Active: `--font-weight-heading`, `--color-ink`, 2px
 `--color-teal` underline. Inactive: `--color-text-secondary`. Not amber
 pills, not a sidebar. Place in a brand column *below* the wordmark/subtitle so
 header actions (new conversation, API key) stay un-squeezed. Chat-only chrome
-(memory banner, new-conversation control) stays off `/stats`.
+(memory banner, new-conversation control) stays off `/market`.
 
 **KPI tiles (handoff, not a fourth invention):** total / remote / paid /
 unpaid reuse the same cream `--color-surface` panel as the chart. Figure in
@@ -199,7 +199,7 @@ spot check.
 
 **Positive:** docs match `tokens.css`; rebrand is documented; Decision 1’s
 seam remains the change vehicle; production loading/error states are named as
-intentional extensions of the prototype. `/stats` (Decision 6) reuses the
+intentional extensions of the prototype. `/market` (Decision 6) reuses the
 same seam rather than introducing a second visual system.
 
 **Negative / accepted risks:** navy-on-amber contrast shortfall (see above);
@@ -209,7 +209,7 @@ opacity and on-navy surfaces) — still one file.
 ## Revisit triggers
 
 - Contrast nudge for navy-on-amber (see Contrast audit).
-- **Addressed in part (ALE-192):** the second view (`/stats`) stays on
+- **Addressed in part (ALE-192):** the second view (`/market`) stays on
   hand-rolled tokens — see Decision 6. Dark mode, or a third distinct
   surface, still revisits whether a design-system library beats this file
   (same trigger as ADR-0004 for routing).
