@@ -1,6 +1,6 @@
 import { type Page, type Route } from "@playwright/test";
 import { API_KEY_STORAGE_KEY } from "../src/api/authStorage";
-import type { ChatResponse } from "../src/api/types";
+import type { ChatResponse, JobOpenings } from "../src/api/types";
 
 export const MOCK_CHAT_QUESTION = "backend engineer in Denmark";
 
@@ -53,6 +53,39 @@ export async function mockChat(
       status: 200,
       contentType: "application/json",
       json: options?.response ?? MOCK_CHAT_RESPONSE,
+    });
+  });
+}
+
+export const MOCK_JOBS_STATS: JobOpenings = {
+  total_jobs: 8,
+  number_of_pages: 1,
+  jobs_per_page: 20,
+  remote_jobs: 3,
+  paid_jobs: 7,
+  unpaid_jobs: 1,
+  jobs_per_role: {
+    backend_developer: 5,
+    frontend_developer: 2,
+    legal: 0,
+  },
+};
+
+export async function mockJobsStats(
+  page: Page,
+  options?: { country?: string; response?: JobOpenings },
+): Promise<void> {
+  await page.route("**/api/jobs/stats**", async (route: Route) => {
+    const url = new URL(route.request().url());
+    const requested = url.searchParams.get("country");
+    if (options?.country && requested !== options.country) {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      json: options?.response ?? MOCK_JOBS_STATS,
     });
   });
 }

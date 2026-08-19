@@ -159,7 +159,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) for the chat UI. Job stats are available via `GET /jobs/stats` on the API ([Swagger UI](http://localhost:8000/docs)).
+Open [http://localhost:5173](http://localhost:5173) for the chat UI (`/chat`) and stats dashboard (`/stats`).
 
 ### REST API (local details)
 
@@ -173,7 +173,7 @@ Production chat SPA is hosted at `https://app.tookratt.com` ([ADR-0016](adr/0016
 
 ### Frontend (React chat UI)
 
-A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). The first turn omits `session_id`; later turns send the id from the previous `ChatResponse` so the backend can apply bounded, in-memory conversation history (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md)). `session_id` lives in React state alongside the message list — a refresh or "New conversation" starts a genuinely fresh session. Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
+A minimal React + Vite + TypeScript app in `frontend/` that calls `POST /chat` through a typed API client (`frontend/src/api/client.ts`). React Router (`react-router-dom`) serves `/chat` (the conversation) and `/stats` (live `GET /jobs/stats` snapshot: country selector, KPI tiles, `jobs_per_role` bars — ALE-193 / [ADR-0005](adr/0005-visual-design-tokens-for-the-chat-ui.md) Decision 6). `/` redirects to `/chat`. The first chat turn omits `session_id`; later turns send the id from the previous `ChatResponse` so the backend can apply bounded, in-memory conversation history (see [ADR-0008](adr/0008-multi-turn-conversation-memory.md)). `session_id` lives in React state alongside the message list — a refresh or "New conversation" starts a genuinely fresh session. Assistant answers render as markdown via `react-markdown` (bold, lists, paragraphs); user messages stay plain text.
 
 Production is the Cloudflare Pages project `tookratt` (`app.tookratt.com`). Build watch paths include `frontend/*` only. Pushes that do not touch `frontend/` do not rebuild the chat app (ALE-178).
 

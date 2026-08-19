@@ -1,5 +1,5 @@
 import { clearStoredApiKey, getStoredApiKey } from "./authStorage";
-import type { ChatRequest, ChatResponse } from "./types";
+import type { ChatRequest, ChatResponse, CountryCode, JobOpenings } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -209,4 +209,27 @@ export async function postChat(request: ChatRequest): Promise<ChatResponse> {
   }
 
   return (await response.json()) as ChatResponse;
+}
+
+export async function getJobsStats(country: CountryCode): Promise<JobOpenings> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/jobs/stats?country=${encodeURIComponent(country)}`,
+      { headers: buildAuthHeaders() },
+    );
+  } catch {
+    throw new ApiNetworkError();
+  }
+
+  if (response.status === 401) {
+    handleUnauthorizedResponse();
+    await readErrorResponse(response);
+  }
+
+  if (!response.ok) {
+    await readErrorResponse(response);
+  }
+
+  return (await response.json()) as JobOpenings;
 }
