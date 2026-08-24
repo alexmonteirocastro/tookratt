@@ -48,13 +48,61 @@ export function matchTurn(hit: JobSearchHit, percent: number, bullets: string[])
   ].join("\n");
 }
 
+function listingSetting(hit: JobSearchHit): string {
+  const place = hit.location || hit.country || "the Nordics";
+  return hit.remote ? `Remote (${place})` : `On-site in ${place}`;
+}
+
+function salaryNote(hit: JobSearchHit): string {
+  if (!hit.salary || hit.salary === "Competitive") {
+    return "";
+  }
+  return ` Band: ${hit.salary}.`;
+}
+
+function hasEquity(hit: JobSearchHit): boolean {
+  return hit.equity.toLowerCase() === "yes";
+}
+
 export function whyThisFits(hit: JobSearchHit, index: number): string[] {
   const title = hit.job_title ?? "this role";
   const company = hit.company ?? "this team";
-  const skill = PERSONA.skills[index % PERSONA.skills.length];
-  return [
-    `${PERSONA.seniority} ${PERSONA.yearsExperience}-year profile matches a ${title} seat.`,
-    `Your ${skill} experience is a direct fit for what ${company} is hiring.`,
-    `Target role (${PERSONA.targetRoles[0]}) lines up with this listing.`,
+  const skillA = PERSONA.skills[index % PERSONA.skills.length];
+  const skillB = PERSONA.skills[(index + 2) % PERSONA.skills.length];
+  const role = hit.job_role.replaceAll("_", " ");
+  const setting = listingSetting(hit);
+  const salary = salaryNote(hit);
+  const equity = hasEquity(hit)
+    ? "equity is on the table"
+    : "no equity listed";
+
+  const recipes: string[][] = [
+    [
+      `Founding-shaped ${title} seat — senior, ${PERSONA.yearsExperience} years is the seniority this hire is usually scoped for.`,
+      `${skillA} plus ${skillB} covers the full-stack brief ${company} is posting.`,
+      `${setting}, and ${equity}. That's the usual ${PERSONA.targetRoles[0].toLowerCase()} package.`,
+    ],
+    [
+      `A ${title} role is a core-product IC seat; ${PERSONA.yearsExperience} years is enough to own it without looking overqualified.`,
+      `${company}'s ${role} listing is a direct match for ${skillA} — the skill this candidate would lead with.`,
+      `${setting}.${salary} Neighbour to a ${PERSONA.targetRoles[0].toLowerCase()} search, not a title match.`,
+    ],
+    [
+      `${title} sits a half-step above senior. The backend-heavy ${PERSONA.yearsExperience}-year profile still looks ready, not stretched.`,
+      `${skillA} and ${skillB} are the platform/backend screen ${company} would run.`,
+      `${setting} — Nordic geography, ${equity}.`,
+    ],
+    [
+      `Infra-shaped ${title} work overlaps this persona's Kubernetes/AWS years more than a pure feature seat would.`,
+      `${company} is hiring a ${role}; ${skillA} is the strongest overlap from the staged profile.`,
+      `${setting}.${salary} ${hasEquity(hit) ? "Equity keeps it founding-adjacent." : "More of a senior IC hire than a founding stake."}`,
+    ],
+    [
+      `${title} is a narrower slice of a full-stack persona, but the level (senior, ${PERSONA.yearsExperience} years) still matches.`,
+      `${skillA} is the interview bar; ${skillB} is the depth ${company} would notice.`,
+      `${setting}.${salary} Not a founding title, same candidate pool.`,
+    ],
   ];
+
+  return recipes[index % recipes.length] ?? recipes[0];
 }

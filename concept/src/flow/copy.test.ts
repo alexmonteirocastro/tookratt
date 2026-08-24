@@ -56,4 +56,42 @@ describe("copy", () => {
     expect(text).toContain("Remote");
     expect(bullets).toHaveLength(3);
   });
+
+  it("varies why-bullets by listing details and match index", () => {
+    const founding = whyThisFits(hit, 0);
+    const staff = whyThisFits(
+      {
+        ...hit,
+        job_title: "Staff Backend Engineer",
+        company: "Harbor AI",
+        job_role: "backend_developer",
+        location: "Stockholm",
+        country: "Sweden",
+        remote: true,
+        equity: "No",
+      },
+      2,
+    );
+    const onsite = whyThisFits(
+      {
+        ...hit,
+        job_title: "Senior Full-Stack Engineer",
+        company: "Fjord Health",
+        job_role: "full_stack_developer",
+        location: "Aarhus",
+        remote: false,
+        salary: "65,000–80,000 EUR",
+        equity: "Yes",
+      },
+      1,
+    );
+
+    expect(founding.join("\n")).not.toBe(staff.join("\n"));
+    expect(founding.join("\n")).not.toBe(onsite.join("\n"));
+    expect(whyThisFits(hit, 0).join("\n")).not.toBe(whyThisFits(hit, 1).join("\n"));
+    expect(founding[2]).toMatch(/Remote \(Copenhagen\)/i);
+    expect(onsite[2]).toMatch(/on-site in aarhus/i);
+    expect(onsite[2]).toContain("65,000–80,000 EUR");
+    expect(staff[2]).toMatch(/no equity listed/i);
+  });
 });
