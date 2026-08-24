@@ -1,0 +1,88 @@
+.message {
+  max-width: 70%;
+  padding: var(--space-4) var(--space-bubble-pad-x);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
+
+.user {
+  align-self: flex-end;
+  background: var(--color-bubble-user);
+  color: var(--color-ink);
+  border-radius: var(--radius-bubble-user);
+}
+
+.assistant {
+  align-self: flex-start;
+  background: var(--color-bubble-assistant);
+  color: var(--color-bubble-assistant-text);
+  border-radius: var(--radius-bubble-assistant);
+}
+
+.error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-bubble-assistant);
+}
+
+.content {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.contentMarkdown {
+  margin: 0;
+  word-break: break-word;
+}
+
+.contentMarkdown :global(p) {
+  margin: 0;
+}
+
+.contentMarkdown :global(p + p) {
+  margin-top: var(--space-3);
+}
+
+.contentMarkdown :global(strong) {
+  font-weight: 600;
+}
+
+.contentMarkdown :global(ul),
+.contentMarkdown :global(ol) {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-5);
+}
+
+.contentMarkdown :global(li + li) {
+  margin-top: var(--space-2);
+}
+
+.contentMarkdown :global(a) {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.contentMarkdown :global(a:hover) {
+  color: var(--color-accent-hover);
+}
+
+.badge {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-bubble-assistant-text);
+  background: var(--color-on-navy-soft);
+  border: 1px solid var(--color-on-navy-border);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  opacity: 0.9;
+}
+
+.error .badge {
+  color: var(--color-error);
+  background: transparent;
+  border-color: var(--color-error-border);
+}
