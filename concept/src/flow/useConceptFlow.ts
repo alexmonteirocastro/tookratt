@@ -49,8 +49,8 @@ export function useConceptFlow() {
   }, []);
 
   // Snapshot load on mount. start() sets state after the async resolve.
-  // oxlint-disable-next-line react/set-state-in-effect
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect
     start();
   }, [start]);
 
