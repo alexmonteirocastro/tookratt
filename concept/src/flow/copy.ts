@@ -14,7 +14,7 @@ export function insightsIntro(stats: JobOpenings): string {
 
 export function profileReveal(): string {
   return [
-    "Here's the profile I'm treating as yours for this preview (**not parsed from the file**):",
+    "Here's the profile I'm treating as yours for this preview:",
     "",
     `- **Seniority:** ${PERSONA.seniority}`,
     `- **Experience:** ${PERSONA.yearsExperience} years`,

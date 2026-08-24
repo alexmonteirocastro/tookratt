@@ -36,10 +36,10 @@ describe("copy", () => {
     expect(text).toMatch(/illustrative/i);
   });
 
-  it("states the profile is not parsed from the file", () => {
-    expect(profileReveal()).toMatch(/not parsed from the file/i);
+  it("reveals the staged persona after upload", () => {
     expect(profileReveal()).toContain("Python");
     expect(profileReveal()).toContain("Founding engineer");
+    expect(profileReveal()).not.toMatch(/not parsed from the file/i);
   });
 
   it("explains empty live search instead of stalling", () => {

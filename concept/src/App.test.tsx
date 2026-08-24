@@ -54,7 +54,7 @@ describe("snapshot conversation", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ANALYZING_MS);
     });
-    expect(screen.getByText(/not parsed from the file/i)).toBeInTheDocument();
+    expect(screen.getByText(/Seniority/i)).toBeInTheDocument();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(MATCH_STAGGER_MS * 5);
@@ -94,7 +94,7 @@ describe("empty live search", () => {
       await vi.advanceTimersByTimeAsync(ANALYZING_MS);
     });
 
-    expect(screen.getByText(/not parsed from the file/i)).toBeInTheDocument();
+    expect(screen.getByText(/Seniority/i)).toBeInTheDocument();
     expect(screen.getByText(/no live matches right now/i)).toBeInTheDocument();
     expect(screen.queryByText(/Finding matching roles/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/94% match/i)).not.toBeInTheDocument();
