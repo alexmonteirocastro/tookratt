@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadSnapshot } from "../api/loadSnapshot";
+import { loadDemoData } from "../api/loadDemoData";
 import type { DemoPayload, JobSearchHit } from "../api/types";
 import type { DisplayMessage } from "../components/ChatMessage";
 import { ANALYZING_MS, MATCH_PERCENTS, MATCH_STAGGER_MS } from "../data/persona";
@@ -35,7 +35,7 @@ export function useConceptFlow() {
     setMessages([]);
     setPendingHits([]);
 
-    void loadSnapshot().then((payload) => {
+    void loadDemoData().then((payload) => {
       if (runId.current !== id) {
         return;
       }

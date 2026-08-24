@@ -8,6 +8,7 @@ Töökratt ingests job listings from [The Hub](https://thehub.io/) via their pub
 
 - **Marketing site:** https://tookratt.com (Cloudflare Pages — `marketing/`)
 - **App:** https://app.tookratt.com (Cloudflare Pages — `frontend/`)
+- **Concept preview:** `concept/` (TechBBQ stub; domain lands with ALE-195)
 - **API:** https://hubster-alpi.onrender.com
 - Hosting topology: apex marketing + `app.` chat per [ADR-0016](docs/adr/0016-marketing-site-topology-and-capture.md); free-tier stack rationale in [ADR-0013](docs/adr/0013-deployment-strategy.md).
 
@@ -87,6 +88,7 @@ Workflow guide (how to read `separation_margin`, judgments, sweeps, etc.):
 - [CONTRIBUTING.md](CONTRIBUTING.md) — code-quality tooling and dev checks
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — environment variables, ingestion, local development, project layout, data model, Hub API client, and testing
 - [marketing/README.md](marketing/README.md) — apex landing page (Cloudflare Pages)
+- [concept/README.md](concept/README.md) — TechBBQ conversational concept stub (ALE-196)
 - [workers/capture/README.md](workers/capture/README.md) — waitlist/contact capture Worker
 - [docs/PRODUCT_VISION.md](docs/PRODUCT_VISION.md) — problem, roadmap, and trust bar for `/chat`
 - [docs/ops/grafana-cloud-chat-observability.md](docs/ops/grafana-cloud-chat-observability.md) — Grafana Cloud `/chat` dashboard (ADR-0015)

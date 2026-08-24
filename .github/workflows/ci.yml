@@ -355,6 +355,47 @@ jobs:
         working-directory: marketing
         run: npm run build
 
+  concept-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-concept
+      cancel-in-progress: true
+    steps:
+      - name: Skipping checks (docs-only PR)
+        if: inputs.skip_heavy_tests
+        run: echo "Skipping checks (docs-only PR)"
+
+      - uses: actions/checkout@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+
+      - uses: actions/setup-node@v4
+        if: ${{ !inputs.skip_heavy_tests }}
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: concept/package-lock.json
+
+      - name: Install dependencies
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: concept
+        run: npm ci
+
+      - name: Run concept lint
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: concept
+        run: npm run lint
+
+      - name: Run concept tests
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: concept
+        run: npm test
+
+      - name: Run concept build
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: concept
+        run: npm run build
+
   capture-worker-test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
