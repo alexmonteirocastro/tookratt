@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { JobOpenings, JobSearchHit } from "../api/types";
-import { insightsIntro, matchTurn, profileReveal, whyThisFits } from "./copy";
+import { insightsIntro, matchTurn, noMatchesTurn, profileReveal, whyThisFits } from "./copy";
 
 const stats: JobOpenings = {
   total_jobs: 487,
@@ -40,6 +40,11 @@ describe("copy", () => {
     expect(profileReveal()).toMatch(/not parsed from the file/i);
     expect(profileReveal()).toContain("Python");
     expect(profileReveal()).toContain("Founding engineer");
+  });
+
+  it("explains empty live search instead of stalling", () => {
+    expect(noMatchesTurn()).toMatch(/no live matches right now/i);
+    expect(noMatchesTurn()).toMatch(/replay/i);
   });
 
   it("renders a match turn with percent, listing link, and canned why-bullets", () => {

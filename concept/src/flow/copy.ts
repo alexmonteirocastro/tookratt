@@ -24,6 +24,14 @@ export function profileReveal(): string {
   ].join("\n");
 }
 
+export function noMatchesTurn(): string {
+  return [
+    "No live matches right now for that target role.",
+    "",
+    "Replay the demo to try again.",
+  ].join("\n");
+}
+
 export function matchTurn(hit: JobSearchHit, percent: number, bullets: string[]): string {
   const title = hit.job_title ?? hit.job_role;
   const company = hit.company ?? "a Nordic startup";

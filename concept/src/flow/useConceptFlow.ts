@@ -4,7 +4,7 @@ import type { DemoPayload, JobSearchHit } from "../api/types";
 import type { DisplayMessage } from "../components/ChatMessage";
 import { ANALYZING_MS, MATCH_PERCENTS, MATCH_STAGGER_MS } from "../data/persona";
 import { createMessageId } from "../utils/id";
-import { insightsIntro, matchTurn, profileReveal, whyThisFits } from "./copy";
+import { insightsIntro, matchTurn, noMatchesTurn, profileReveal, whyThisFits } from "./copy";
 
 export type FlowPhase = "loading" | "awaiting-cv" | "analyzing" | "matching" | "done";
 
@@ -67,15 +67,35 @@ export function useConceptFlow() {
         if (runId.current !== id) {
           return;
         }
-        setMessages((prev) => [...prev, assistantMessage(profileReveal())]);
+        const next = [assistantMessage(profileReveal())];
+        if (pendingHits.length === 0) {
+          next.push(assistantMessage(noMatchesTurn()));
+          setMessages((prev) => [...prev, ...next]);
+          setPhase("done");
+          return;
+        }
+        setMessages((prev) => [...prev, ...next]);
         setPhase("matching");
       }, ANALYZING_MS);
     },
-    [phase],
+    [phase, pendingHits],
   );
 
   useEffect(() => {
-    if (phase !== "matching" || pendingHits.length === 0) {
+    if (phase !== "matching") {
+      return;
+    }
+    if (pendingHits.length === 0) {
+      // Empty live search: finish instead of sitting on "Finding matching roles…".
+      // oxlint-disable-next-line react/set-state-in-effect
+      setMessages((prev) => {
+        const text = noMatchesTurn();
+        if (prev.some((message) => message.content === text)) {
+          return prev;
+        }
+        return [...prev, assistantMessage(text)];
+      });
+      setPhase("done");
       return;
     }
 

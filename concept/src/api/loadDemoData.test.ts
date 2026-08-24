@@ -64,6 +64,24 @@ describe("loadDemoData", () => {
     expect(headers.Authorization).toBe("Bearer demo-key");
   });
 
+  it("returns empty live search results instead of falling back to the snapshot", async () => {
+    const emptySearch: JobSearchResponse = { query: "founding engineer", results: [] };
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/jobs/stats")) {
+        return new Response(JSON.stringify(liveStats), { status: 200 });
+      }
+      if (url.includes("/jobs/search")) {
+        return new Response(JSON.stringify(emptySearch), { status: 200 });
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    const payload = await loadDemoData(options({ fetchImpl }));
+    expect(payload.search.results).toEqual([]);
+    expect(payload.stats.total_jobs).toBe(12);
+  });
+
   it("falls back to the snapshot when a live call fails", async () => {
     const fetchImpl = vi.fn(async () => new Response("nope", { status: 503 }));
     const payload = await loadDemoData(options({ fetchImpl }));
