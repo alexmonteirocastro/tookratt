@@ -1,5 +1,6 @@
 import type { JobOpenings, JobSearchHit } from "../api/types";
 import { PERSONA } from "../data/persona";
+import { formatRoleLabel } from "../utils/statsLabels";
 
 export function insightsIntro(stats: JobOpenings): string {
   return [
@@ -69,7 +70,7 @@ export function whyThisFits(hit: JobSearchHit, index: number): string[] {
   const company = hit.company ?? "this team";
   const skillA = PERSONA.skills[index % PERSONA.skills.length];
   const skillB = PERSONA.skills[(index + 2) % PERSONA.skills.length];
-  const role = hit.job_role.replaceAll("_", " ");
+  const role = formatRoleLabel(hit.job_role);
   const setting = listingSetting(hit);
   const salary = salaryNote(hit);
   const equity = hasEquity(hit)
@@ -85,7 +86,7 @@ export function whyThisFits(hit: JobSearchHit, index: number): string[] {
     [
       `A ${title} role is a core-product IC seat; ${PERSONA.yearsExperience} years is enough to own it without looking overqualified.`,
       `${company}'s ${role} listing is a direct match for ${skillA} — the skill this candidate would lead with.`,
-      `${setting}.${salary} Neighbour to a ${PERSONA.targetRoles[0].toLowerCase()} search, not a title match.`,
+      `${setting}.${salary} Broadens the search past the exact title, same seniority band.`,
     ],
     [
       `${title} sits a half-step above senior. The backend-heavy ${PERSONA.yearsExperience}-year profile still looks ready, not stretched.`,
@@ -93,14 +94,14 @@ export function whyThisFits(hit: JobSearchHit, index: number): string[] {
       `${setting} — Nordic geography, ${equity}.`,
     ],
     [
-      `Infra-shaped ${title} work overlaps this persona's Kubernetes/AWS years more than a pure feature seat would.`,
-      `${company} is hiring a ${role}; ${skillA} is the strongest overlap from the staged profile.`,
+      `Infra-shaped ${title} work overlaps your Kubernetes/AWS years more than a pure feature seat would.`,
+      `${company} is hiring for ${role}; ${skillA} is the strongest overlap from your profile.`,
       `${setting}.${salary} ${hasEquity(hit) ? "Equity keeps it founding-adjacent." : "More of a senior IC hire than a founding stake."}`,
     ],
     [
-      `${title} is a narrower slice of a full-stack persona, but the level (senior, ${PERSONA.yearsExperience} years) still matches.`,
+      `${title} is a frontend-shaped take on the same senior full-stack brief; the level (${PERSONA.yearsExperience} years) still matches.`,
       `${skillA} is the interview bar; ${skillB} is the depth ${company} would notice.`,
-      `${setting}.${salary} Not a founding title, same candidate pool.`,
+      `${setting}.${salary} Same seniority band, same candidate pool.`,
     ],
   ];
 

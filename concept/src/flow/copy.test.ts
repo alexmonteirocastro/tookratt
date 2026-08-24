@@ -92,6 +92,36 @@ describe("copy", () => {
     expect(founding[2]).toMatch(/Remote \(Copenhagen\)/i);
     expect(onsite[2]).toMatch(/on-site in aarhus/i);
     expect(onsite[2]).toContain("65,000–80,000 EUR");
+    expect(onsite[2]).toMatch(/same seniority band/i);
+    expect(onsite.join("\n")).not.toMatch(/not a title match/i);
     expect(staff[2]).toMatch(/no equity listed/i);
+
+    const devops = whyThisFits(
+      {
+        ...hit,
+        job_title: "Platform Engineer",
+        company: "Baltic Cloud",
+        job_role: "devops",
+      },
+      3,
+    );
+    expect(devops.join("\n")).toContain("hiring for DevOps");
+    expect(devops.join("\n")).toContain("your profile");
+    expect(devops.join("\n")).not.toMatch(/staged profile/i);
+    expect(devops.join("\n")).not.toMatch(/\ba devops\b/i);
+
+    const frontend = whyThisFits(
+      {
+        ...hit,
+        job_title: "Senior Frontend Engineer",
+        company: "Lumen Pay",
+        job_role: "frontend_developer",
+        location: "Helsinki",
+        remote: false,
+      },
+      4,
+    );
+    expect(frontend.join("\n")).toMatch(/same candidate pool/i);
+    expect(frontend.join("\n")).not.toMatch(/not a founding title/i);
   });
 });
