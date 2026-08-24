@@ -1,0 +1,111 @@
+{
+  "stats": {
+    "total_jobs": 487,
+    "number_of_pages": 25,
+    "jobs_per_page": 20,
+    "remote_jobs": 142,
+    "paid_jobs": 451,
+    "unpaid_jobs": 36,
+    "jobs_per_role": {
+      "cxo": 8,
+      "human_resources": 12,
+      "finance": 18,
+      "legal": 6,
+      "marketing": 31,
+      "sales": 44,
+      "customer_service": 9,
+      "customer_success": 14,
+      "analyst": 11,
+      "business_development": 22,
+      "operations": 19,
+      "product_management": 27,
+      "project_management": 10,
+      "design": 16,
+      "ux_ui_designer": 13,
+      "engineer": 41,
+      "full_stack_developer": 38,
+      "frontend_developer": 29,
+      "backend_developer": 47,
+      "mobile_development": 15,
+      "quality_assurance": 8,
+      "devops": 21,
+      "data_science": 17,
+      "other": 11
+    }
+  },
+  "search": {
+    "query": "founding engineer",
+    "results": [
+      {
+        "score": 0.91,
+        "job_id": "concept-job-1",
+        "job_url": "https://thehub.io/jobs/concept-job-1",
+        "job_title": "Founding Engineer",
+        "company": "Nordic Ledger",
+        "job_role": "full_stack_developer",
+        "country": "Denmark",
+        "location": "Copenhagen",
+        "remote": true,
+        "salary_type": "paid",
+        "salary": "Competitive",
+        "equity": "Yes"
+      },
+      {
+        "score": 0.87,
+        "job_id": "concept-job-2",
+        "job_url": "https://thehub.io/jobs/concept-job-2",
+        "job_title": "Senior Full-Stack Engineer",
+        "company": "Fjord Health",
+        "job_role": "full_stack_developer",
+        "country": "Denmark",
+        "location": "Aarhus",
+        "remote": false,
+        "salary_type": "paid",
+        "salary": "65,000–80,000 EUR",
+        "equity": "Yes"
+      },
+      {
+        "score": 0.84,
+        "job_id": "concept-job-3",
+        "job_url": "https://thehub.io/jobs/concept-job-3",
+        "job_title": "Staff Backend Engineer",
+        "company": "Harbor AI",
+        "job_role": "backend_developer",
+        "country": "Sweden",
+        "location": "Stockholm",
+        "remote": true,
+        "salary_type": "paid",
+        "salary": "Competitive",
+        "equity": "No"
+      },
+      {
+        "score": 0.81,
+        "job_id": "concept-job-4",
+        "job_url": "https://thehub.io/jobs/concept-job-4",
+        "job_title": "Platform Engineer",
+        "company": "Baltic Cloud",
+        "job_role": "devops",
+        "country": "Denmark",
+        "location": "Copenhagen",
+        "remote": true,
+        "salary_type": "paid",
+        "salary": "Competitive",
+        "equity": "Yes"
+      },
+      {
+        "score": 0.78,
+        "job_id": "concept-job-5",
+        "job_url": "https://thehub.io/jobs/concept-job-5",
+        "job_title": "Senior Frontend Engineer",
+        "company": "Lumen Pay",
+        "job_role": "frontend_developer",
+        "country": "Finland",
+        "location": "Helsinki",
+        "remote": false,
+        "salary_type": "paid",
+        "salary": "Competitive",
+        "equity": "Yes"
+      }
+    ]
+  }
+}

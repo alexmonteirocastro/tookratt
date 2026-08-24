@@ -1,0 +1,26 @@
+.bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-input-gap);
+  padding: var(--space-input-pad-y) var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  flex-shrink: 0;
+}
+
+.label {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-ink);
+}
+
+.input {
+  font-size: var(--font-size-sm);
+  color: var(--color-ink);
+}
+
+.input:disabled {
+  opacity: 0.6;
+}
