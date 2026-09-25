@@ -104,7 +104,7 @@ test("new conversation and a page refresh both omit session_id on the next ask",
   await expect(page.getByRole("article", { name: "Assistant reply" })).toBeVisible();
 
   await page.getByRole("button", { name: /new conversation/i }).click();
-  await expect(page.getByText(/ask about nordic and european startup jobs/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ask about the market." })).toBeVisible();
 
   await submitQuestion(page, "frontend roles in Sweden");
   await expect(page.getByRole("article", { name: "Your message" })).toHaveText(

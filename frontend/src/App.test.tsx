@@ -100,6 +100,10 @@ describe("App conversation memory", () => {
     expect(banner).toHaveTextContent(
       /resets when you refresh or start a new conversation/i,
     );
+    expect(banner).toHaveTextContent(/refreshing starts over/i);
+    expect(
+      screen.getByText("Job market research for Nordic and European startups"),
+    ).toBeInTheDocument();
     expect(
       screen.queryByText(/doesn't remember previous messages/i),
     ).not.toBeInTheDocument();
@@ -130,7 +134,7 @@ describe("App conversation memory", () => {
     expect(screen.queryByText(chatSuccessBody.answer)).not.toBeInTheDocument();
     expect(screen.queryByText("any others?")).not.toBeInTheDocument();
     expect(
-      screen.getByText(/ask about nordic and european startup jobs/i),
+      screen.getByRole("heading", { name: "Ask about the market." }),
     ).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/ask a question about jobs/i), "fresh start");

@@ -8,6 +8,25 @@ import styles from "./ChatInput.module.css";
 describe("ChatInput", () => {
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("uses the desktop placeholder by default", () => {
+    render(<ChatInput onSubmit={vi.fn()} disabled={false} />);
+
+    expect(screen.getByPlaceholderText("Ask about roles, skills or countries")).toBeInTheDocument();
+  });
+
+  it("uses the short placeholder on a narrow viewport", async () => {
+    vi.stubGlobal("matchMedia", () => ({
+      matches: true,
+      media: "(max-width: 640px)",
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    render(<ChatInput onSubmit={vi.fn()} disabled={false} />);
+
+    expect(await screen.findByPlaceholderText("Ask about the market")).toBeInTheDocument();
   });
 
   it("renders a live character counter at 0/max by default", () => {

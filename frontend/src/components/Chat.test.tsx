@@ -102,6 +102,18 @@ describe("Chat", () => {
     return user;
   }
 
+  it("prompts for market research when the conversation is empty", () => {
+    render(<Chat />);
+
+    expect(screen.getByRole("heading", { name: "Ask about the market." })).toBeInTheDocument();
+    expect(
+      screen.getByText(/which skills come up most for backend roles in denmark/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/how many remote frontend roles are open in sweden/i),
+    ).toBeInTheDocument();
+  });
+
   it("renders user and assistant messages after a successful request", async () => {
     mockPostChat.mockResolvedValue(successResponse);
     const user = userEvent.setup();

@@ -80,9 +80,10 @@ export function Chat() {
         {showEmpty && (
           <div className={styles.empty}>
             <Mark className={styles.emptyMark} />
+            <h2 className={styles.emptyHeading}>Ask about the market.</h2>
             <p className={styles.emptyText}>
-              Ask about Nordic and European startup jobs — for example, &ldquo;backend engineer
-              in Denmark&rdquo; or &ldquo;remote frontend roles in Sweden&rdquo;.
+              For example, &ldquo;which skills come up most for backend roles in Denmark?&rdquo; or
+              &ldquo;how many remote frontend roles are open in Sweden?&rdquo;
             </p>
           </div>
         )}
