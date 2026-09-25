@@ -97,7 +97,9 @@ describe("App conversation memory", () => {
     const banner = screen.getByRole("note");
     expect(banner).toHaveTextContent(/remembers this conversation/i);
     expect(banner).toHaveTextContent(new RegExp(`last ${CHAT_HISTORY_MAX_TURNS} turns`, "i"));
-    expect(banner).toHaveTextContent(/resets if you refresh or start a new conversation/i);
+    expect(banner).toHaveTextContent(
+      /resets when you refresh or start a new conversation/i,
+    );
     expect(
       screen.queryByText(/doesn't remember previous messages/i),
     ).not.toBeInTheDocument();

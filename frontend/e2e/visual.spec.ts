@@ -54,4 +54,25 @@ test.describe("visual snapshots", { tag: "@visual" }, () => {
     await expect(page.getByRole("rowheader", { name: "Backend developer" })).toBeVisible();
     await expect(page).toHaveScreenshot("job-market.png", { fullPage: true });
   });
+
+  test("job market mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await seedApiKey(page);
+    await mockJobsStats(page);
+    await openApp(page, "/market");
+
+    await expect(page.getByRole("rowheader", { name: "Backend developer" })).toBeVisible();
+    await expect(page).toHaveScreenshot("job-market-mobile.png", { fullPage: true });
+  });
+
+  test("empty chat mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await seedApiKey(page);
+    await openApp(page, "/chat");
+
+    await expect(
+      page.getByText(/ask about nordic and european startup jobs/i),
+    ).toBeVisible();
+    await expect(page).toHaveScreenshot("chat-empty-mobile.png", { fullPage: true });
+  });
 });

@@ -1,0 +1,15 @@
+.mark {
+  display: block;
+}
+
+.connector {
+  stroke: var(--color-signal);
+}
+
+.dot {
+  fill: var(--color-signal);
+}
+
+.ring {
+  stroke: var(--color-accent);
+}

@@ -29,10 +29,9 @@
   padding: var(--space-6) var(--space-4);
 }
 
-.emptyMascot {
+.emptyMark {
   height: var(--size-mark-empty);
   width: auto;
-  opacity: 0.9;
 }
 
 .emptyText {

@@ -40,7 +40,8 @@ describe("SourceList", () => {
     expect(jobLink).toHaveAttribute("href", "https://thehub.io/jobs/job-1");
     expect(screen.getByText("0.91")).toBeInTheDocument();
     expect(screen.getByText(/^sources$/i)).toBeInTheDocument();
-    expect(screen.queryByText(/acme/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Acme · Copenhagen")).toBeInTheDocument();
+    expect(screen.queryByText(/acme · copenhagen · denmark/i)).not.toBeInTheDocument();
   });
 
   it("renders full debug cards when variant is debug", () => {

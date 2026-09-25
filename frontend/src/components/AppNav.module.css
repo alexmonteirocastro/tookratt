@@ -33,3 +33,19 @@
   font-weight: var(--font-weight-heading);
   border-bottom-color: var(--color-signal);
 }
+
+@media (max-width: 640px) {
+  .nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    gap: 0;
+  }
+
+  .link {
+    flex: 1;
+    text-align: center;
+    padding-bottom: var(--space-2);
+    border-bottom-width: 3px;
+  }
+}

@@ -3,6 +3,7 @@ import { ApiHttpError, ApiNetworkError, postChat } from "../api/client";
 import type { ChatRequest } from "../api/types";
 import { createMessageId } from "../utils/id";
 import { ChatInput } from "./ChatInput";
+import { Mark } from "./Mark";
 import { ChatMessage, type DisplayMessage } from "./ChatMessage";
 import { LoadingIndicator } from "./LoadingIndicator";
 import styles from "./Chat.module.css";
@@ -78,13 +79,7 @@ export function Chat() {
       <div className={styles.messages} ref={listRef} aria-live="polite">
         {showEmpty && (
           <div className={styles.empty}>
-            <img
-              className={styles.emptyMascot}
-              src="/mascot.png"
-              alt=""
-              width={120}
-              height={120}
-            />
+            <Mark className={styles.emptyMark} />
             <p className={styles.emptyText}>
               Ask about Nordic and European startup jobs — for example, &ldquo;backend engineer
               in Denmark&rdquo; or &ldquo;remote frontend roles in Sweden&rdquo;.

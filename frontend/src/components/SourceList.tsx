@@ -88,6 +88,11 @@ export function SourceList({ sources, variant }: SourceListProps) {
               {scoreLabel !== null && (
                 <span className={styles.chipScore}>{scoreLabel}</span>
               )}
+              {(source.company || source.location) && (
+                <p className={styles.chipMeta}>
+                  {[source.company, source.location].filter(Boolean).join(" · ")}
+                </p>
+              )}
             </li>
           );
         })}

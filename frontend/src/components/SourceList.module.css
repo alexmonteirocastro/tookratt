@@ -104,3 +104,28 @@
   color: var(--color-on-assistant-muted);
   white-space: nowrap;
 }
+
+.chipMeta {
+  display: none;
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-on-assistant-muted);
+}
+
+@media (max-width: 640px) {
+  .chipList {
+    flex-direction: column;
+  }
+
+  .chip {
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .chipMeta {
+    display: block;
+    flex-basis: 100%;
+  }
+}

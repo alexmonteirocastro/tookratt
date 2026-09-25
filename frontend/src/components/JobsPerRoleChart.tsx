@@ -7,8 +7,7 @@ interface JobsPerRoleChartProps {
 
 /**
  * ALE-192 Decision 1 — CSS horizontal bars, no chart library.
- * Teal fill on a parchment track; amber is reserved for the count (text on
- * cream, not text on amber). Sort descending; drop zero-count roles.
+ * Baltic Blue fill on a Paper track; the count sits beside the bar. Sort descending; drop zero-count roles.
  */
 export function JobsPerRoleChart({ jobsPerRole }: JobsPerRoleChartProps) {
   const rows = rolesByCountDescending(jobsPerRole);
@@ -20,33 +19,41 @@ export function JobsPerRoleChart({ jobsPerRole }: JobsPerRoleChartProps) {
       {rows.length === 0 ? (
         <p className={styles.empty}>No roles to show for this country.</p>
       ) : (
-        <table className={styles.table}>
+        <table className={styles.table} role="table">
           <colgroup>
             <col className={styles.labelCol} />
             <col />
             <col className={styles.countCol} />
           </colgroup>
-          <thead className={styles.srOnly}>
-            <tr>
-              <th scope="col">Role</th>
-              <th scope="col">Distribution</th>
-              <th scope="col">Jobs</th>
+          <thead className={styles.srOnly} role="rowgroup">
+            <tr role="row">
+              <th scope="col" role="columnheader">
+                Role
+              </th>
+              <th scope="col" role="columnheader">
+                Distribution
+              </th>
+              <th scope="col" role="columnheader">
+                Jobs
+              </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {rows.map((row) => {
               const widthPercent = maxCount === 0 ? 0 : (row.count / maxCount) * 100;
               return (
-                <tr key={row.key} className={styles.row}>
-                  <th scope="row" className={styles.label}>
+                <tr key={row.key} className={styles.row} role="row">
+                  <th scope="row" className={styles.label} role="rowheader">
                     {row.label}
                   </th>
-                  <td className={styles.trackCell}>
+                  <td className={styles.trackCell} role="cell">
                     <div className={styles.track} aria-hidden="true">
                       <div className={styles.bar} style={{ width: `${widthPercent}%` }} />
                     </div>
                   </td>
-                  <td className={styles.count}>{row.count}</td>
+                  <td className={styles.count} role="cell">
+                    {row.count}
+                  </td>
                 </tr>
               );
             })}
