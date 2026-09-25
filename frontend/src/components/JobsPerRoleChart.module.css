@@ -97,3 +97,43 @@
   white-space: nowrap;
   border: 0;
 }
+
+@media (max-width: 640px) {
+  .labelCol,
+  .countCol {
+    width: auto;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+  }
+
+  .label,
+  .count {
+    display: block;
+    grid-row: 1;
+    padding-top: var(--space-3);
+  }
+
+  .label {
+    grid-column: 1;
+  }
+
+  .count {
+    grid-column: 2;
+    align-self: end;
+  }
+
+  .row:first-child .label,
+  .row:first-child .count {
+    padding-top: 0;
+  }
+
+  .trackCell {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding: var(--space-2) 0 0;
+  }
+}

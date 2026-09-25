@@ -6,6 +6,7 @@ import { ApiKeyModal } from "./components/ApiKeyModal";
 import { AppNav } from "./components/AppNav";
 import { Chat } from "./components/Chat";
 import { LockIcon } from "./components/LockIcon";
+import { Mark } from "./components/Mark";
 import { NewConversationIcon } from "./components/NewConversationIcon";
 import { Stats } from "./components/Stats";
 import styles from "./App.module.css";
@@ -40,13 +41,7 @@ export default function App() {
       <header className={styles.header}>
         <div className={styles.brandColumn}>
           <div className={styles.brand}>
-            <img
-              className={styles.mascot}
-              src="/mascot.png"
-              alt="Töökratt"
-              width={56}
-              height={56}
-            />
+            <Mark className={styles.mark} title="Töökratt" />
             <div className={styles.brandText}>
               <h1 className={styles.title}>töökratt</h1>
               <p className={styles.subtitle}>
@@ -97,9 +92,14 @@ export default function App() {
             <path d="M12 8h.01" />
           </svg>
           <p className={styles.bannerText}>
-            Töökratt remembers this conversation — follow-ups like &ldquo;any others?&rdquo; work.
-            Memory covers the last {CHAT_HISTORY_MAX_TURNS} turns, stays in this tab, and resets
-            if you refresh or start a new conversation.
+            <span className={styles.bannerFull}>
+              Töökratt remembers this conversation, so follow-ups like &ldquo;any others?&rdquo; work.
+              Memory covers the last {CHAT_HISTORY_MAX_TURNS} turns, stays in this tab, and resets
+              when you refresh or start a new conversation.
+            </span>
+            <span className={styles.bannerShort}>
+              Remembers the last {CHAT_HISTORY_MAX_TURNS} turns in this tab. Refreshing starts over.
+            </span>
           </p>
         </div>
       ) : null}

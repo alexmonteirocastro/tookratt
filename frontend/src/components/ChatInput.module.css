@@ -72,6 +72,16 @@
   outline-offset: 2px;
 }
 
+@media (max-width: 640px) {
+  .input {
+    font-size: 1rem;
+  }
+
+  .button {
+    min-height: 44px;
+  }
+}
+
 .srOnly {
   position: absolute;
   width: 1px;

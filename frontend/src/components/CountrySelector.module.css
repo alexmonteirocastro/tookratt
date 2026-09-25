@@ -69,6 +69,18 @@
   border: 0;
 }
 
+@media (max-width: 640px) {
+  .group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .option {
+    height: 44px;
+    padding: 0 var(--space-2);
+  }
+}
+
 .code {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-heading);

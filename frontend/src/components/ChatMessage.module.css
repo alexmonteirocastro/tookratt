@@ -27,6 +27,17 @@
   border-radius: var(--radius-bubble-assistant);
 }
 
+@media (max-width: 640px) {
+  .user {
+    max-width: 85%;
+  }
+
+  .assistant,
+  .error {
+    max-width: 100%;
+  }
+}
+
 .content {
   margin: 0;
   white-space: pre-wrap;

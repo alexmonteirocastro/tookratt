@@ -7,8 +7,7 @@ interface JobsPerRoleChartProps {
 
 /**
  * ALE-192 Decision 1 — CSS horizontal bars, no chart library.
- * Teal fill on a parchment track; amber is reserved for the count (text on
- * cream, not text on amber). Sort descending; drop zero-count roles.
+ * Baltic Blue fill on a Paper track; the count sits beside the bar. Sort descending; drop zero-count roles.
  */
 export function JobsPerRoleChart({ jobsPerRole }: JobsPerRoleChartProps) {
   const rows = rolesByCountDescending(jobsPerRole);

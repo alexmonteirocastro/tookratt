@@ -94,7 +94,12 @@ export function Stats({ enabled }: StatsProps) {
         <>
           <ul className={styles.kpis}>
             {kpiTiles(data).map((tile) => (
-              <li key={tile.label} className={styles.kpi}>
+              <li
+                key={tile.label}
+                className={
+                  tile.label === "Total jobs" ? `${styles.kpi} ${styles.kpiTotal}` : styles.kpi
+                }
+              >
                 <p className={styles.kpiValue}>{tile.value}</p>
                 <p className={styles.kpiLabel}>{tile.label}</p>
               </li>
