@@ -2,7 +2,7 @@
 
 ![Tests](https://github.com/alexmonteirocastro/tookratt/actions/workflows/test.yml/badge.svg) ![Deploy](https://github.com/alexmonteirocastro/tookratt/actions/workflows/deploy.yml/badge.svg)
 
-Töökratt ingests job listings from [The Hub](https://thehub.io/) via their public API, embeds the content via **Qdrant Cloud Inference** (`intfloat/multilingual-e5-small`), and stores the results in [Qdrant](https://qdrant.tech/) for semantic search — with a `/chat` RAG layer and React UI for natural-language job discovery across Nordic/European startup markets.
+Töökratt ingests job listings from [The Hub](https://thehub.io/) via their public API, embeds the content via **Qdrant Cloud Inference** (`intfloat/multilingual-e5-small`), and stores the results in [Qdrant](https://qdrant.tech/) for semantic search — with a `/chat` RAG layer and React UI for questions about what Nordic and European startup listings demand.
 
 ## Live deployment
 
@@ -88,7 +88,7 @@ Workflow guide (how to read `separation_margin`, judgments, sweeps, etc.):
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — environment variables, ingestion, local development, project layout, data model, Hub API client, and testing
 - [marketing/README.md](marketing/README.md) — apex landing page (Cloudflare Pages)
 - [workers/capture/README.md](workers/capture/README.md) — waitlist/contact capture Worker
-- [docs/PRODUCT_VISION.md](docs/PRODUCT_VISION.md) — problem, roadmap, and trust bar for `/chat`
+- [docs/PRODUCT_VISION.md](docs/PRODUCT_VISION.md) — market-research vision, roadmap, and trust bar
 - [docs/ops/grafana-cloud-chat-observability.md](docs/ops/grafana-cloud-chat-observability.md) — Grafana Cloud `/chat` dashboard (ADR-0015)
 - [docs/ops/grafana-cloud-injection-alerting.md](docs/ops/grafana-cloud-injection-alerting.md) — Grafana Cloud injection alert rule (ADR-0015)
 - [evals_system/GUIDE.md](evals_system/GUIDE.md) — manual eval review UI walkthrough
