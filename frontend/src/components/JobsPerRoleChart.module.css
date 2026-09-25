@@ -1,8 +1,7 @@
 /*
  * ALE-192 Decision 1 — CSS bars, not a chart-library default.
- * Panel = cream surface (same as input bar). Track = parchment.
- * Fill = teal. Count = accent text beside the bar, never on the fill
- * (avoids extending ADR-0005's navy-on-amber shortfall to small figures).
+ * Panel = white surface (same as input bar). Track = Paper.
+ * Fill = Baltic Blue. Count sits beside the bar, never on the fill.
  */
 .panel {
   margin: 0;

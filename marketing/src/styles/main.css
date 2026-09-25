@@ -128,7 +128,7 @@ ul {
 }
 
 .btn-nav:hover {
-  background: #142038;
+  background: color-mix(in srgb, var(--color-ink) 78%, var(--color-surface-alt));
   color: var(--color-on-navy);
 }
 
@@ -358,7 +358,7 @@ ul {
 }
 
 .feature-panel-teal {
-  background: var(--color-accent);
+  background: var(--color-ink);
 }
 
 .chat-q {
@@ -492,7 +492,7 @@ ul {
 
 /* CTA strip */
 .cta-strip {
-  background: var(--color-accent);
+  background: var(--color-ink);
   text-align: center;
   padding-top: var(--space-section-sm);
   padding-bottom: var(--space-section-sm);
@@ -523,7 +523,7 @@ ul {
 }
 
 .cta-strip a.mailto:hover {
-  color: var(--color-accent);
+  color: var(--color-signal);
 }
 
 /* Footer */

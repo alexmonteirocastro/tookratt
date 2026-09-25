@@ -1,7 +1,6 @@
 /*
  * ALE-192 Decision 3 — header text tabs, not a sidebar or amber pills.
- * Active = ink + amber signal underline. Inactive = secondary text. No ink-on-amber
- * at this size (ADR-0005 accepted-risk pair stays on Ask / user bubbles).
+ * Active = ink + amber signal underline. Inactive = secondary text.
  */
 .nav {
   display: flex;

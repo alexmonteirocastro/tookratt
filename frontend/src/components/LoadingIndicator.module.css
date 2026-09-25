@@ -6,6 +6,7 @@
   padding: var(--space-4) var(--space-bubble-pad-x);
   background: var(--color-bubble-assistant);
   color: var(--color-bubble-assistant-text);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-bubble-assistant);
   align-self: flex-start;
 }
