@@ -2,7 +2,7 @@
 
 ![Tests](https://github.com/alexmonteirocastro/tookratt/actions/workflows/test.yml/badge.svg) ![Deploy](https://github.com/alexmonteirocastro/tookratt/actions/workflows/deploy.yml/badge.svg)
 
-Töökratt ingests job listings from [The Hub](https://thehub.io/) via their public API, embeds the content via **Qdrant Cloud Inference** (`intfloat/multilingual-e5-small`), and stores the results in [Qdrant](https://qdrant.tech/) for semantic search — with a `/chat` RAG layer and React UI for questions about what Nordic and European startup listings demand.
+Töökratt ingests job listings from [The Hub](https://thehub.io/) via their public API, embeds the content via **Qdrant Cloud Inference** (`intfloat/multilingual-e5-small`), and stores the results in [Qdrant](https://qdrant.tech/) for semantic search, with a `/chat` RAG layer and React UI for questions about what Nordic and European startup listings demand.
 
 ## Live deployment
 

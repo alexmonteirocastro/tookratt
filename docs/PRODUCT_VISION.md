@@ -1,8 +1,8 @@
 # Product Vision
 
-*Status: Accepted — companion to `docs/adr/`; see [ADR-0001](adr/0001-llm-provider-strategy.md) and [ADR-0002](adr/0002-retrieval-filtering-strategy.md) for the technical decisions this vision motivates.*
+*Status: Accepted. Companion to `docs/adr/`. See [ADR-0001](adr/0001-llm-provider-strategy.md) and [ADR-0002](adr/0002-retrieval-filtering-strategy.md) for the technical decisions this vision motivates.*
 
-*Revision history: 2026-09-23 — refocused from job-search/CV assistant to market research + learning resources. The earlier direction (candidate profile, cover-letter drafting, CV ingestion) stays in git history and is not a roadmap item.*
+*Revision history: 2026-09-23. Refocused from job-search/CV assistant to market research + learning resources. The earlier direction (candidate profile, cover-letter drafting, CV ingestion) stays in git history and is not a roadmap item.*
 
 ## 1. Problem
 
@@ -58,11 +58,17 @@ For role-shaped phrases like "founding engineer," titles and descriptions usuall
 
 The core path is market data in, demand signals out, then somewhere to learn the skill. No phase ingests a CV or keeps a candidate profile.
 
-**Phase 1 — Demand signals (current focus).** Tiers 1 and 2 already ship. Tier 3 is the new capability: what listings ask for, where, and for which roles, from the corpus we have. Still anonymous. Still no persistent user. The Hub is the source in this phase, not a promise that it stays the only one.
+**Phase 1. Demand signals (current focus).** Tiers 1 and 2 already ship. Tier 3 is the new capability: what listings ask for, where, and for which roles, from the corpus we have. The Hub is the source in this phase, not a promise that it stays the only one.
 
-**Phase 2 — How to learn it.** Once a skill is actually in demand, point at a free resource for it (ALE-199). The link is chosen by the backend from a catalog, and the answer names the provider. This phase does not teach the skill, and it does not rewrite the material.
+Shipped already: a per-country market overview (open roles, remote roles, roles that publish pay, and jobs per role), on the app and on the homepage (ALE-191, ALE-192, ALE-193).
 
-**Phase 3 — More than one market.** A second job source (ALE-198), so the same demand questions can be compared across markets (tier 5). The second corpus has to stay in sync with ingestion the same way the first one does.
+Still open in this phase: better filters from free text, for role, company, and title. That is a tier-1 improvement (ALE-188).
+
+Accounts exist for access control only: invite-only, email and password, an admin who can invite and revoke (ALE-189). No profile, no stored career data, no personalization.
+
+**Phase 2. How to learn it.** Once a skill is actually in demand, point at a free resource for it (ALE-199). The link is chosen by the backend from a catalog, and the answer names the provider. This phase does not teach the skill, and it does not rewrite the material.
+
+**Phase 3. More than one market.** A second job source (ALE-198), so the same demand questions can be compared across markets (tier 5). The second corpus has to stay in sync with ingestion the same way the first one does.
 
 ## 6. Non-goals
 
@@ -80,7 +86,7 @@ Out of scope for the current stage, so they are not quietly in the next phase ei
 * Recruiter or startup-facing features of any kind
 * Multi-language generation (the corpus already includes non-English listings, see ADR-0002's accepted risks)
 
-## 7. Trust bar — what makes an answer good enough to act on
+## 7. Trust bar: what makes an answer good enough to act on
 
 The anti-hallucination stance ([ADR-0001](adr/0001-llm-provider-strategy.md) Decision 3: decline rather than fabricate) extends to every tier:
 
@@ -98,7 +104,7 @@ The project is built to survive going from a personal learning project to someth
 * Real users means real Gemini API costs and rate limits at volume (ADR-0001's risk section, partly addressed by ALE-87).
 * Tier 3, once built, is a second structure that has to stay in sync with ingestion, not just the vector index.
 * A second job source, and a learning-resource catalog, are further corpora with the same obligation. Multi-source ingestion is a scaling problem, not a one-off import.
-* This vision does not add a store of personal career data. Conversation memory stays the bounded, in-tab store from ADR-0008.
+* This vision does not add a store of personal career data. Accounts, when they come, hold login state only (ALE-189). Conversation memory stays the bounded, in-tab store from ADR-0008.
 
 ## Open questions
 
