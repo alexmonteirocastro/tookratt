@@ -350,6 +350,11 @@ jobs:
         working-directory: marketing
         run: npm run lint
 
+      - name: Run marketing tests
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: marketing
+        run: npm test
+
       - name: Run marketing build
         if: ${{ !inputs.skip_heavy_tests }}
         working-directory: marketing
