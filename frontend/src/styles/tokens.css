@@ -1,39 +1,44 @@
 /*
- * Design tokens for the Töökratt chat UI — ALE-172 dashboard redesign.
+ * Design tokens for the Töökratt chat UI.
+ * Baltic palette, Ö mark, Space Grotesk / IBM Plex Sans — ALE-201.
  * Components reference these by name; no hardcoded hex or px elsewhere.
  */
 :root {
-  /* Palette (ALE-172 design handoff) */
-  --color-ink: #1b2a4a;
-  --color-text-secondary: rgba(27, 42, 74, 0.65);
-  --color-text-muted: rgba(27, 42, 74, 0.55);
-  --color-text-faint: rgba(27, 42, 74, 0.45);
-  --color-text-soft: rgba(27, 42, 74, 0.75);
-  --color-surface: #fbf8f2;
-  --color-surface-alt: #f4efe6;
-  --color-border: rgba(27, 42, 74, 0.15);
-  --color-border-teal: rgba(46, 110, 98, 0.2);
-  --color-accent: #c97d2e;
-  --color-accent-hover: #b56f28;
-  --color-accent-text: #1b2a4a;
-  --color-teal: #2e6e62;
-  --color-bubble-user: #c97d2e;
-  --color-bubble-assistant: #1b2a4a;
-  --color-bubble-assistant-text: #f4efe6;
-  --color-lock-hover: #f0ebe0;
-  --color-on-navy-muted: rgba(244, 239, 230, 0.65);
-  --color-on-navy-soft: rgba(251, 248, 242, 0.12);
-  --color-on-navy-border: rgba(251, 248, 242, 0.2);
-  --color-overlay: rgba(27, 42, 74, 0.45);
+  /* Palette (ALE-201 Baltic) */
+  --color-ink: #12151b;
+  --color-text-secondary: rgba(18, 21, 27, 0.65);
+  --color-text-muted: rgba(18, 21, 27, 0.55);
+  --color-text-faint: rgba(18, 21, 27, 0.45);
+  --color-text-soft: rgba(18, 21, 27, 0.75);
+  --color-surface: #ffffff;
+  --color-surface-alt: #f6f7f9;
+  --color-border: rgba(18, 21, 27, 0.12);
+  --color-border-accent: rgba(22, 64, 122, 0.2);
+  --color-accent: #16407a;
+  --color-accent-hover: #10325f;
+  --color-accent-text: #f6f7f9;
+  /* Charts on Ink. Non-text amber stays on --color-signal. */
+  --color-accent-on-ink: #7fa3d6;
+  --color-signal: #c68a2e;
+  --color-bubble-user: #16407a;
+  --color-bubble-user-text: #f6f7f9;
+  --color-bubble-assistant: #ffffff;
+  --color-bubble-assistant-text: #12151b;
+  --color-lock-hover: #edf0f4;
+  --color-on-assistant-muted: rgba(18, 21, 27, 0.62);
+  --color-on-assistant-soft: #edf0f4;
+  --color-on-assistant-border: rgba(18, 21, 27, 0.12);
+  --color-on-assistant-chip-border: rgba(18, 21, 27, 0.12);
+  --color-overlay: rgba(18, 21, 27, 0.5);
 
   /* Error states (production; not in prototype) */
   --color-error: #9b2c2c;
   --color-error-bg: #fce8e6;
   --color-error-border: rgba(155, 44, 44, 0.35);
 
-  /* Typography — Sora (display) + Karla (body), self-hosted via @fontsource */
-  --font-family-display: "Sora", "Helvetica Neue", Arial, sans-serif;
-  --font-family: "Karla", "Helvetica Neue", Arial, sans-serif;
+  /* Typography — Space Grotesk (display) + IBM Plex Sans (body), via @fontsource */
+  --font-family-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
   --font-size-xs: 0.875rem; /* 14px */
   --font-size-sm: 1rem; /* 16px */
   --font-size-base: 1.0625rem; /* 17px */
@@ -71,13 +76,12 @@
   --max-width-chat: 980px;
   --size-chart-label: 11rem; /* ALE-192 jobs_per_role chart label column */
   --min-height-conversation: 420px;
-  --size-mascot-header: 56px;
-  --size-mascot-empty: 120px;
+  --size-mark-header: 40px;
+  --size-mark-empty: 72px;
   --size-lock-button: 44px;
   --space-input-pad-y: 18px;
   --space-input-gap: 10px;
   --space-ask-pad-x: 30px;
   --space-bubble-pad-x: 22px;
   --space-empty-gap: 26px;
-  --color-on-navy-chip-border: rgba(251, 248, 242, 0.15);
 }

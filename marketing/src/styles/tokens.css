@@ -1,29 +1,31 @@
 /*
  * Marketing-site tokens — duplicated from frontend/src/styles/tokens.css
  * per ADR-0016 (accepted cost across two Pages projects). Keep in sync by hand.
+ * Baltic palette and type — ALE-201. Mark sizes stay until ALE-202 removes the mascot.
  */
 :root {
-  --color-ink: #1b2a4a;
-  --color-text-secondary: rgba(27, 42, 74, 0.65);
-  --color-text-muted: rgba(27, 42, 74, 0.55);
-  --color-text-faint: rgba(27, 42, 74, 0.45);
-  --color-surface: #fbf8f2;
-  --color-surface-alt: #f4efe6;
-  --color-border: rgba(27, 42, 74, 0.15);
-  --color-accent: #c97d2e;
-  --color-accent-hover: #b56f28;
-  --color-accent-text: #1b2a4a;
-  --color-teal: #2e6e62;
-  --color-on-teal-muted: rgba(244, 239, 230, 0.85);
-  --color-on-navy: #f4efe6;
-  --color-on-navy-muted: rgba(244, 239, 230, 0.75);
+  --color-ink: #12151b;
+  --color-text-secondary: rgba(18, 21, 27, 0.65);
+  --color-text-muted: rgba(18, 21, 27, 0.55);
+  --color-text-faint: rgba(18, 21, 27, 0.45);
+  --color-surface: #ffffff;
+  --color-surface-alt: #f6f7f9;
+  --color-border: rgba(18, 21, 27, 0.12);
+  --color-accent: #16407a;
+  --color-accent-hover: #10325f;
+  --color-accent-text: #f6f7f9;
+  --color-accent-on-ink: #7fa3d6;
+  --color-signal: #c68a2e;
+  /* Text on Ink sections. Paper, not the chat "on assistant" chips. */
+  --color-on-navy: #f6f7f9;
+  --color-on-navy-muted: rgba(246, 247, 249, 0.75);
   --color-error: #9b2c2c;
   --color-error-bg: #fce8e6;
-  --color-success-bg: rgba(46, 110, 98, 0.12);
-  --color-success: #2e6e62;
+  --color-success-bg: #e8eef6;
+  --color-success: #16407a;
 
-  --font-family-display: "Sora", "Helvetica Neue", Arial, sans-serif;
-  --font-family: "Karla", "Helvetica Neue", Arial, sans-serif;
+  --font-family-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
 
   --space-2: 8px;
   --space-3: 12px;

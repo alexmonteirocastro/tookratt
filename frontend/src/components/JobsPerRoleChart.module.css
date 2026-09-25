@@ -73,7 +73,7 @@
 .bar {
   height: 100%;
   min-width: var(--space-1);
-  background: var(--color-teal);
+  background: var(--color-accent);
   border-radius: var(--radius-sm);
 }
 

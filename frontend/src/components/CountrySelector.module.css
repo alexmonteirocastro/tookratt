@@ -1,7 +1,6 @@
 /*
  * ALE-192 Decision 2 — pill tabs inside existing radius/spacing tokens.
- * Selected fill is teal + cream (5.62:1, AA pass), not amber, so small
- * labels don't inherit ADR-0005's navy-on-amber accepted risk.
+ * Selected fill is Baltic Blue + Paper (accent text), not amber.
  */
 .fieldset {
   margin: 0;
@@ -43,9 +42,9 @@
 }
 
 .option:has(:checked) {
-  background: var(--color-teal);
-  border-color: var(--color-teal);
-  color: var(--color-surface);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 .option:has(:focus-visible) {
