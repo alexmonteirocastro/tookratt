@@ -5,12 +5,11 @@ import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
 import "@fontsource/ibm-plex-sans/700.css";
-import { getAppUrl, getContactEmail } from "./config";
+import { getAppUrl } from "./config";
 import { bindForm } from "./forms";
 import "./styles/main.css";
 
 const appUrl = getAppUrl();
-const contactEmail = getContactEmail();
 const year = new Date().getFullYear();
 
 const root = document.querySelector<HTMLElement>("#app");
@@ -68,7 +67,7 @@ root.innerHTML = `
           </article>
           <article class="persona">
             <h3>Moving to a new country</h3>
-            <p>See how your role is hired where you don't work yet.</p>
+            <p>Check whether your role is in demand where you're moving.</p>
           </article>
           <article class="persona">
             <h3>Changing direction</h3>
@@ -103,7 +102,7 @@ root.innerHTML = `
               <span class="step-num">03</span>
               <div>
                 <h3>Check the source</h3>
-                <p>Every claim points at a posting. If the data doesn't say it, neither do we.</p>
+                <p>Every claim points at a posting. If the data doesn't say it, neither do I.</p>
               </div>
             </li>
           </ol>
@@ -111,7 +110,7 @@ root.innerHTML = `
       </section>
 
       <section id="market" class="band band-ink" aria-labelledby="market-heading">
-        <div class="shell split">
+        <div class="shell">
           <div class="section-header section-header-left">
             <p class="eyebrow">The market view</p>
             <h2 id="market-heading">Pick a country. See the numbers.</h2>
@@ -120,20 +119,6 @@ root.innerHTML = `
               Denmark, Sweden, Norway, Finland, Iceland, Europe.
             </p>
           </div>
-          <dl class="stat-grid">
-            <div>
-              <dd>[N]</dd>
-              <dt>Open roles</dt>
-            </div>
-            <div>
-              <dd>[N]</dd>
-              <dt>Remote</dt>
-            </div>
-            <div>
-              <dd>[N]</dd>
-              <dt>Paid</dt>
-            </div>
-          </dl>
         </div>
       </section>
 
@@ -147,7 +132,7 @@ root.innerHTML = `
           <ul class="not-list">
             <li>It doesn't write your CV.</li>
             <li>It doesn't apply for you.</li>
-            <li>It doesn't rank a perfect job.</li>
+            <li>It doesn't pick the perfect job for you.</li>
             <li>It doesn't invent a stat the postings don't support.</li>
           </ul>
         </div>
@@ -185,16 +170,12 @@ root.innerHTML = `
           <div class="section-header section-header-left">
             <p class="eyebrow">Waitlist</p>
             <h2 id="capture-heading">Want in?</h2>
-            <p>
-              Invite only. A note to
-              <a href="mailto:${contactEmail}">${contactEmail}</a>
-              when a place opens.
-            </p>
+            <p>Invite only. Leave your email and I'll write when a place opens.</p>
           </div>
           <div class="forms-grid">
             <form class="form-block" id="waitlist-form" novalidate>
               <h3>Join the waitlist</h3>
-              <p>Request a place. We'll write if one opens.</p>
+              <p>Request a place. I'll write if one opens.</p>
               <div class="field">
                 <label for="waitlist-name">Name <span class="optional">(optional)</span></label>
                 <input id="waitlist-name" name="name" type="text" autocomplete="name" maxlength="120" />

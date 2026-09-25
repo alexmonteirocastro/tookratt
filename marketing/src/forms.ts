@@ -160,8 +160,8 @@ export function bindForm(form: HTMLFormElement, kind: FormKind): void {
           status,
           "success",
           kind === "waitlist"
-            ? "Request received. We'll write if a place opens."
-            : "Message sent. We'll write back.",
+            ? "Request received. I'll write if a place opens."
+            : "Message sent. I'll write back.",
         );
       })
       .catch((error: unknown) => {
