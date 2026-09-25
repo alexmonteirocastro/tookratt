@@ -94,7 +94,7 @@ describe("Chat", () => {
 
   async function submitQuestion(question: string) {
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), question);
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), question);
     await user.click(screen.getByRole("button", { name: /ask/i }));
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -121,7 +121,7 @@ describe("Chat", () => {
     render(<Chat />);
 
     await user.type(
-      screen.getByLabelText(/ask a question about jobs/i),
+      screen.getByLabelText(/ask a question about the job market/i),
       "backend roles in Denmark",
     );
     await user.click(screen.getByRole("button", { name: /ask/i }));
@@ -149,7 +149,7 @@ describe("Chat", () => {
 
     render(<Chat />);
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "hello");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "hello");
     await user.click(screen.getByRole("button", { name: /ask/i }));
 
     expect(screen.getByRole("status")).toHaveTextContent(/searching jobs/i);
@@ -168,7 +168,7 @@ describe("Chat", () => {
 
     render(<Chat />);
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "hello");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "hello");
     await user.click(screen.getByRole("button", { name: /ask/i }));
 
     expect(
@@ -184,7 +184,7 @@ describe("Chat", () => {
 
     render(<Chat />);
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "hello");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "hello");
     await user.click(screen.getByRole("button", { name: /ask/i }));
 
     expect(
@@ -200,7 +200,7 @@ describe("Chat", () => {
 
     render(<Chat />);
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "hello");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "hello");
     await user.click(screen.getByRole("button", { name: /ask/i }));
 
     expect(
@@ -214,7 +214,7 @@ describe("Chat", () => {
 
     render(<Chat />);
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "hello");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "hello");
     await user.click(screen.getByRole("button", { name: /ask/i }));
 
     await waitFor(() => {
@@ -231,7 +231,7 @@ describe("Chat", () => {
     render(<Chat />);
 
     await user.type(
-      screen.getByLabelText(/ask a question about jobs/i),
+      screen.getByLabelText(/ask a question about the job market/i),
       "underwater basket weaving",
     );
     await user.click(screen.getByRole("button", { name: /ask/i }));
@@ -250,7 +250,7 @@ describe("Chat", () => {
     render(<Chat />);
 
     await user.type(
-      screen.getByLabelText(/ask a question about jobs/i),
+      screen.getByLabelText(/ask a question about the job market/i),
       "frontend roles in Sweden",
     );
     await user.click(screen.getByRole("button", { name: /ask/i }));

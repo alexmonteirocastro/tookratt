@@ -16,7 +16,9 @@ const PLACEHOLDER_DESKTOP = "Ask about roles, skills or countries";
 const PLACEHOLDER_MOBILE = "Ask about the market";
 
 function useNarrowViewport(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  const [matches, setMatches] = useState(
+    () => typeof window.matchMedia === "function" && window.matchMedia(query).matches,
+  );
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") {
@@ -51,7 +53,7 @@ export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
       <label htmlFor="chat-question" className={styles.srOnly}>
-        Ask a question about jobs
+        Ask a question about the job market
       </label>
       <textarea
         id="chat-question"

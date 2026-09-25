@@ -113,7 +113,7 @@ export async function openApp(page: Page, path = "/"): Promise<void> {
 }
 
 export async function submitQuestion(page: Page, question: string): Promise<void> {
-  await page.getByLabel(/ask a question about jobs/i).fill(question);
+  await page.getByLabel(/ask a question about the job market/i).fill(question);
   await page.getByRole("button", { name: /^ask$/i }).click();
 }
 
