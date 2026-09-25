@@ -58,9 +58,9 @@ jobs:
         # available throughout — safe to run unattended on a schedule.
 
       - name: Refresh tookratt.com market stats
-        # ALE-209: the marketing Pages build fetches /jobs/stats itself.
-        # This hook rebuilds production after the sync so the numbers match
-        # the index we just wrote. A failed hook must not fail the sync.
+        # ALE-209: the marketing Pages build fetches /jobs/stats from The Hub.
+        # Those counts are not read from Qdrant, so this is a daily refresh,
+        # not a picture of the index just synced. A failed hook must not fail the sync.
         if: success()
         continue-on-error: true
         env:

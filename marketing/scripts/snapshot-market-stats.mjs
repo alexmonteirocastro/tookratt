@@ -1,10 +1,16 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const COUNTRIES = ["DK", "SE", "NO", "FI", "IS", "EU"];
 export const DEFAULT_API_ORIGIN = "https://hubster-alpi.onrender.com";
-const REQUEST_TIMEOUT_MS = 90_000;
+export const LIVE_SNAPSHOT_URL = "https://tookratt.com/market-stats.json";
+const COLD_TIMEOUT_MS = 90_000;
+const WARM_TIMEOUT_MS = 20_000;
+
+export function marketStatsPath(metaUrl = import.meta.url) {
+  return fileURLToPath(new URL("../public/market-stats.json", metaUrl));
+}
 
 export function apiKeyFromEnv(env) {
   const raw = env.TOOKRATT_API_KEYS || env.HUBSTER_API_KEYS || "";
@@ -41,12 +47,22 @@ export function buildSnapshot(generatedAt, countries) {
   };
 }
 
-async function fetchCountry(fetchImpl, origin, key, code) {
+function isSnapshot(body) {
+  return (
+    typeof body?.generated_at === "string" &&
+    body?.countries != null &&
+    typeof body.countries === "object" &&
+    !Array.isArray(body.countries) &&
+    Object.keys(body.countries).length > 0
+  );
+}
+
+async function fetchCountry(fetchImpl, origin, key, code, timeoutMs) {
   const url = new URL("/jobs/stats", origin);
   url.searchParams.set("country", code);
   const response = await fetchImpl(url, {
     headers: { Authorization: `Bearer ${key}` },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) {
     throw new Error(`${code} returned ${response.status}`);
@@ -54,36 +70,95 @@ async function fetchCountry(fetchImpl, origin, key, code) {
   return countryStats(await response.json());
 }
 
+async function writeSnapshot(outPath, snapshot) {
+  await mkdir(path.dirname(outPath), { recursive: true });
+  await writeFile(outPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+}
+
+async function reuseLiveSnapshot(fetchImpl, liveSnapshotUrl, outPath) {
+  const response = await fetchImpl(liveSnapshotUrl, {
+    signal: AbortSignal.timeout(WARM_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    throw new Error(`live snapshot returned ${response.status}`);
+  }
+  const body = await response.json();
+  if (!isSnapshot(body)) {
+    throw new Error("unexpected live snapshot shape");
+  }
+  const countries = {};
+  for (const [code, stats] of Object.entries(body.countries)) {
+    try {
+      countries[code] = countryStats(stats);
+    } catch {
+      console.error(`market stats: live snapshot skipped ${code}`);
+    }
+  }
+  if (Object.keys(countries).length === 0) {
+    throw new Error("live snapshot had no usable countries");
+  }
+  await writeSnapshot(outPath, { generated_at: body.generated_at, countries });
+}
+
 export async function snapshotMarketStats({
   env = process.env,
   fetchImpl = fetch,
   now = () => new Date(),
   outPath,
+  liveSnapshotUrl = LIVE_SNAPSHOT_URL,
 } = {}) {
-  const key = apiKeyFromEnv(env);
-  if (!key) {
-    console.log("market stats: no API key, leaving numbers out of this build");
-    await rm(outPath, { force: true });
-    return { written: false };
-  }
-
-  const origin = env.MARKET_STATS_API_URL?.trim() || DEFAULT_API_ORIGIN;
   try {
-    const countries = {};
-    for (const code of COUNTRIES) {
-      countries[code] = await fetchCountry(fetchImpl, origin, key, code);
+    const key = apiKeyFromEnv(env);
+    if (!key) {
+      console.log("market stats: no API key, leaving numbers out of this build");
+      await rm(outPath, { force: true });
+      return { written: false };
     }
-    const snapshot = buildSnapshot(now().toISOString(), countries);
-    await mkdir(path.dirname(outPath), { recursive: true });
-    await writeFile(outPath, `${JSON.stringify(snapshot, null, 2)}\n`);
-    console.log(`market stats: wrote ${COUNTRIES.length} countries`);
-    return { written: true };
+
+    const origin = env.MARKET_STATS_API_URL?.trim() || DEFAULT_API_ORIGIN;
+    const countries = {};
+    const failed = [];
+    let timeoutMs = COLD_TIMEOUT_MS;
+    for (const code of COUNTRIES) {
+      try {
+        countries[code] = await fetchCountry(fetchImpl, origin, key, code, timeoutMs);
+        timeoutMs = WARM_TIMEOUT_MS;
+      } catch (error) {
+        failed.push(code);
+        const message = error instanceof Error ? error.message : "unknown error";
+        console.error(`market stats: ${code} failed (${message})`);
+      }
+    }
+
+    if (Object.keys(countries).length > 0) {
+      await writeSnapshot(outPath, buildSnapshot(now().toISOString(), countries));
+      const skipped = failed.length > 0 ? `, skipped ${failed.join(", ")}` : "";
+      console.log(`market stats: wrote ${Object.keys(countries).length} countries${skipped}`);
+      return { written: true, failed };
+    }
+
+    try {
+      await reuseLiveSnapshot(fetchImpl, liveSnapshotUrl, outPath);
+      console.error(
+        "market stats: every country failed, reusing the snapshot already on tookratt.com",
+      );
+      return { written: true, failed, reused: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown error";
+      console.error(
+        `market stats: fetch failed, build continues without numbers (${message})`,
+      );
+      await rm(outPath, { force: true });
+      return { written: false, failed };
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown error";
     console.error(
-      `market stats: fetch failed, build continues without numbers (${message})`,
+      `market stats: snapshot failed, build continues without numbers (${message})`,
     );
-    await rm(outPath, { force: true });
+    if (outPath) {
+      await rm(outPath, { force: true }).catch(() => {});
+    }
     return { written: false };
   }
 }
@@ -94,6 +169,12 @@ function isMainModule() {
 }
 
 if (isMainModule()) {
-  const outPath = path.join(import.meta.dirname, "..", "public", "market-stats.json");
-  await snapshotMarketStats({ outPath });
+  try {
+    await snapshotMarketStats({ outPath: marketStatsPath() });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    console.error(
+      `market stats: snapshot failed, build continues without numbers (${message})`,
+    );
+  }
 }
