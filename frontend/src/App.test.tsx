@@ -64,7 +64,7 @@ describe("App auth wiring", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "hello");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "hello");
     await user.click(screen.getByRole("button", { name: /ask/i }));
 
     await waitFor(() => {
@@ -100,6 +100,10 @@ describe("App conversation memory", () => {
     expect(banner).toHaveTextContent(
       /resets when you refresh or start a new conversation/i,
     );
+    expect(banner).toHaveTextContent(/refreshing starts over/i);
+    expect(
+      screen.getByText("Job market research for Nordic and European startups"),
+    ).toBeInTheDocument();
     expect(
       screen.queryByText(/doesn't remember previous messages/i),
     ).not.toBeInTheDocument();
@@ -109,11 +113,11 @@ describe("App conversation memory", () => {
     const user = userEvent.setup();
     renderApp();
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "hello");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "hello");
     await user.click(screen.getByRole("button", { name: /ask/i }));
     expect(await screen.findByText(chatSuccessBody.answer)).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "any others?");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "any others?");
     await user.click(screen.getByRole("button", { name: /ask/i }));
     await waitFor(() => {
       expect(vi.mocked(fetch).mock.calls).toHaveLength(2);
@@ -130,10 +134,10 @@ describe("App conversation memory", () => {
     expect(screen.queryByText(chatSuccessBody.answer)).not.toBeInTheDocument();
     expect(screen.queryByText("any others?")).not.toBeInTheDocument();
     expect(
-      screen.getByText(/ask about nordic and european startup jobs/i),
+      screen.getByRole("heading", { name: "Ask about the market." }),
     ).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "fresh start");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "fresh start");
     await user.click(screen.getByRole("button", { name: /ask/i }));
     expect(await screen.findByText("fresh start")).toBeInTheDocument();
 
@@ -180,7 +184,7 @@ describe("App routing", () => {
       "aria-current",
       "page",
     );
-    expect(screen.queryByLabelText(/ask a question about jobs/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/ask a question about the job market/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /new conversation/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
@@ -192,7 +196,7 @@ describe("App routing", () => {
       "aria-current",
       "page",
     );
-    expect(screen.queryByLabelText(/ask a question about jobs/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/ask a question about the job market/i)).not.toBeInTheDocument();
   });
 
   it("navigates to /market and loads jobs_per_role without chat chrome", async () => {
@@ -207,7 +211,7 @@ describe("App routing", () => {
       "page",
     );
     expect(screen.getByText("8")).toBeInTheDocument();
-    expect(screen.queryByLabelText(/ask a question about jobs/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/ask a question about the job market/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /new conversation/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
     expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes("country=DK"))).toBe(

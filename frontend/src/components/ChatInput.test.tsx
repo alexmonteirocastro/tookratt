@@ -8,6 +8,25 @@ import styles from "./ChatInput.module.css";
 describe("ChatInput", () => {
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("uses the desktop placeholder by default", () => {
+    render(<ChatInput onSubmit={vi.fn()} disabled={false} />);
+
+    expect(screen.getByPlaceholderText("Ask about roles, skills or countries")).toBeInTheDocument();
+  });
+
+  it("uses the short placeholder on a narrow viewport", async () => {
+    vi.stubGlobal("matchMedia", () => ({
+      matches: true,
+      media: "(max-width: 640px)",
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    render(<ChatInput onSubmit={vi.fn()} disabled={false} />);
+
+    expect(await screen.findByPlaceholderText("Ask about the market")).toBeInTheDocument();
   });
 
   it("renders a live character counter at 0/max by default", () => {
@@ -20,7 +39,7 @@ describe("ChatInput", () => {
     const user = userEvent.setup();
     render(<ChatInput onSubmit={vi.fn()} disabled={false} />);
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "hello");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "hello");
 
     expect(screen.getByText(`5/${CHAT_QUESTION_MAX_LENGTH}`)).toBeInTheDocument();
   });
@@ -28,7 +47,7 @@ describe("ChatInput", () => {
   it("hard-caps the textarea via maxLength matching the configured limit", () => {
     render(<ChatInput onSubmit={vi.fn()} disabled={false} />);
 
-    expect(screen.getByLabelText(/ask a question about jobs/i)).toHaveAttribute(
+    expect(screen.getByLabelText(/ask a question about the job market/i)).toHaveAttribute(
       "maxLength",
       String(CHAT_QUESTION_MAX_LENGTH),
     );
@@ -38,7 +57,7 @@ describe("ChatInput", () => {
     const user = userEvent.setup();
     render(<ChatInput onSubmit={vi.fn()} disabled={false} />);
 
-    const input = screen.getByLabelText(/ask a question about jobs/i);
+    const input = screen.getByLabelText(/ask a question about the job market/i);
     await user.click(input);
     await user.paste("a".repeat(CHAT_QUESTION_MAX_LENGTH + 20));
 
@@ -55,7 +74,7 @@ describe("ChatInput", () => {
     expect(screen.getByText(`0/${CHAT_QUESTION_MAX_LENGTH}`)).not.toHaveAttribute("aria-live");
 
     const nearLimitCount = Math.floor(CHAT_QUESTION_MAX_LENGTH * 0.9);
-    const input = screen.getByLabelText(/ask a question about jobs/i);
+    const input = screen.getByLabelText(/ask a question about the job market/i);
     await user.click(input);
     await user.paste("a".repeat(nearLimitCount));
 
@@ -69,11 +88,11 @@ describe("ChatInput", () => {
     const onSubmit = vi.fn();
     render(<ChatInput onSubmit={onSubmit} disabled={false} />);
 
-    await user.type(screen.getByLabelText(/ask a question about jobs/i), "  backend roles  ");
+    await user.type(screen.getByLabelText(/ask a question about the job market/i), "  backend roles  ");
     await user.click(screen.getByRole("button", { name: /ask/i }));
 
     expect(onSubmit).toHaveBeenCalledWith("backend roles");
-    expect(screen.getByLabelText(/ask a question about jobs/i)).toHaveValue("");
+    expect(screen.getByLabelText(/ask a question about the job market/i)).toHaveValue("");
     expect(screen.getByText(`0/${CHAT_QUESTION_MAX_LENGTH}`)).toBeInTheDocument();
   });
 
@@ -83,7 +102,7 @@ describe("ChatInput", () => {
     const exact = "a".repeat(CHAT_QUESTION_MAX_LENGTH);
     render(<ChatInput onSubmit={onSubmit} disabled={false} />);
 
-    const input = screen.getByLabelText(/ask a question about jobs/i);
+    const input = screen.getByLabelText(/ask a question about the job market/i);
     await user.click(input);
     await user.paste(exact);
     await user.click(screen.getByRole("button", { name: /ask/i }));

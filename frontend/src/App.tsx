@@ -45,7 +45,7 @@ export default function App() {
             <div className={styles.brandText}>
               <h1 className={styles.title}>töökratt</h1>
               <p className={styles.subtitle}>
-                Tireless job search assistant for Nordic &amp; European startups
+                Job market research for Nordic and European startups
               </p>
             </div>
           </div>

@@ -14,12 +14,13 @@ interface StatsProps {
 interface KpiTile {
   label: string;
   value: number;
+  emphasis?: boolean;
 }
 
 function kpiTiles(data: JobOpenings): KpiTile[] {
   const onSite = Math.max(0, data.total_jobs - data.remote_jobs);
   return [
-    { label: "Total jobs", value: data.total_jobs },
+    { label: "Total jobs", value: data.total_jobs, emphasis: true },
     { label: "Remote", value: data.remote_jobs },
     { label: "On-site", value: onSite },
     { label: "Paid", value: data.paid_jobs },
@@ -97,7 +98,7 @@ export function Stats({ enabled }: StatsProps) {
               <li
                 key={tile.label}
                 className={
-                  tile.label === "Total jobs" ? `${styles.kpi} ${styles.kpiTotal}` : styles.kpi
+                  tile.emphasis ? `${styles.kpi} ${styles.kpiTotal}` : styles.kpi
                 }
               >
                 <p className={styles.kpiValue}>{tile.value}</p>

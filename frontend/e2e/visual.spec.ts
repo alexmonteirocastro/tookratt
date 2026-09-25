@@ -16,9 +16,7 @@ test.describe("visual snapshots", { tag: "@visual" }, () => {
     await seedApiKey(page);
     await openApp(page, "/chat");
 
-    await expect(
-      page.getByText(/ask about nordic and european startup jobs/i),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ask about the market." })).toBeVisible();
     await expect(page).toHaveScreenshot("chat-empty.png", { fullPage: true });
   });
 
@@ -31,6 +29,19 @@ test.describe("visual snapshots", { tag: "@visual" }, () => {
     const sources = sourceListLocator(page, "Sources");
     await expect(sources).toBeVisible();
     await expect(sources).toHaveScreenshot("source-list-compact.png");
+  });
+
+  test("source list compact mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await seedApiKey(page);
+    await mockChat(page);
+    await openApp(page, "/chat");
+    await submitQuestion(page, MOCK_CHAT_QUESTION);
+
+    const sources = sourceListLocator(page, "Sources");
+    await expect(sources).toBeVisible();
+    await expect(sources.getByText("Acme · Copenhagen")).toBeVisible();
+    await expect(sources).toHaveScreenshot("source-list-compact-mobile.png");
   });
 
   test("api-key auth modal", async ({ page }) => {
@@ -70,9 +81,8 @@ test.describe("visual snapshots", { tag: "@visual" }, () => {
     await seedApiKey(page);
     await openApp(page, "/chat");
 
-    await expect(
-      page.getByText(/ask about nordic and european startup jobs/i),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ask about the market." })).toBeVisible();
+    await expect(page.getByPlaceholder("Ask about the market")).toBeVisible();
     await expect(page).toHaveScreenshot("chat-empty-mobile.png", { fullPage: true });
   });
 });

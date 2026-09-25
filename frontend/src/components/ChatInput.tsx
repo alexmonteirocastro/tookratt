@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { CHAT_QUESTION_MAX_LENGTH } from "../api/client";
 import styles from "./ChatInput.module.css";
 
@@ -10,8 +10,33 @@ interface ChatInputProps {
 /** Flag the counter when the input is within the last 10% of the limit. */
 const NEAR_LIMIT_RATIO = 0.9;
 
+/** Same breakpoint as the mobile layout in ALE-205. */
+const NARROW_VIEWPORT = "(max-width: 640px)";
+const PLACEHOLDER_DESKTOP = "Ask about roles, skills or countries";
+const PLACEHOLDER_MOBILE = "Ask about the market";
+
+function useNarrowViewport(query: string): boolean {
+  const [matches, setMatches] = useState(
+    () => typeof window.matchMedia === "function" && window.matchMedia(query).matches,
+  );
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      return;
+    }
+    const media = window.matchMedia(query);
+    const onChange = () => setMatches(media.matches);
+    onChange();
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [query]);
+
+  return matches;
+}
+
 export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
   const [question, setQuestion] = useState("");
+  const narrow = useNarrowViewport(NARROW_VIEWPORT);
   const used = question.length;
   const nearLimit = used >= Math.floor(CHAT_QUESTION_MAX_LENGTH * NEAR_LIMIT_RATIO);
 
@@ -28,14 +53,14 @@ export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
       <label htmlFor="chat-question" className={styles.srOnly}>
-        Ask a question about jobs
+        Ask a question about the job market
       </label>
       <textarea
         id="chat-question"
         className={styles.input}
         value={question}
         onChange={(event) => setQuestion(event.target.value)}
-        placeholder="e.g. Frontend developer roles in Sweden"
+        placeholder={narrow ? PLACEHOLDER_MOBILE : PLACEHOLDER_DESKTOP}
         rows={2}
         maxLength={CHAT_QUESTION_MAX_LENGTH}
         disabled={disabled}
