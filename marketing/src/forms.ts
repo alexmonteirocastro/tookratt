@@ -26,7 +26,7 @@ function openMailto(kind: FormKind, fields: Record<string, string>): void {
   const subject =
     kind === "waitlist"
       ? "Töökratt waitlist"
-      : `Töökratt contact — ${fields.name || "inquiry"}`;
+      : `Töökratt contact: ${fields.name || "inquiry"}`;
   const body =
     kind === "waitlist"
       ? `Please add me to the waitlist.\n\nEmail: ${fields.email}\nName: ${fields.name || "(not provided)"}`
@@ -115,7 +115,7 @@ export function bindForm(form: HTMLFormElement, kind: FormKind): void {
 
   if (mailtoMode) {
     turnstileSlot.innerHTML =
-      '<p class="form-status" data-kind="info">Capture Worker not configured yet — submit opens your email client.</p>';
+      '<p class="form-status" data-kind="info">Capture isn\'t configured yet. Submit opens your email client.</p>';
   } else {
     whenTurnstileReady(() => {
       widgetId = renderTurnstile(turnstileSlot, (next) => {
@@ -137,7 +137,7 @@ export function bindForm(form: HTMLFormElement, kind: FormKind): void {
       setStatus(
         status,
         "info",
-        "Opening your email client… If nothing opens, write to hello@tookratt.com.",
+        `Opening your email client. If nothing opens, write to ${getContactEmail()}.`,
       );
       openMailto(kind, fields);
       return;
@@ -160,8 +160,8 @@ export function bindForm(form: HTMLFormElement, kind: FormKind): void {
           status,
           "success",
           kind === "waitlist"
-            ? "You're on the list — thanks for your interest."
-            : "Message sent — we'll get back to you.",
+            ? "Request received. I'll write if a place opens."
+            : "Message sent. I'll write back.",
         );
       })
       .catch((error: unknown) => {
