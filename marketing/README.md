@@ -40,6 +40,8 @@ tookratt.com gets the numbers two ways, and neither puts a key in the browser:
 
 A country that fails is left out of the file. If every country fails, the build reuses the snapshot already on tookratt.com. If that is missing too, the file is left out and the build still succeeds.
 
+The homepage fetches `/market-stats.json` and fills the market band from it. A missing country disables that pill. If the file is missing, the band keeps its copy and hides the numbers.
+
 ## Forms
 
 Both forms include Cloudflare Turnstile when `VITE_CAPTURE_URL` is set (script loaded on demand). Until the Worker (ALE-177) is live, leave `VITE_CAPTURE_URL` unset and submit opens the visitor's mail client — no Turnstile script is fetched in that mode.

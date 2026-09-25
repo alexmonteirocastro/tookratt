@@ -1,7 +1,7 @@
 /*
  * Marketing-site tokens — duplicated from frontend/src/styles/tokens.css
  * per ADR-0016 (accepted cost across two Pages projects). Keep in sync by hand.
- * Baltic palette and type — ALE-201. Mark sizes stay until ALE-202 removes the mascot.
+ * Baltic palette and type — ALE-201. Mark sizes replace the mascot (ALE-202).
  */
 :root {
   --color-ink: #12151b;
@@ -48,7 +48,5 @@
   --max-width: 1400px;
   --max-width-copy: 520px;
   --max-width-form: 480px;
-  --size-mascot-nav: 44px;
-  --size-mascot-hero: 380px;
-  --size-mascot-cta: 130px;
+  --size-mark-nav: 40px;
 }

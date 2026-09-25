@@ -8,7 +8,7 @@
     "prebuild": "node scripts/snapshot-market-stats.mjs",
     "build": "tsc --noEmit && vite build",
     "lint": "oxlint src",
-    "test": "node --test scripts/snapshot-market-stats.test.mjs",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/snapshot-market-stats.test.mjs src/market.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {
