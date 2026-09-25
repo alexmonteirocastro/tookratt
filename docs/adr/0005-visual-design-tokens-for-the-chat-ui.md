@@ -112,7 +112,7 @@ part of the live language (bubbles / bordered cream panels instead).
 
 ## Decision 5: Application to the chat UI specifically
 
-- **Header** — mascot + lowercase Sora wordmark “töökratt”, subtitle, cream lock
+- **Header** — mascot + lowercase Sora wordmark "töökratt", subtitle, cream lock
   button (API key modal trigger).
 - **Info banner** — cream surface, teal border/icon, stateless-question copy.
 - **Conversation** — empty state with large mascot; user bubbles amber/navy text;
@@ -228,6 +228,10 @@ Decision 1’s seam is unchanged: the live values are still one token file.
 
 - Contrast nudge for navy-on-amber (see Contrast audit). **Closed (ALE-201 /
   ALE-210):** that pair is gone; see the follow-up note.
+- **Open (ALE-210):** `--color-text-faint` (Ink at 45%) is 2.95:1 on Paper
+  and fails AA. See the accepted risk in the follow-up note. Revisit if a
+  formal accessibility gate lands in CI, or before that text is the only cue
+  for an action the user must take.
 - **Addressed in part (ALE-192):** the second view (`/market`) stays on
   hand-rolled tokens — see Decision 6. Dark mode, or a third distinct
   surface, still revisits whether a design-system library beats this file
@@ -264,7 +268,8 @@ signal `#C68A2E`.
 | `--color-accent-on-ink` | `#7FA3D6` | blue on Ink. Defined in the token files; no component references it yet |
 | `--color-text-secondary` | Ink at 65% | subtitle |
 | `--color-text-muted` | Ink at 60%, `rgba(18, 21, 27, 0.6)` | muted copy. **4.69:1 on Paper.** Not the ALE-174 mapping of navy at 55% |
-| `--color-text-faint` / `--color-text-soft` | Ink at 45% / 75% | counter and softer copy. Ratios not re-audited here |
+| `--color-text-soft` | Ink at 75%, `rgba(18, 21, 27, 0.75)` | memory banner. **7.8:1 on Paper** (AA pass) |
+| `--color-text-faint` | Ink at 45%, `rgba(18, 21, 27, 0.45)` | counter, placeholders, marketing "(optional)". **2.95:1 on Paper** (AA fail). Accepted risk below |
 | `--color-border-accent` | `rgba(22, 64, 122, 0.2)` | replaces `--color-border-teal` |
 
 `--color-teal` is removed. Chart fill and the selected country pill use
@@ -284,13 +289,35 @@ superseded Inter.
 **Ö mark.** `--size-mascot-header` / `--size-mascot-empty` become
 `--size-mark-header: 40px` and `--size-mark-empty: 72px` in the frontend
 file. ALE-205 uses that mark in the app header, empty state, and favicons.
-Marketing `--size-mascot-*` stays until ALE-202.
+The mark takes its colours from `--color-accent` (ring) and `--color-signal`
+(dots and connector) in `frontend/src/components/Mark.module.css`, so a later
+dark lockup swaps those two variables. Marketing `--size-mascot-*` stays
+until ALE-202.
+
+**Mobile breakpoint.** The app layout switches at `max-width: 640px`. A
+custom property cannot be used inside a media query, so the value is a
+shared convention rather than a token in `tokens.css`. `ChatInput.tsx`
+mirrors the same query for the short placeholder. Do not drift it to 600px
+or 768px.
 
 **Contrast.** Paper on Baltic Blue (`#F6F7F9` on `#16407A`) is **9.6:1**,
 which passes AA for normal text. That is the Ask label and the user-bubble
 body, so the navy-on-amber pair (4.37:1) and its accepted risk are **closed**.
 `--color-text-muted` is Ink at 60% and measures **4.69:1 on Paper**, also an
-AA pass for normal text. The ALE-174 audit above is historical.
+AA pass for normal text. `--color-text-soft` (Ink at 75%) is **7.8:1 on
+Paper**, an AA pass; the memory banner uses it. The ALE-174 audit above is
+historical.
+
+**Accepted risk (ALE-210):** `--color-text-faint` is Ink at 45% and measures
+**2.95:1 on Paper**, which fails AA for normal text. It is real text: the
+character counter at 14px (`ChatInput.module.css`), every input placeholder
+(`frontend/src/styles/global.css`), and the marketing waitlist "(optional)"
+label. Left as shipped. This note does not change token values.
+
+**Revisit trigger:** if a formal accessibility gate is added to CI, or before
+this text is the only cue for an action the user must take. Clearing 4.5:1
+means raising faint toward the 60% muted mix, or pointing the counter and
+placeholders at `--color-text-muted`.
 
 **Why not edit Decisions 2 and 3 silently:** project convention is
 revision-via-follow-up when a later ticket changes a prior decision, so
