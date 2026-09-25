@@ -1,8 +1,8 @@
 # ADR-0005: Visual Design Tokens for the Chat UI (Töökratt dashboard)
 
 * **Status:** Accepted
-* **Date:** 2026-07-07 (original); superseded palette/type 2026-08-10 (ALE-174 / ALE-172)
-* **Related:** ADR-0004 (frontend architecture), ALE-74 (initial implementation), ALE-172 (dashboard redesign handoff), ALE-174 (this rewrite), ALE-192 (stats dashboard patterns)
+* **Date:** 2026-07-07 (original); superseded palette/type 2026-08-10 (ALE-174 / ALE-172); Baltic palette/type recorded 2026-09-25 (ALE-201 / ALE-210)
+* **Related:** ADR-0004 (frontend architecture), ALE-74 (initial implementation), ALE-172 (dashboard redesign handoff), ALE-174 (this rewrite), ALE-192 (stats dashboard patterns), ALE-201 (Baltic palette, Ö mark, type — landed in the token files), ALE-210 (this follow-up)
 
 ## Context
 
@@ -20,6 +20,10 @@ rewritten so the documented decisions match the live tokens (ALE-174).
 The earlier Inter / indigo decisions are **superseded**, not deleted from
 history: they remain the rationale for *having* a CSS-variable token seam
 (Decision 1 is unchanged in spirit).
+
+ALE-201 (2026-09-25) replaced the ALE-172 palette and type with the Baltic
+set. Decisions 2 and 3 and the contrast audit below stay as the ALE-174
+record. The live decisions are the follow-up note at the end of this ADR.
 
 ## Decision 1: Token system lives in CSS custom properties, not inline/magic values
 
@@ -63,6 +67,10 @@ repo-wide hex hunt.
 **Rationale:** ALE-172 high-fidelity handoff is the product brand for the
 dashboard; tokens track that brief rather than the earlier sibling-site mood.
 
+**Follow-up (ALE-201 / ALE-210):** Superseded for the live UI. The table
+above remains the ALE-174 record. The Baltic palette is in the follow-up
+note at the end of this ADR.
+
 ## Decision 3: Display / body pairing — Sora + Karla (self-hosted)
 
 **Decision:**
@@ -79,6 +87,10 @@ dashboard; tokens track that brief rather than the earlier sibling-site mood.
 **Rationale:** The handoff specifies a deliberate display/body pairing. Both
 families are OFL-licensed for web embedding; self-hosting avoids a runtime CDN
 dependency.
+
+**Follow-up (ALE-201 / ALE-210):** Superseded for the live UI. Sora and Karla
+remain the ALE-174 record. Space Grotesk and IBM Plex Sans are in the
+follow-up note at the end of this ADR.
 
 ## Decision 4: Spacing, radius, and layout scale
 
@@ -183,6 +195,9 @@ text (or if a formal a11y gate is added to CI), darken ink toward ~`#192746`
 or lighten amber slightly until ≥ 4.5:1 — both ~3% nudges were enough in a
 spot check.
 
+**Follow-up (ALE-201 / ALE-210):** This accepted risk is closed. Navy on
+amber is no longer a live pair. See the follow-up note.
+
 ## Alternatives considered and rejected
 
 - **Keep Inter / indigo and only rename Hubster → Töökratt in copy** —
@@ -206,13 +221,79 @@ same seam rather than introducing a second visual system.
 token set is larger than the 2026-07 indigo palette (more semantic aliases for
 opacity and on-navy surfaces) — still one file.
 
+**Follow-up (ALE-210):** the navy-on-amber shortfall named above is closed.
+Decision 1’s seam is unchanged: the live values are still one token file.
+
 ## Revisit triggers
 
-- Contrast nudge for navy-on-amber (see Contrast audit).
+- Contrast nudge for navy-on-amber (see Contrast audit). **Closed (ALE-201 /
+  ALE-210):** that pair is gone; see the follow-up note.
 - **Addressed in part (ALE-192):** the second view (`/market`) stays on
   hand-rolled tokens — see Decision 6. Dark mode, or a third distinct
   surface, still revisits whether a design-system library beats this file
   (same trigger as ADR-0004 for routing).
 - If a simplified monochrome mark is designed, prefer it for 16×16 favicon
   only (smile is illegible at that size with the current art — accepted under
-  ALE-172).
+  ALE-172). **Closed for the app favicon (ALE-201 / ALE-205):** the Kratt
+  mascot is replaced by the Ö mark, including a 16px drawing with no
+  connector. Marketing still uses the mascot until ALE-202.
+
+## Follow-up notes (post-acceptance)
+
+### Baltic palette, Ö mark, and type (ALE-201 / ALE-210)
+
+ALE-201 replaced the ALE-172 navy / amber / parchment / teal palette and the
+Sora + Karla pairing. The decisions above are left in place so that record
+stays readable. Live values are canonical in
+`frontend/src/styles/tokens.css`. `marketing/src/styles/tokens.css` duplicates
+the palette and type by hand (ADR-0016). This note does not change token
+values.
+
+**Palette.** Ink `#12151B`, Paper `#F6F7F9`, Baltic Blue `#16407A`, amber
+signal `#C68A2E`.
+
+| Token | Value | Use |
+|---|---|---|
+| `--color-ink` | `#12151B` | primary text, wordmark |
+| `--color-surface-alt` | `#F6F7F9` (Paper) | page background |
+| `--color-surface` | `#FFFFFF` | panels, input bar, assistant bubble |
+| `--color-accent` | `#16407A` (Baltic Blue) | Ask button, links, user bubble, chart fill, selected country |
+| `--color-accent-hover` | `#10325F` | blue control hover |
+| `--color-accent-text` | `#F6F7F9` (Paper) | text on blue controls and user bubbles |
+| `--color-signal` | `#C68A2E` | non-text amber: nav underline, Ö mark dots |
+| `--color-accent-on-ink` | `#7FA3D6` | blue on Ink. Defined in the token files; no component references it yet |
+| `--color-text-secondary` | Ink at 65% | subtitle |
+| `--color-text-muted` | Ink at 60%, `rgba(18, 21, 27, 0.6)` | muted copy. **4.69:1 on Paper.** Not the ALE-174 mapping of navy at 55% |
+| `--color-text-faint` / `--color-text-soft` | Ink at 45% / 75% | counter and softer copy. Ratios not re-audited here |
+| `--color-border-accent` | `rgba(22, 64, 122, 0.2)` | replaces `--color-border-teal` |
+
+`--color-teal` is removed. Chart fill and the selected country pill use
+`--color-accent`. The active nav underline uses `--color-signal`, not accent.
+Assistant bubbles are white with ink text and a 1px border, not parchment on
+navy. User bubbles are Baltic Blue with Paper text. In the frontend token
+file, `--color-on-navy-*` is renamed `--color-on-assistant-*`. Marketing
+keeps `--color-on-navy` and `--color-on-navy-muted` until ALE-202.
+
+**Type.** Display is Space Grotesk (`--font-family-display`), weights 500 /
+600 / 700 loaded. Body is IBM Plex Sans (`--font-family`), weights 400 / 500
+/ 600 / 700 loaded. Space Grotesk has no 800; headings use 700. Hosting stays
+`@fontsource` imported from `frontend/src/main.tsx` and `marketing/src/main.ts`,
+not a Google Fonts CDN. This supersedes Sora + Karla the same way Decision 3
+superseded Inter.
+
+**Ö mark.** `--size-mascot-header` / `--size-mascot-empty` become
+`--size-mark-header: 40px` and `--size-mark-empty: 72px` in the frontend
+file. ALE-205 uses that mark in the app header, empty state, and favicons.
+Marketing `--size-mascot-*` stays until ALE-202.
+
+**Contrast.** Paper on Baltic Blue (`#F6F7F9` on `#16407A`) is **9.6:1**,
+which passes AA for normal text. That is the Ask label and the user-bubble
+body, so the navy-on-amber pair (4.37:1) and its accepted risk are **closed**.
+`--color-text-muted` is Ink at 60% and measures **4.69:1 on Paper**, also an
+AA pass for normal text. The ALE-174 audit above is historical.
+
+**Why not edit Decisions 2 and 3 silently:** project convention is
+revision-via-follow-up when a later ticket changes a prior decision, so
+readers of this file still see what ALE-174 decided and where the Baltic
+change lives. The change is recorded here, in the ADR whose decisions moved,
+rather than in a new ADR.
