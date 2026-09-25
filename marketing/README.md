@@ -27,6 +27,16 @@ Cloudflare Pages: set **Root directory** to `marketing`, build command `npm run 
 | `VITE_APP_URL` | Chat app URL (default `https://app.tookratt.com`) |
 | `VITE_CAPTURE_URL` | ALE-177 Worker endpoint for waitlist/contact JSON POSTs. Empty → `mailto:hello@tookratt.com` fallback |
 | `VITE_TURNSTILE_SITE_KEY` | Public Turnstile site key (secret stays in the Worker) |
+| `TOOKRATT_API_KEYS` | Build-time only. `prebuild` uses the first key to snapshot `GET /jobs/stats` into `public/market-stats.json`. Never prefix with `VITE_`. That would ship the key to the browser. Unset or a failed fetch leaves the file out and the build still succeeds. |
+
+## Market stats (ALE-209)
+
+`npm run build` fetches aggregate counts for `DK`, `SE`, `NO`, `FI`, `IS`, and `EU` and writes `public/market-stats.json`. Vite copies it to `/market-stats.json`. The file is gitignored. `public/_headers` sets `Cache-Control: max-age=3600`.
+
+tookratt.com gets the numbers two ways, and neither puts a key in the browser:
+
+- A marketing git deploy runs the same prebuild. Set `TOOKRATT_API_KEYS` as a **Production** environment variable on the `tookratt-marketing` Pages project (the GitHub Actions secret is not visible to Pages).
+- The daily ingestion workflow POSTs `CLOUDFLARE_PAGES_DEPLOY_HOOK` after a successful sync, which rebuilds `main`. Create that hook in the Pages project (branch `main`) and store the URL as a GitHub Actions secret. A failed hook does not fail the Qdrant sync.
 
 ## Forms
 

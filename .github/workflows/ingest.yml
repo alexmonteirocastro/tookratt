@@ -56,3 +56,24 @@ jobs:
         # Sync (not --seed): diffs live listings vs Qdrant, adds new jobs,
         # removes delisted ones. Never drops the collection, so search stays
         # available throughout — safe to run unattended on a schedule.
+
+      - name: Refresh tookratt.com market stats
+        # ALE-209: the marketing Pages build fetches /jobs/stats itself.
+        # This hook rebuilds production after the sync so the numbers match
+        # the index we just wrote. A failed hook must not fail the sync.
+        if: success()
+        continue-on-error: true
+        env:
+          CLOUDFLARE_PAGES_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_PAGES_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$CLOUDFLARE_PAGES_DEPLOY_HOOK" ]; then
+            echo "CLOUDFLARE_PAGES_DEPLOY_HOOK is unset; tookratt.com keeps its previous numbers"
+            exit 1
+          fi
+          code=$(curl --silent --output /tmp/pages-hook-body --write-out "%{http_code}" \
+            --request POST --url "$CLOUDFLARE_PAGES_DEPLOY_HOOK" || echo "000")
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "Marketing deploy hook returned HTTP ${code}"
+            exit 1
+          fi
+          echo "Marketing deploy hook accepted"

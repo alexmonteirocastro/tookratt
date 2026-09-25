@@ -14,6 +14,9 @@ wheels/
 # Secrets and local config
 .env
 
+# Build-time market snapshot (ALE-209). Written by marketing prebuild, never committed.
+marketing/public/market-stats.json
+
 # Local data
 tmp/
 qdrant_data/
