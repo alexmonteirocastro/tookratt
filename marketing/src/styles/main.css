@@ -35,7 +35,7 @@ p {
 }
 
 a {
-  color: var(--color-teal);
+  color: var(--color-accent);
   text-decoration: none;
 }
 
@@ -60,7 +60,7 @@ ul {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-size: 15px;
-  color: var(--color-teal);
+  color: var(--color-accent);
 }
 
 .page {
@@ -128,7 +128,7 @@ ul {
 }
 
 .btn-nav:hover {
-  background: #142038;
+  background: color-mix(in srgb, var(--color-ink) 78%, var(--color-surface-alt));
   color: var(--color-on-navy);
 }
 
@@ -176,7 +176,7 @@ ul {
 .nav-links a:not(.btn) {
   font-weight: 600;
   font-size: 17px;
-  color: var(--color-teal);
+  color: var(--color-accent);
 }
 
 .nav-links a:not(.btn):hover {
@@ -290,7 +290,7 @@ ul {
   display: block;
   font-family: var(--font-family-display);
   font-size: 36px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-accent);
   margin-bottom: 18px;
 }
@@ -358,7 +358,7 @@ ul {
 }
 
 .feature-panel-teal {
-  background: var(--color-teal);
+  background: var(--color-ink);
 }
 
 .chat-q {
@@ -492,7 +492,7 @@ ul {
 
 /* CTA strip */
 .cta-strip {
-  background: var(--color-teal);
+  background: var(--color-ink);
   text-align: center;
   padding-top: var(--space-section-sm);
   padding-bottom: var(--space-section-sm);
@@ -512,7 +512,7 @@ ul {
 }
 
 .cta-strip p {
-  color: var(--color-on-teal-muted);
+  color: var(--color-on-navy-muted);
   font-size: 19px;
   margin-bottom: 28px;
 }
@@ -523,7 +523,7 @@ ul {
 }
 
 .cta-strip a.mailto:hover {
-  color: var(--color-accent);
+  color: var(--color-signal);
 }
 
 /* Footer */

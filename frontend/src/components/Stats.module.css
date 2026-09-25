@@ -1,6 +1,6 @@
 /*
  * ALE-192 / ALE-193 — stats dashboard. KPI tiles reuse the chart's cream
- * panel: Sora figure, uppercase Karla muted label (SourceList heading grammar).
+ * panel: Space Grotesk figure, uppercase Plex muted label (SourceList heading grammar).
  */
 .stats {
   display: flex;

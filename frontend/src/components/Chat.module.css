@@ -30,7 +30,7 @@
 }
 
 .emptyMascot {
-  height: var(--size-mascot-empty);
+  height: var(--size-mark-empty);
   width: auto;
   opacity: 0.9;
 }

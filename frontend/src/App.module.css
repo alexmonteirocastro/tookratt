@@ -32,7 +32,7 @@
 }
 
 .mascot {
-  height: var(--size-mascot-header);
+  height: var(--size-mark-header);
   width: auto;
   flex-shrink: 0;
 }
@@ -96,7 +96,7 @@
   gap: var(--space-3);
   padding: var(--space-5) var(--space-6);
   background: var(--color-surface);
-  border: 1px solid var(--color-border-teal);
+  border: 1px solid var(--color-border-accent);
   border-radius: var(--radius-md);
   flex-shrink: 0;
 }
@@ -104,7 +104,7 @@
 .bannerIcon {
   flex-shrink: 0;
   margin-top: 2px;
-  color: var(--color-teal);
+  color: var(--color-accent);
 }
 
 .bannerText {

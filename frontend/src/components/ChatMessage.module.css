@@ -8,7 +8,7 @@
 .user {
   align-self: flex-end;
   background: var(--color-bubble-user);
-  color: var(--color-ink);
+  color: var(--color-bubble-user-text);
   border-radius: var(--radius-bubble-user);
 }
 
@@ -16,6 +16,7 @@
   align-self: flex-start;
   background: var(--color-bubble-assistant);
   color: var(--color-bubble-assistant-text);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-bubble-assistant);
 }
 
@@ -74,8 +75,8 @@
   padding: var(--space-1) var(--space-2);
   font-size: var(--font-size-xs);
   color: var(--color-bubble-assistant-text);
-  background: var(--color-on-navy-soft);
-  border: 1px solid var(--color-on-navy-border);
+  background: var(--color-on-assistant-soft);
+  border: 1px solid var(--color-on-assistant-border);
   border-radius: var(--radius-sm);
   display: inline-block;
   opacity: 0.9;
