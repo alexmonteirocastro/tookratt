@@ -41,7 +41,7 @@ export default function App() {
       <header className={styles.header}>
         <div className={styles.brandColumn}>
           <div className={styles.brand}>
-            <Mark className={styles.mark} title="Töökratt" />
+            <Mark className={styles.mark} />
             <div className={styles.brandText}>
               <h1 className={styles.title}>töökratt</h1>
               <p className={styles.subtitle}>

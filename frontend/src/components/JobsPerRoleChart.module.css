@@ -99,6 +99,11 @@
 }
 
 @media (max-width: 640px) {
+  .table,
+  .table tbody {
+    display: block;
+  }
+
   .labelCol,
   .countCol {
     width: auto;
@@ -106,6 +111,7 @@
 
   .row {
     display: grid;
+    width: 100%;
     grid-template-columns: 1fr auto;
   }
 
