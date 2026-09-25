@@ -10,6 +10,7 @@ export const COUNTRIES = [
 export type CountryCode = (typeof COUNTRIES)[number]["code"]
 
 const COUNT_MS = 1200
+const ROLE_LIMIT = 8
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 /** Same labels as the app chart, so a role reads the same in both places. */
@@ -156,8 +157,12 @@ export function easeOutCubic(progress: number): number {
   return 1 - (1 - clamped) ** 3
 }
 
+export function blendCount(from: number, to: number, eased: number): number {
+  return Math.round(from + (to - from) * eased)
+}
+
 export function frameValue(target: number, eased: number): number {
-  return Math.round(target * eased)
+  return blendCount(0, target, eased)
 }
 
 function rolesFor(jobsPerRole: Record<string, number>): RoleCount[] {
@@ -186,12 +191,19 @@ function escapeHtml(value: string): string {
   })
 }
 
-function countMarkup(value: number): string {
-  const formatted = escapeHtml(formatCount(value))
-  return `<span class="count"><span class="count-sizer" aria-hidden="true">${formatted}</span><span class="count-live" aria-hidden="true" data-count-to="${value}">0</span></span><span class="visually-hidden">${formatted}</span>`
+function countMarkup(value: number, from = 0): string {
+  const finalText = escapeHtml(formatCount(value))
+  const startText = escapeHtml(formatCount(from))
+  const sizer = escapeHtml(formatCount(Math.max(value, from)))
+  return `<span class="count"><span class="count-sizer" aria-hidden="true">${sizer}</span><span class="count-live" aria-hidden="true" data-count-from="${from}" data-count-to="${value}">${startText}</span></span><span class="visually-hidden">${finalText}</span>`
 }
 
-function detailMarkup(snapshot: MarketSnapshot, code: CountryCode): string {
+interface ShownCounts {
+  kpis: Map<string, number>
+  roles: Map<string, { count: number; share: number }>
+}
+
+function detailMarkup(snapshot: MarketSnapshot, code: CountryCode, shown?: ShownCounts): string {
   const stats = snapshot.countries[code]
   if (!stats) {
     return ""
@@ -202,25 +214,34 @@ function detailMarkup(snapshot: MarketSnapshot, code: CountryCode): string {
     { label: "Roles that publish pay", value: stats.paid_jobs, signal: false },
   ]
   const kpiItems = kpis
-    .map(
-      (kpi) => `<li class="market-kpi${kpi.signal ? " market-kpi-signal" : ""}">
-        <p class="market-kpi-value">${countMarkup(kpi.value)}</p>
+    .map((kpi) => {
+      const from = shown?.kpis.get(kpi.label) ?? 0
+      return `<li class="market-kpi${kpi.signal ? " market-kpi-signal" : ""}">
+        <p class="market-kpi-value">${countMarkup(kpi.value, from)}</p>
         <p class="market-kpi-label">${kpi.label}</p>
-      </li>`,
-    )
+      </li>`
+    })
     .join("")
   const roles = rolesFor(stats.jobs_per_role)
-  const roleRows = roles
-    .map(
-      (role) => `<tr class="role-row">
+  const visible = roles.slice(0, ROLE_LIMIT)
+  const hidden = roles.length - visible.length
+  const roleRows = visible
+    .map((role) => {
+      const from = shown?.roles.get(role.key)
+      const shareFrom = from?.share ?? 0
+      return `<tr class="role-row" data-role="${escapeHtml(role.key)}">
         <th scope="row" class="role-label">${escapeHtml(role.label)}</th>
         <td class="role-track-cell">
-          <div class="role-track" aria-hidden="true"><div class="role-bar" data-share="${role.share}"></div></div>
+          <div class="role-track" aria-hidden="true"><div class="role-bar" data-share-from="${shareFrom}" data-share="${role.share}" style="transform:scaleX(${shareFrom})"></div></div>
         </td>
-        <td class="role-count">${countMarkup(role.count)}</td>
-      </tr>`,
-    )
+        <td class="role-count">${countMarkup(role.count, from?.count ?? 0)}</td>
+      </tr>`
+    })
     .join("")
+  const more =
+    hidden === 0
+      ? ""
+      : `<p class="role-more">and ${hidden} more ${hidden === 1 ? "role" : "roles"}</p>`
   const chart =
     roles.length === 0
       ? ""
@@ -232,6 +253,7 @@ function detailMarkup(snapshot: MarketSnapshot, code: CountryCode): string {
             </thead>
             <tbody>${roleRows}</tbody>
           </table>
+          ${more}
         </figure>`
   const updated = formatUpdated(snapshot.generated_at)
   const updatedMarkup = updated ? `<p class="market-updated">${escapeHtml(updated)}</p>` : ""
@@ -264,6 +286,39 @@ function applyFinal(detail: HTMLElement): void {
   }
 }
 
+function displayedCount(live: HTMLElement): number {
+  const parsed = Number(live.textContent?.replace(/[^\d.-]/g, ""))
+  return Number.isFinite(parsed) ? parsed : Number(live.dataset.countTo)
+}
+
+function displayedShare(bar: HTMLElement): number {
+  const match = /scaleX\(([^)]+)\)/.exec(bar.style.transform)
+  const parsed = match ? Number(match[1]) : Number.NaN
+  return Number.isFinite(parsed) ? parsed : Number(bar.dataset.shareFrom ?? 0)
+}
+
+function shownFrom(detail: HTMLElement): ShownCounts {
+  const kpis = new Map<string, number>()
+  for (const item of detail.querySelectorAll<HTMLElement>(".market-kpi")) {
+    const label = item.querySelector(".market-kpi-label")?.textContent ?? ""
+    const live = item.querySelector<HTMLElement>("[data-count-to]")
+    if (live) {
+      kpis.set(label, displayedCount(live))
+    }
+  }
+  const roles = new Map<string, { count: number; share: number }>()
+  for (const row of detail.querySelectorAll<HTMLElement>("[data-role]")) {
+    const key = row.dataset.role
+    const live = row.querySelector<HTMLElement>("[data-count-to]")
+    const bar = row.querySelector<HTMLElement>("[data-share]")
+    if (!key || !live || !bar) {
+      continue
+    }
+    roles.set(key, { count: displayedCount(live), share: displayedShare(bar) })
+  }
+  return { kpis, roles }
+}
+
 function animateDetail(detail: HTMLElement, cancel: { id: number }): void {
   const lives = [...detail.querySelectorAll<HTMLElement>("[data-count-to]")]
   const bars = [...detail.querySelectorAll<HTMLElement>("[data-share]")]
@@ -272,10 +327,14 @@ function animateDetail(detail: HTMLElement, cancel: { id: number }): void {
     const progress = Math.min(1, (now - start) / COUNT_MS)
     const eased = easeOutCubic(progress)
     for (const live of lives) {
-      live.textContent = formatCount(frameValue(Number(live.dataset.countTo), eased))
+      const from = Number(live.dataset.countFrom ?? 0)
+      const to = Number(live.dataset.countTo)
+      live.textContent = formatCount(blendCount(from, to, eased))
     }
     for (const bar of bars) {
-      bar.style.transform = `scaleX(${Number(bar.dataset.share) * eased})`
+      const from = Number(bar.dataset.shareFrom ?? 0)
+      const to = Number(bar.dataset.share)
+      bar.style.transform = `scaleX(${from + (to - from) * eased})`
     }
     if (progress < 1) {
       cancel.id = requestAnimationFrame(tick)
@@ -313,10 +372,15 @@ export function mountMarket(root: HTMLElement): void {
         if (!detail) {
           return
         }
+        const shown = !reduced && revealed ? shownFrom(detail) : undefined
         cancelAnimationFrame(cancel.id)
-        detail.innerHTML = detailMarkup(snapshot, code)
-        if (reduced || revealed) {
+        detail.innerHTML = detailMarkup(snapshot, code, shown)
+        if (reduced) {
           applyFinal(detail)
+          return
+        }
+        if (revealed) {
+          animateDetail(detail, cancel)
         }
       }
       slot.addEventListener("change", (event) => {

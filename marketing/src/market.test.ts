@@ -6,6 +6,7 @@ import {
   formatCount,
   formatRoleLabel,
   formatUpdated,
+  blendCount,
   frameValue,
   parseSnapshot,
   renderMarketFigures,
@@ -54,6 +55,13 @@ test("frameValue eases out and lands on the target", () => {
   assert.ok(frameValue(100, easeOutCubic(0.5)) > 50)
 })
 
+test("blendCount moves from the previous number to the next", () => {
+  assert.equal(blendCount(100, 400, 0), 100)
+  assert.equal(blendCount(100, 400, 1), 400)
+  assert.ok(blendCount(100, 400, 0.5) > 100)
+  assert.ok(blendCount(100, 400, 0.5) < 400)
+})
+
 test("renderMarketFigures disables a missing country and keeps the final number for assistive tech", () => {
   const snapshot = parseSnapshot({
     generated_at: "2026-09-25T00:00:00.000Z",
@@ -71,4 +79,24 @@ test("renderMarketFigures disables a missing country and keeps the final number 
   assert.match(html, /Updated 25 Sep 2026/)
   assert.match(html, /data-share="1"/)
   assert.match(html, /data-share="0.5"/)
+  assert.doesNotMatch(html, /more role/)
+})
+
+test("renderMarketFigures keeps the top roles and counts the rest", () => {
+  const jobsPerRole: Record<string, number> = {}
+  for (let index = 0; index < 9; index += 1) {
+    jobsPerRole[`role_${index}`] = 100 - index
+  }
+  const snapshot = parseSnapshot({
+    generated_at: "2026-09-25T00:00:00.000Z",
+    countries: {
+      DK: { total_jobs: 1, remote_jobs: 1, paid_jobs: 1, jobs_per_role: jobsPerRole },
+    },
+  })
+  assert.ok(snapshot)
+  const html = renderMarketFigures(snapshot, "DK")
+  assert.match(html, /Role 0/)
+  assert.match(html, /Role 7/)
+  assert.doesNotMatch(html, /Role 8/)
+  assert.match(html, /and 1 more role/)
 })

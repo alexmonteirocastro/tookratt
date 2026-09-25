@@ -572,6 +572,12 @@ ul {
   color: var(--color-on-navy);
 }
 
+.role-more {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--color-on-navy-muted);
+}
+
 .market-updated {
   margin-top: 28px;
   font-size: 14px;

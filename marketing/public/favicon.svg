@@ -1,6 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <line x1="16" y1="8" x2="32" y2="8" stroke="#C68A2E" stroke-width="3"/>
-  <circle cx="16" cy="8" r="5.5" fill="#C68A2E"/>
-  <circle cx="32" cy="8" r="5.5" fill="#C68A2E"/>
-  <circle cx="24" cy="29" r="12.5" fill="none" stroke="#16407A" stroke-width="7.5"/>
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .r { stroke: #F6F7F9 }
+    }
+  </style>
+  <circle cx="15" cy="8" r="6.5" fill="#C68A2E"/>
+  <circle cx="33" cy="8" r="6.5" fill="#C68A2E"/>
+  <circle class="r" cx="24" cy="29" r="12.5" fill="none" stroke="#16407A" stroke-width="9"/>
 </svg>
