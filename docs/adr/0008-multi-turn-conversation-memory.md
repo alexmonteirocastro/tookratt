@@ -2,7 +2,9 @@
 
 * **Status:** Accepted
 * **Date:** 2026-08-18
-* **Related:** ALE-103 (spike, this ADR's deliverable), ALE-184 (backend implementation), ALE-185 (frontend implementation), ADR-0001 Decision 4 (statelessness — the revisit trigger this ADR fires), ADR-0002 Decision 3 (deterministic filter extraction — precedent this ADR extends), ADR-0004 Decision 3 (frontend history is display-only — superseded by this ADR once implemented), ADR-0006 (in-memory rate limiting — same multi-worker caveat applies here), ADR-0009/ADR-0012 (prompt structuring precedent for untrusted content), ADR-0011 (API key auth — no per-user identity today), ADR-0014 (Render memory-crash precedent), ALE-183 (embedding-model context-window spike — related but not a dependency), PRODUCT_VISION.md (Phase 2 candidate profile)
+* **Related:** ALE-103 (spike, this ADR's deliverable), ALE-184 (backend implementation), ALE-185 (frontend implementation), ADR-0001 Decision 4 (statelessness — the revisit trigger this ADR fires), ADR-0002 Decision 3 (deterministic filter extraction — precedent this ADR extends), ADR-0004 Decision 3 (frontend history is display-only — superseded by this ADR once implemented), ADR-0006 (in-memory rate limiting — same multi-worker caveat applies here), ADR-0009/ADR-0012 (prompt structuring precedent for untrusted content), ADR-0011 (API key auth — no per-user identity today), ADR-0014 (Render memory-crash precedent), ALE-183 (embedding-model context-window spike — related but not a dependency), PRODUCT_VISION.md (conversation memory only; ALE-200 dropped the candidate profile)
+
+**Follow-up (ALE-200, 2026-09-23):** PRODUCT_VISION no longer schedules a candidate profile. `SessionState` remains the conversation-memory store. It is not the carrier of a profile. The Phase 2 mentions below are the decision as written.
 
 ## Context
 
