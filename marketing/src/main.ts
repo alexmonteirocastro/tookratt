@@ -7,6 +7,8 @@ import "@fontsource/ibm-plex-sans/600.css";
 import "@fontsource/ibm-plex-sans/700.css";
 import { getAppUrl } from "./config";
 import { bindForm } from "./forms";
+import { markMarkup } from "./mark";
+import { mountMarket } from "./market";
 import "./styles/main.css";
 
 const appUrl = getAppUrl();
@@ -21,6 +23,7 @@ root.innerHTML = `
   <div class="page">
     <header class="shell nav">
       <a class="brand" href="#top" aria-label="Töökratt home">
+        ${markMarkup()}
         <span class="brand-name">töökratt</span>
       </a>
       <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="nav-links">
@@ -119,6 +122,7 @@ root.innerHTML = `
               Denmark, Sweden, Norway, Finland, Iceland, Europe.
             </p>
           </div>
+          <div class="market-figures" data-market-figures hidden></div>
         </div>
       </section>
 
@@ -229,6 +233,11 @@ if (contactForm) {
   bindForm(contactForm, "contact");
 }
 
+const market = document.querySelector<HTMLElement>("#market");
+if (market) {
+  mountMarket(market);
+}
+
 const toggle = document.querySelector<HTMLButtonElement>(".nav-toggle");
 const links = document.querySelector<HTMLElement>("#nav-links");
 if (toggle && links) {
@@ -242,4 +251,37 @@ if (toggle && links) {
       toggle.setAttribute("aria-expanded", "false");
     });
   });
+  bindSectionNav(links);
+}
+
+function bindSectionNav(nav: HTMLElement): void {
+  const pairs = [...nav.querySelectorAll<HTMLAnchorElement>("a[href^='#']")].flatMap((anchor) => {
+    const id = anchor.getAttribute("href")?.slice(1);
+    const section = id ? document.getElementById(id) : null;
+    return section ? [{ anchor, section }] : [];
+  });
+  if (pairs.length === 0) {
+    return;
+  }
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) {
+        return;
+      }
+      for (const pair of pairs) {
+        if (pair.section === visible.target) {
+          pair.anchor.setAttribute("aria-current", "location");
+        } else {
+          pair.anchor.removeAttribute("aria-current");
+        }
+      }
+    },
+    { rootMargin: "-20% 0px -55% 0px", threshold: [0.1, 0.25, 0.5] },
+  );
+  for (const pair of pairs) {
+    observer.observe(pair.section);
+  }
 }
