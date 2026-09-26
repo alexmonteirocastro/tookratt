@@ -18,7 +18,7 @@ This matches the product as it stands after ALE-200, not the roadmap paragraph t
 | Auth mechanism | Supabase access token (short-lived ES256 JWT) plus rotating refresh tokens. FastAPI verifies the JWT locally. Not a cookie. Not a session table we operate. Not merged with chat `session_id`. |
 | Identity for v1 | Supabase Auth, invite-only email + password. Public sign-up off. The admin copies a `generate_link` invite URL and sends it by hand. No SMTP in v1. Magic link and OAuth wait. |
 | Data model | `auth.users` and `auth.sessions` are Supabase's. Admin role lives in the token (`app_metadata`). No waitlist table. No feature-flag table. No profile. Service keys stay out of `auth.users`. |
-| Datastore | Supabase free Postgres, reached from Render through the shared pooler in session mode (port 5432). A scheduled dump outside Supabase is part of the decision. |
+| Datastore | Supabase free Postgres. The first API ticket verifies tokens and calls the admin API over HTTPS; it does not need a SQL connection. The pooler (session mode, port 5432) matters when the first table or the `auth.sessions` check arrives. A scheduled dump outside Supabase is the backup and the keep-alive. |
 | Migration | Accept a static key **or** a Supabase access token during cutover. Move people off `TOOKRATT_API_KEYS` one at a time. Leave non-interactive callers (marketing prebuild, CI) on static keys. |
 | ADR-0011 | Supersede it with a new ADR. Do not revise ADR-0011 in place. Point both documents at each other when that ADR lands. |
 
@@ -43,7 +43,7 @@ This is a consequence of §2, not a separate vote for JWTs. An earlier pass of t
 - Algorithm ES256. Public keys come from `https://<project>.supabase.co/auth/v1/.well-known/jwks.json`.
 - Supabase caches that key list for 10–20 minutes. The API must not cache it longer.
 - The legacy HS256 shared secret is not the production path.
-- Claims: `iss`, `aud`, `exp`, and the role (see §3).
+- Claims: `iss`, `aud`, `exp`, and `app_metadata.role` (see §3). The top-level `role` claim is Supabase's Postgres role (`authenticated`). It is not our admin/member flag, and FastAPI must not read it as one.
 - The service-role key never reaches the browser. The anon key may. That split is the same rule as `TOOKRATT_API_KEYS` on the marketing build: a secret used to administer users is not a `VITE_` variable.
 
 Revocation is not instant. After a session is revoked, the access token stays valid until it expires (one hour by default). That is acceptable for this invite list. If a later incident needs a hard cutoff, FastAPI can also require that the token's `session_id` still exists in `auth.sessions`. That is one database query per request, and it is the escape hatch, not the default.
@@ -81,7 +81,7 @@ What stays in our code:
 
 - The FastAPI dependency in §1.
 - Admin actions, which call the Supabase admin API with the secret key. Invites use `generate_link` (`type: invite`) and return the URL to the admin. `invite_user_by_email` sends mail, so v1 does not call it. Revoke uses `update_user_by_id` (`ban_duration`) or `delete_user`. `list_users` is 50 per page. The panel UI itself is still out of scope.
-- The first admin can be created in the Supabase dashboard. There is no bootstrap env password in the API.
+- The first admin starts as a user created in the Supabase dashboard. There is no bootstrap env password in the API. Creating that user does not put `app_metadata.role = admin` on later access tokens. Set it with `update_user_by_id`, or an equivalent update of `auth.users` app metadata, and confirm the next token carries `app_metadata.role`. The top-level `role` claim will still say `authenticated`.
 
 ### Email — no mail provider in v1
 
@@ -91,7 +91,9 @@ The admin copies an invite link and sends it by hand, the same way API keys are 
 
 That call has not been made against a project yet. There is no Supabase project in this repo, and creating one is implementation, not this spike. Until an implementation ticket runs `generate_link` with public sign-up disabled and gets `action_link` back, the no-SMTP choice is the intended path, not a demonstrated one.
 
-Two invite hazards the ADR should not rediscover in production: PKCE does not work with invites, and an email-link scanner (Microsoft Safe Links is the usual one) can consume the token if the link is sent through a mailbox that prefetches URLs. Sending it in a channel that does not prefetch is the point of copying it by hand. Where the invitee sets the password is still unchecked. The likely shape is a React page that receives the link's session and calls `updateUser({ password })`. The docs do not spell that out.
+Invite links expire. This spike did not read the project's OTP lifetime or how far it can be extended, so the implementation ticket has to read both (Open item 4). A link that dies before the recipient opens it is not a hand-sent invite.
+
+Two further hazards the ADR should not rediscover in production: PKCE does not work with invites, and an email-link scanner (Microsoft Safe Links is the usual one) can consume the token if the link is sent through a mailbox that prefetches URLs. Sending it in a channel that does not prefetch is the point of copying it by hand. Where the invitee sets the password is still unchecked. The likely shape is a React page that receives the link's session and calls `updateUser({ password })`. The docs do not spell that out.
 
 ### What Supabase Auth costs
 
@@ -123,7 +125,7 @@ Enough to show the mechanism fits. Column types are the ADR's job. Supabase alre
 
 ### Role
 
-Put `role` (`admin` or `member`) in `app_metadata`, which Supabase puts on the access token. FastAPI then distinguishes admin from member without a database read, consistent with verifying the JWT locally. Changing a role waits for the current access token to expire or for a refresh, the same lag as revocation. A `public.user_roles` table is the alternative if that lag is unacceptable; it costs a query on every admin check. Default for the ADR: the claim. The table is the escape hatch, next to the `auth.sessions` lookup.
+Put `admin` or `member` in `app_metadata.role`, which Supabase copies onto the access token. FastAPI reads that field and no other role field. Supabase already sets a top-level `role` claim to the Postgres role `authenticated` (or `anon`). Treating that claim as "is this person an admin?" would make every signed-in user an admin, or make none of them one. Changing `app_metadata.role` waits for the current access token to expire or for a refresh, the same lag as revocation. A `public.user_roles` table is the alternative if that lag is unacceptable; it costs a query on every admin check, and it is the moment the API needs a database connection (§4). Default for the ADR: `app_metadata.role`. The table is the escape hatch, next to the `auth.sessions` lookup.
 
 `ban_duration` is the revoke operation to confirm (Open items). A banned user must not be able to refresh. There has to be a documented way to lift the ban. Deleting the user is the stronger action and is not required for "revoke access."
 
@@ -139,9 +141,15 @@ No chat-turn table. See §1.
 
 The marketing Pages prebuild calls `GET /jobs/stats` with the first entry in `TOOKRATT_API_KEYS` (`marketing/README.md`). CI and the Compose `test` service set `TOOKRATT_API_KEYS=test-api-key`. Those callers have no email and no password. Creating Supabase users for them would force every existing unit test through Auth. Keep them as the static allowlist.
 
+A static key is never an admin. The access dependency returns a caller that says which kind of credential succeeded: a service key, or a user with `sub` and `app_metadata.role`. Invite and revoke require a user caller whose `app_metadata.role` is `admin`. Membership in the key set authorizes the existing product routes (`/chat`, `/jobs/*`) only. A leaked marketing key must not be able to invite or revoke.
+
 ## 4. Datastore — Supabase free Postgres
 
-**Recommendation:** Supabase free Postgres for the Auth schema and any later app tables. Connect from the Render API through the shared pooler (Supavisor) in **session mode on port 5432**. Username form `postgres.[PROJECT-REF]`. A scheduled `pg_dump` or `supabase db dump`, stored outside Supabase, is part of this decision.
+**Recommendation:** Supabase free Postgres for the Auth schema and any later app tables. A scheduled `pg_dump` or `supabase db dump`, stored outside Supabase, is part of this decision.
+
+The first implementation ticket may not open a SQL connection at all. If the only authorization data is `app_metadata.role` and there is no `public` table, FastAPI verifies tokens against the JWKS URL and calls the admin API, both over HTTPS. `DATABASE_URL`, the pooler, and a SQL driver stay out of that ticket. They arrive with the first `public` table, or with the hard-cutoff read of `auth.sessions`. When that connection is added, Render reaches Postgres through the shared pooler (Supavisor) in **session mode on port 5432**, username `postgres.[PROJECT-REF]`. The free tier's direct connection is IPv6-only. Transaction mode (port 6543) does not support prepared statements, which asyncpg and SQLAlchemy use.
+
+Because the API does not touch the database in that first shape, API traffic cannot keep the project awake. The dump workflow is the keep-alive as well as the backup.
 
 Checked 2026-09-26 against Supabase and Render's current docs. This replaces the earlier "confirm the host in the ADR" placeholder.
 
@@ -158,15 +166,13 @@ Checked 2026-09-26 against Supabase and Render's current docs. This replaces the
 | Pause | After 7 days of low activity the project is **paused**, not deleted. Resume from the dashboard. A paused project can be restored for up to 1 year. Supabase sends a warning email a week before a pause. |
 | Backups | None. No daily backups, no point-in-time recovery. |
 
-### How Render connects
-
-The free tier's direct database connection is IPv6-only. The Render web service reaches Postgres through the shared pooler, which is IPv4. Use session mode (port 5432). Transaction mode (port 6543) does not support prepared statements, which asyncpg and SQLAlchemy use.
-
 ### Backups and the pause
 
 Free Supabase will not save us from a bad migration or a dropped table. A scheduled GitHub Action dumps the database and stores the dump outside Supabase. That job is required.
 
 The same job is how a quiet invite-only app avoids the 7-day pause. Supabase says a few database requests a day are enough. Whether a dump counts is still to verify (Open items). If it does not, the workflow needs a trivial query as well. A paused project fails the next login until someone resumes it in the dashboard. That is the accepted availability risk at $0, in the same family as ADR-0013's Render spin-down, and it is worse than a spin-down because it lasts until a person acts.
+
+The repo is public. GitHub disables scheduled workflows on a public repository after 60 days without repository activity, and the disable is silent. The dump keep-alive and the daily ingest (`.github/workflows/ingest.yml`) are both schedules, so a quiet 60 days stops both. Do not treat the ingest run as proof the timer resets. The implementation ticket should say how someone notices a disabled schedule.
 
 ### Why not Render
 
@@ -188,15 +194,15 @@ Cloudflare D1 stays a poor fit: the API is not a Worker, and ADR-0016 kept produ
 
 ### Local and CI
 
-Compose has no database service today. Dev should grow a Postgres service, or a local Supabase stack, that the API points at with a URL.
+Compose has no database service today, and the first API ticket should not add one. Token-verification tests use a local key pair and do not call a live Supabase project. A Postgres service in dev and CI arrives with the first SQL, not before.
 
-The unit-test job does not have a database, and it should not grow one for the whole suite. `Settings` still requires a non-empty `TOOKRATT_API_KEYS`, and tests authenticate with `test-api-key`. Keeping that path (§5) means existing `/chat` and `/jobs/*` tests stay as they are. Tests that need a real JWT or a real SQL role check belong beside a Postgres service, not in the default unit-test marker. Token-verification tests can use a local key pair and should not call a live Supabase project.
+The unit-test job does not have a database, and it should not grow one for the whole suite. `Settings` still requires a non-empty `TOOKRATT_API_KEYS`, and tests authenticate with `test-api-key`. Keeping that path (§5) means existing `/chat` and `/jobs/*` tests stay as they are.
 
-There is no SQLAlchemy or Alembic in `pyproject.toml` today. If v1's only schema is Supabase Auth plus `app_metadata`, the first migration may be empty. The moment we add a `public` table, schema changes are versioned files, not SQL applied by hand in the dashboard.
+There is no SQLAlchemy or Alembic in `pyproject.toml` today. If v1's only schema is Supabase Auth plus `app_metadata`, the first migration is empty and there is no `DATABASE_URL`. The moment a `public` table is added, schema changes are versioned files, not SQL applied by hand in the dashboard.
 
 ## 5. Migration — both credentials work until each person has moved
 
-**Recommendation:** One access dependency accepts either a remaining static key or a valid Supabase access token. Humans move one at a time. Machines never become `auth.users` rows.
+**Recommendation:** One access dependency accepts either a remaining static key or a valid Supabase access token, and it returns a caller that records which one succeeded. A service-key caller has no `sub` and no role. A user caller has `sub` and `app_metadata.role`. Admin routes require the user caller with `role` `admin` inside `app_metadata`. Humans move one at a time. Machines never become `auth.users` rows, and a static key never gains admin rights.
 
 ADR-0011 Decision 2's useful property is independent revocation: remove one key from the comma-separated env var and everyone else keeps working. The cutover should keep that property.
 
@@ -204,13 +210,13 @@ ADR-0011 Decision 2's useful property is independent revocation: remove one key 
 2. Create the first admin in the Supabase dashboard. That person invites each current key holder by copying a `generate_link` URL and sending it by hand. No SMTP. Nobody is locked out on deploy day, because their key still works.
 3. When a person has logged in and confirmed the app works, remove **their** key from `TOOKRATT_API_KEYS` and redeploy. Other keys, including the marketing prebuild key, stay.
 4. Stop when the env var contains only service credentials: the marketing snapshot key, `test-api-key` in CI, and whatever local dev still uses. `Settings` rejects an empty set today (`parse_tookratt_api_keys`). After this migration that validator can stay, because the set is not empty.
-5. During cutover the SPA stores one bearer value, as it does now (`frontend/src/api/authStorage.ts`). It does not need to know whether the value is a legacy key or an access token. The server distinguishes them: membership in the static set, otherwise JWT verification. When the last human key is gone, the lock modal becomes the Supabase login flow. That UI replacement is the frontend implementation ticket.
+5. The server distinguishes the two credentials: membership in the static set, otherwise JWT verification. The SPA cannot. A Supabase access token expires after about an hour, and only the Supabase client can refresh it, so an account holder must run that client and send its current access token. A stored string, which is what `frontend/src/api/authStorage.ts` does for the API key today, will not keep an account session alive. Legacy key holders keep that stored string until their key is removed. When the last human key is gone, the lock modal becomes the Supabase login flow. That UI replacement is the frontend implementation ticket.
 6. `/health` stays unauthenticated (ADR-0011 Decision 1).
 7. `HUBSTER_API_KEYS` remains the ALE-168 alias until that cutover finishes. The new ADR should not invent a second alias.
 
 There is no flag day and no window where a collaborator has neither a key nor an account, as long as step 3 happens only after step 2 for that person.
 
-Service keys are a deliberate remainder. They are how a build and a test suite call the API without a browser. The new ADR should say that plainly so a later cleanup does not delete the marketing key and break the homepage snapshot.
+Service keys are a deliberate remainder. They are how a build and a test suite call the API without a browser. The new ADR should say that plainly so a later cleanup does not delete the marketing key and break the homepage snapshot. It should also say the inverse: those keys authorize product routes only. They do not authorize invite or revoke (§3).
 
 ## 6. ADR-0011 — supersede it, in a new number
 
@@ -249,8 +255,8 @@ What it should retire: "a handful of static keys is the user database."
 | Session cookie or JWT? | **Supabase access token (ES256 JWT) plus rotating refresh tokens.** We do not operate a second session table. Cookies stay out because the app and the API are different sites. |
 | Merge with chat `SessionState`? | **No.** Tag the in-memory session with `sub`. Turns stay in the process, with the 30-minute TTL. |
 | Identity method for v1? | **Supabase Auth, invite-only email + password.** Public sign-up off. Admin copies a `generate_link` URL. No SMTP. |
-| Schema we own? | **No** users, sessions, invites, waitlist, flags, or profile tables in v1. Role goes in `app_metadata`. |
-| Where does Postgres live? | **Supabase free**, via the shared pooler, session mode, port 5432. Scheduled off-site dump included. |
+| Schema we own? | **No** users, sessions, invites, waitlist, flags, or profile tables in v1. Role is `app_metadata.role`, never the top-level `role` claim. |
+| Where does Postgres live? | **Supabase free.** Off-site dump included. The first API does not open SQL; the pooler (session mode, port 5432) waits for the first table or the `auth.sessions` check. |
 | Render free Postgres or a disk? | **No.** Free Postgres is deleted after 30 days plus 14 days of grace. A free web service cannot attach a disk. |
 | Hard cutover from `TOOKRATT_API_KEYS`? | **No.** Dual-accept, then remove human keys one at a time. Service keys stay. |
 | Revise ADR-0011 in place? | **No.** ADR-0019 supersedes it, with pointers both ways. |
@@ -262,7 +268,7 @@ These are checks, not undecided architecture. The datastore recommendation does 
 1. **Invites with public sign-up disabled.** Confirm an admin can still invite when "Allow new users to sign up" is off. The docs do not say.
 2. **Where the invitee sets a password.** Likely a React page on the invite link's session calling `updateUser({ password })`. Unconfirmed. PKCE does not apply to invites. Link scanners can consume the token.
 3. **Ban and unban.** `ban_duration` must stop refresh, and there must be a way to lift it.
-4. **`generate_link` without SMTP.** v1 will not add a mail provider. The admin copies `action_link` and sends it by hand. The remaining proof, for the implementation ticket, is one `generate_link` call on a project with public sign-up disabled. This spike does not create that project.
+4. **`generate_link` without SMTP, and how long the link lives.** v1 will not add a mail provider. The admin copies `action_link` and sends it by hand. The implementation ticket confirms the call returns that link on a project with public sign-up disabled, and reads the OTP expiry (and its maximum) before anyone is told to expect a hand-sent link to wait. This spike does not create that project and does not state a lifetime.
 5. **Verify a token from FastAPI.** `get_claims` in `supabase-py`, or PyJWT against the JWKS URL. Confirm `iss`, `aud`, `exp`, ES256, and that we do not cache keys longer than 10–20 minutes.
 6. **Does the scheduled dump count as activity** for the 7-day pause? If not, add a trivial query to the same workflow.
 
