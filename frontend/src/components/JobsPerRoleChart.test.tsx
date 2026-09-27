@@ -10,6 +10,7 @@ describe("JobsPerRoleChart", () => {
   it("renders a table of non-zero roles with bars sized to the max", () => {
     const { container } = render(
       <JobsPerRoleChart
+        countryName="Denmark"
         jobsPerRole={{
           backend_developer: 20,
           frontend_developer: 10,
@@ -19,6 +20,7 @@ describe("JobsPerRoleChart", () => {
     );
 
     expect(screen.getByText("Jobs per role")).toBeInTheDocument();
+    expect(screen.getByText("Denmark")).toBeInTheDocument();
     expect(screen.getByRole("rowheader", { name: "Backend developer" })).toBeInTheDocument();
     expect(screen.getByRole("rowheader", { name: "Frontend developer" })).toBeInTheDocument();
     expect(screen.queryByText("Legal")).not.toBeInTheDocument();
@@ -32,7 +34,7 @@ describe("JobsPerRoleChart", () => {
   });
 
   it("shows an empty state when every role is zero", () => {
-    render(<JobsPerRoleChart jobsPerRole={{ legal: 0, other: 0 }} />);
+    render(<JobsPerRoleChart countryName="Sweden" jobsPerRole={{ legal: 0, other: 0 }} />);
 
     expect(screen.getByText(/no roles to show/i)).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();

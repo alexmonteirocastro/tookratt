@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiHttpError, ApiNetworkError, getJobsStats } from "../api/client";
 import type { CountryCode, JobOpenings } from "../api/types";
+import { COUNTRY_OPTIONS } from "../utils/statsLabels";
 import { CountrySelector } from "./CountrySelector";
 import { JobsPerRoleChart } from "./JobsPerRoleChart";
 import styles from "./Stats.module.css";
@@ -106,7 +107,12 @@ export function Stats({ enabled }: StatsProps) {
               </li>
             ))}
           </ul>
-          <JobsPerRoleChart jobsPerRole={data.jobs_per_role} />
+          <JobsPerRoleChart
+            jobsPerRole={data.jobs_per_role}
+            countryName={
+              COUNTRY_OPTIONS.find((option) => option.code === country)?.name ?? country
+            }
+          />
         </>
       ) : null}
     </div>

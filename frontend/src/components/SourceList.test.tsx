@@ -30,7 +30,8 @@ describe("SourceList", () => {
 
     expect(screen.getByText(/^sources$/i)).toBeInTheDocument();
     expect(screen.queryByText(/retrieved sources/i)).not.toBeInTheDocument();
-    expect(screen.getByText("0.91")).toBeInTheDocument();
+    expect(screen.queryByText("0.91")).not.toBeInTheDocument();
+    expect(screen.getByText("Acme · Copenhagen")).toBeInTheDocument();
   });
 
   it("uses compact chips when VITE_SHOW_DEBUG_SOURCES is unset", () => {
@@ -38,7 +39,7 @@ describe("SourceList", () => {
 
     const jobLink = screen.getByRole("link", { name: /senior backend developer/i });
     expect(jobLink).toHaveAttribute("href", "https://thehub.io/jobs/job-1");
-    expect(screen.getByText("0.91")).toBeInTheDocument();
+    expect(screen.queryByText("0.91")).not.toBeInTheDocument();
     expect(screen.getByText(/^sources$/i)).toBeInTheDocument();
     expect(screen.getByText("Acme · Copenhagen")).toBeInTheDocument();
     expect(screen.queryByText(/acme · copenhagen · denmark/i)).not.toBeInTheDocument();

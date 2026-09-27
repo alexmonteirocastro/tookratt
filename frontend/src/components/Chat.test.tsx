@@ -132,7 +132,8 @@ describe("Chat", () => {
     expect(jobLink).toHaveAttribute("href", "https://thehub.io/jobs/job-1");
     expect(jobLink).toHaveAttribute("target", "_blank");
     expect(jobLink).toHaveAttribute("rel", "noopener noreferrer");
-    expect(screen.getByText("0.91")).toBeInTheDocument();
+    expect(screen.queryByText("0.91")).not.toBeInTheDocument();
+    expect(screen.getByText("Acme · Copenhagen")).toBeInTheDocument();
     expect(screen.getByText(/^sources$/i)).toBeInTheDocument();
     expect(mockPostChat).toHaveBeenCalledWith({ question: "backend roles in Denmark" });
     expect(mockPostChat.mock.calls[0][0]).not.toHaveProperty("session_id");
@@ -258,7 +259,8 @@ describe("Chat", () => {
     expect(await screen.findByText(declinedWithSourcesResponse.answer)).toBeInTheDocument();
     expect(screen.getByText(/^sources$/i)).toBeInTheDocument();
     expect(screen.getByText(/backend developer/i)).toBeInTheDocument();
-    expect(screen.getByText("0.42")).toBeInTheDocument();
+    expect(screen.queryByText("0.42")).not.toBeInTheDocument();
+    expect(screen.getByText("Wrong Co · Copenhagen")).toBeInTheDocument();
     expect(
       screen.getByText(/no matching jobs — answer from search, not generated/i),
     ).toBeInTheDocument();

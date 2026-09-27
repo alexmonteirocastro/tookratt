@@ -209,9 +209,9 @@ function detailMarkup(snapshot: MarketSnapshot, code: CountryCode, shown?: Shown
     return ""
   }
   const kpis = [
-    { label: "Open roles", value: stats.total_jobs, signal: true },
-    { label: "Remote roles", value: stats.remote_jobs, signal: false },
-    { label: "Roles that publish pay", value: stats.paid_jobs, signal: false },
+    { label: "Open roles", value: stats.total_jobs, signal: false },
+    { label: "Remote", value: stats.remote_jobs, signal: false },
+    { label: "Paid", value: stats.paid_jobs, signal: true },
   ]
   const kpiItems = kpis
     .map((kpi) => {

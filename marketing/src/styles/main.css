@@ -342,6 +342,15 @@ ul {
   line-height: 1.5;
 }
 
+.persona .persona-num {
+  margin: 0 0 12px;
+  font-family: var(--font-family-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
 .next-card .eyebrow {
   margin-bottom: 12px;
 }
@@ -374,10 +383,20 @@ ul {
 }
 
 .not-list li {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  gap: 12px;
+  align-items: baseline;
   padding-top: 16px;
   border-top: 1px solid var(--color-border);
   color: var(--color-ink);
   font-size: 18px;
+}
+
+.not-mark {
+  font-family: var(--font-family-display);
+  font-weight: 700;
+  color: var(--color-accent);
 }
 
 .band {
