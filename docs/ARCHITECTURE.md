@@ -126,7 +126,7 @@ Set at minimum:
 - `QDRANT_API_KEY` — cluster API key
 - `QDRANT_COLLECTION_NAME` / `QDRANT_DEV_COLLECTION_NAME` — distinct collection names
 - `EMBEDDING_MODEL=intfloat/multilingual-e5-small`
-- `TOOKRATT_API_KEYS` — service keys for `/jobs/*` only ([ADR-0019](adr/0019-accounts-and-access-control-on-supabase-auth.md) follow-up, [ALE-220](https://linear.app/alex-projects/issue/ALE-220)). `/chat` requires a logged-in user. Until [ALE-214](https://linear.app/alex-projects/issue/ALE-214) ships, the running API still accepts these keys on `/chat` as well.
+- `TOOKRATT_API_KEYS` — service keys for `GET /jobs/stats` only ([ADR-0019](adr/0019-accounts-and-access-control-on-supabase-auth.md) follow-up, [ALE-220](https://linear.app/alex-projects/issue/ALE-220)). `/jobs/search` and `/chat` require a logged-in user. Until [ALE-214](https://linear.app/alex-projects/issue/ALE-214) ships, the running API still accepts these keys on `/chat` and `/jobs/*` as well.
 - `GEMINI_API_KEY` — if using `/chat` with the default Gemini provider
 
 `intfloat/multilingual-e5-small` is served via Qdrant Cloud Inference only — there is no local FastEmbed fallback ([ADR-0014](adr/0014-embedding-model-migration.md)). Ingestion, `/jobs/search`, and `/chat` retrieval all fail against a local Qdrant container with the current defaults.

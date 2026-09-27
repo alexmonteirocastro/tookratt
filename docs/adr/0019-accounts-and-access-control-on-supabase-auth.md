@@ -137,7 +137,7 @@ These were checks, not undecided architecture. The fallback if checks 1–5 had 
 - GitHub disables scheduled workflows on a public repository after 60 days without repository activity, and the disable is silent. That hits the dump and the daily ingest together. The implementation must say how someone notices.
 - Emails and password hashes live in Supabase. That is a new trust boundary, the same class of shift as Qdrant Cloud in ADR-0013.
 
-**Follow-up (ALE-220, 2026-09-27):** A leaked service key can only read `/jobs/*`. The bullets above stay as written. The correction is in [Follow-up notes](#follow-up-notes).
+**Follow-up (ALE-220, 2026-09-27):** A leaked service key can only read `GET /jobs/stats`. The bullets above stay as written. The correction is in [Follow-up notes](#follow-up-notes).
 
 ## Revisit triggers
 
@@ -157,12 +157,12 @@ These were checks, not undecided architecture. The fallback if checks 1–5 had 
 
 ## Follow-up notes
 
-### Login-only app, and static keys limited to `/jobs/*` (ALE-220, 2026-09-27)
+### Login-only app, and static keys limited to `/jobs/stats` (ALE-220, 2026-09-27)
 
 Recorded first as a [comment on ALE-212](https://linear.app/alex-projects/issue/ALE-212/adr-0019-accounts-and-access-control-on-supabase-auth-supersedes-adr#comment-c7363a9e-0d41-4260-8b9f-558b8bf81126). This note folds that correction into the ADR. The decision text above is unchanged. Both changes narrow it. They do not reopen the Supabase choice.
 
 **Login-only app (Decisions 6 and 7).** There is no dual-accept period in the frontend. [ALE-216](https://linear.app/alex-projects/issue/ALE-216) removes `ApiKeyModal`, `authStorage.ts`, and any "use an access key" option. The only human key is Alex's, and [ALE-217](https://linear.app/alex-projects/issue/ALE-217) removes it after he has logged in with his account. Decision 6's per-person cutover no longer applies.
 
-**Static keys limited to `/jobs/*` (Decision 4).** The only production static key is the marketing prebuild's `/jobs/stats` key. `/chat` requires a user caller. A static key gets 403 there, because a leaked marketing key must not be able to spend Gemini or Qdrant budget. CI and the Compose `test` service keep `test-api-key` for `/jobs/*`. `/chat` tests use a token signed with a local test key, which [ALE-214](https://linear.app/alex-projects/issue/ALE-214) builds.
+**Static keys limited to `GET /jobs/stats` (Decision 4).** The only production static key is the marketing prebuild's stats snapshot key. `/jobs/search` and `/chat` require a user caller. A static key gets 403 on both, because a leaked marketing key must not be able to spend Qdrant budget on search or Gemini and Qdrant budget on chat. CI and the Compose `test` service keep `test-api-key` for `/jobs/stats`. `/jobs/search` and `/chat` tests use a token signed with a local test key, which [ALE-214](https://linear.app/alex-projects/issue/ALE-214) builds.
 
-**Consequence.** A leaked service key can only read `/jobs/*`. It still cannot invite or revoke.
+**Consequence.** A leaked service key can only read `GET /jobs/stats`. It still cannot invite or revoke.
