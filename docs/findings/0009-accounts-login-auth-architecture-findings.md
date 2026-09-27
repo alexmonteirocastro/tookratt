@@ -271,6 +271,7 @@ These are checks, not undecided architecture. The datastore recommendation does 
 4. **`generate_link` without SMTP, and how long the link lives.** v1 will not add a mail provider. The admin copies `action_link` and sends it by hand. The implementation ticket confirms the call returns that link on a project with public sign-up disabled, and reads the OTP expiry (and its maximum) before anyone is told to expect a hand-sent link to wait. This spike does not create that project and does not state a lifetime.
 5. **Verify a token from FastAPI.** `get_claims` in `supabase-py`, or PyJWT against the JWKS URL. Confirm `iss`, `aud`, `exp`, ES256, and that we do not cache keys longer than 10–20 minutes.
 6. **Does the scheduled dump count as activity** for the 7-day pause? If not, add a trivial query to the same workflow.
+7. **Password reset without SMTP.** Confirm `generate_link` (`type: recovery`) returns a copy-paste link with public sign-up off and no SMTP, that it lands on the same set-password page as the invite, how long it lives, and what a banned user gets. If it fails, the admin sets a temporary password with `update_user_by_id`.
 
 ## Follow-up — ALE-213 (2026-09-27)
 
