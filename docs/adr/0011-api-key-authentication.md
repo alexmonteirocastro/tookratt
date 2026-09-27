@@ -1,8 +1,10 @@
 # ADR-0011: API Key Authentication for Access Control
 
-* **Status:** Proposed
+* **Status:** Superseded
 * **Date:** 2026-07-11
-* **Related:** ALE-114 (spike), ADR-0006 (chat endpoint hardening / rate limiting), ALE-72 (Settings/env-var pattern), ALE-86 (CORS configuration), ADR-0004 (frontend architecture)
+* **Related:** ALE-114 (spike), ADR-0006 (chat endpoint hardening / rate limiting), ALE-72 (Settings/env-var pattern), ALE-86 (CORS configuration), ADR-0004 (frontend architecture), [ADR-0019](0019-accounts-and-access-control-on-supabase-auth.md) (supersedes this ADR)
+
+**Follow-up (ALE-212 / ADR-0019, 2026-09-27):** Superseded. Per-person invite and revoke is now a product requirement, so the shared-key model below is no longer the target. The decision text is unchanged. The replacement is [ADR-0019](0019-accounts-and-access-control-on-supabase-auth.md).
 
 ## Context
 
