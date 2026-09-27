@@ -3,7 +3,7 @@
 * **Ticket:** [ALE-189](https://linear.app/alex-projects/issue/ALE-189/spike-discover-accountsloginauth-architecture-sessions-vs-jwt-identity)
 * **Related:** [ADR-0011](../adr/0011-api-key-authentication.md) (the access-control decision this spike expects a new ADR to supersede), [ADR-0008](../adr/0008-multi-turn-conversation-memory.md) (`SessionState` is chat memory, not a user), [ADR-0013](../adr/0013-deployment-strategy.md) (Render free web service, single instance, Cloudflare Pages frontend), [ADR-0016](../adr/0016-marketing-site-topology-and-capture.md) (apex marketing + `app.` chat; waitlist is an email relay with no store), [ADR-0006](../adr/0006-chat-endpoint-hardening.md) (per-IP in-memory rate limit on `/chat` only), [PRODUCT_VISION](../PRODUCT_VISION.md) (2026-09-23: accounts are invite-only access control), [ALE-114](https://linear.app/alex-projects/issue/ALE-114/spike-discover-authenticationaccess-control-options-to-restrict) (the spike that produced ADR-0011), [ALE-200](https://linear.app/alex-projects/issue/ALE-200) (vision revision that dropped candidate profiles)
 * **Date:** 2026-09-26
-* **Status:** Spike complete for the decisions below. Datastore limits were checked the same day (Render free Postgres expires; Supabase free pauses). Supabase Auth is the identity recommendation and still has the checks in Open items before the ADR treats it as closed. No implementation.
+* **Status:** Spike complete for the decisions below. Datastore limits were checked the same day (Render free Postgres expires; Supabase free pauses). Supabase Auth is the identity recommendation. [ALE-213](https://linear.app/alex-projects/issue/ALE-213/spike-run-the-seven-supabase-auth-checks-on-the-dev-project-bet-006) ran the open checks on the dev project on 2026-09-27; checks 1–5 passed (go). See the follow-up.
 
 ## Summary
 
@@ -263,7 +263,7 @@ What it should retire: "a handful of static keys is the user database."
 
 ## Open items
 
-These are checks, not undecided architecture. The datastore recommendation does not wait on them. The identity recommendation does.
+These are checks, not undecided architecture. The datastore recommendation does not wait on them. The identity recommendation does. ALE-213 ran them on 2026-09-27; the follow-up below is the result.
 
 1. **Invites with public sign-up disabled.** Confirm an admin can still invite when "Allow new users to sign up" is off. The docs do not say.
 2. **Where the invitee sets a password.** Likely a React page on the invite link's session calling `updateUser({ password })`. Unconfirmed. PKCE does not apply to invites. Link scanners can consume the token.
@@ -271,6 +271,27 @@ These are checks, not undecided architecture. The datastore recommendation does 
 4. **`generate_link` without SMTP, and how long the link lives.** v1 will not add a mail provider. The admin copies `action_link` and sends it by hand. The implementation ticket confirms the call returns that link on a project with public sign-up disabled, and reads the OTP expiry (and its maximum) before anyone is told to expect a hand-sent link to wait. This spike does not create that project and does not state a lifetime.
 5. **Verify a token from FastAPI.** `get_claims` in `supabase-py`, or PyJWT against the JWKS URL. Confirm `iss`, `aud`, `exp`, ES256, and that we do not cache keys longer than 10–20 minutes.
 6. **Does the scheduled dump count as activity** for the 7-day pause? If not, add a trivial query to the same workflow.
+7. **Password reset without SMTP.** Confirm `generate_link` (`type: recovery`) returns a copy-paste link with public sign-up off and no SMTP, that it lands on the same set-password page as the invite, how long it lives, and what a banned user gets. If it fails, the admin sets a temporary password with `update_user_by_id`.
+
+## Follow-up — ALE-213 (2026-09-27)
+
+Ran against the permanent dev project `uuaoiyzztkxzrzvfddil` (`https://uuaoiyzztkxzrzvfddil.supabase.co`). Public sign-up is off. Site URL is `http://localhost:5173`. The test user was deleted afterwards (`auth.users` is empty).
+
+**Go.** Checks 1–5 passed. Check 6 is inconclusive and does not block: the dump workflow should also run a trivial query. Check 7 passed.
+
+| Check | Result | What happened |
+|---|---|---|
+| 1. Invite with sign-up off | Pass | `POST /auth/v1/signup` returned 422 `signup_disabled`. Admin `generate_link` (`type: invite`) with the secret key returned `action_link`. |
+| 2. Set password | Pass | Opening the verify URL returned 303 to the Site URL. The session is in the URL fragment (`type=invite`, `expires_in=3600`), not a PKCE `code`. `PUT /auth/v1/user` with `{password}` succeeded, then email + password login succeeded. |
+| 3. Ban and unban | Pass | `ban_duration: "24h"` set `banned_until`. Refresh and password login then failed with `user_banned`. `ban_duration: "none"` cleared `banned_until`, and password login worked again. |
+| 4. `generate_link` without SMTP, and lifetime | Pass | The link came back with no mail-send error. The REST field is top-level `action_link` (client SDKs expose `properties.action_link`). The response also includes an 8-digit `email_otp` and `hashed_token`; our API must not forward those. `auth.one_time_tokens.expires_at` is null, and `GET /auth/v1/settings` does not return the lifetime. Email OTP expiration on the dev project is set to 86400 seconds (24 hours), which also covers invite and recovery links. The access-token lifetime (3600s) is a different clock. |
+| 5. ES256 from Python | Pass | JWKS key is EC P-256, `alg` ES256. `iss` is `https://uuaoiyzztkxzrzvfddil.supabase.co/auth/v1`, `aud` is `authenticated`, lifetime 3600s. `Cache-Control: public, max-age=600`. After `update_user_by_id` set `app_metadata.role` to `admin`, a new login carried that claim. The top-level `role` stayed `authenticated`. |
+| 6. Dump vs 7-day pause | Inconclusive | The pausing guide (docs source on master, 2026-09-27) counts user database queries, a dashboard visit, and API calls. It does not mention `pg_dump`. Keep the trivial query next to the dump. The same page still says a paused project can be restored for 1 year. |
+| 7. Password reset without SMTP | Pass | `generate_link` (`type: recovery`) returned a link to the same Site URL, with fragment `type=recovery`. A banned user still receives a link, but opening it redirects with an error fragment and no session. Unban first, or set a password with `update_user_by_id`. |
+
+A `redirect_to` outside the allow list was rewritten to the Site URL rather than returned as an error. Local signature checks still accept a banned user's access token until `exp` (about an hour left in this run). GoTrue's own `GET /auth/v1/user` returns 403 `user_banned` immediately.
+
+Dashboard key names in use: publishable `sb_publishable_…` (`SUPABASE_PUBLISHABLE_KEY`) and secret `sb_secret_…` (`SUPABASE_SECRET_KEY`). A legacy anon JWT is also enabled. The Vite app gets the publishable key only.
 
 ## Out of scope (unchanged from the ticket, updated for the vision)
 
