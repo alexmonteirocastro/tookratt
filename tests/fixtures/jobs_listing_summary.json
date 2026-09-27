@@ -5,6 +5,10 @@
   "suggestions": {
     "remote": 30,
     "paid": 100,
+    "jobPositionTypes": {
+      "5b8e46b3853f039706b6ea73": 4,
+      "5b8e46b3853f039706b6ea72": 2
+    },
     "jobRoles": {
       "cxo": 1,
       "humanresources": 2,

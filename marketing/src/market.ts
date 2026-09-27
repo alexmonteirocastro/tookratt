@@ -45,6 +45,8 @@ export interface CountryStats {
   total_jobs: number
   remote_jobs: number
   paid_jobs: number
+  internship_jobs: number | null
+  student_jobs: number | null
   jobs_per_role: Record<string, number>
 }
 
@@ -62,6 +64,10 @@ interface RoleCount {
 
 function isCountryCode(value: string): value is CountryCode {
   return COUNTRIES.some((country) => country.code === value)
+}
+
+function optionalCount(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
 }
 
 function countryStats(body: unknown): CountryStats | null {
@@ -90,6 +96,8 @@ function countryStats(body: unknown): CountryStats | null {
     total_jobs: record.total_jobs,
     remote_jobs: record.remote_jobs,
     paid_jobs: record.paid_jobs,
+    internship_jobs: optionalCount(record.internship_jobs),
+    student_jobs: optionalCount(record.student_jobs),
     jobs_per_role: roles,
   }
 }
@@ -209,14 +217,25 @@ function detailMarkup(snapshot: MarketSnapshot, code: CountryCode, shown?: Shown
     return ""
   }
   const kpis = [
-    { label: "Open roles", value: stats.total_jobs, signal: false },
-    { label: "Remote", value: stats.remote_jobs, signal: false },
-    { label: "Paid", value: stats.paid_jobs, signal: true },
-  ]
+    { label: "Open roles", value: stats.total_jobs, signal: true, lead: true },
+    { label: "Roles that publish pay", value: stats.paid_jobs, signal: false, lead: false },
+    { label: "Internships", value: stats.internship_jobs, signal: false, lead: false },
+    { label: "Student jobs", value: stats.student_jobs, signal: false, lead: false },
+  ].filter((kpi): kpi is { label: string; value: number; signal: boolean; lead: boolean } => kpi.value != null)
   const kpiItems = kpis
     .map((kpi) => {
       const from = shown?.kpis.get(kpi.label) ?? 0
-      return `<li class="market-kpi${kpi.signal ? " market-kpi-signal" : ""}">
+      const classes = ["market-kpi"]
+      if (kpi.lead) {
+        classes.push("market-kpi-lead")
+      }
+      if (kpi.signal) {
+        classes.push("market-kpi-signal")
+      }
+      if (kpi.value === 0) {
+        classes.push("market-kpi-zero")
+      }
+      return `<li class="${classes.join(" ")}">
         <p class="market-kpi-value">${countMarkup(kpi.value, from)}</p>
         <p class="market-kpi-label">${kpi.label}</p>
       </li>`
@@ -257,7 +276,7 @@ function detailMarkup(snapshot: MarketSnapshot, code: CountryCode, shown?: Shown
         </figure>`
   const updated = formatUpdated(snapshot.generated_at)
   const updatedMarkup = updated ? `<p class="market-updated">${escapeHtml(updated)}</p>` : ""
-  return `<ul class="market-kpis">${kpiItems}</ul>${chart}${updatedMarkup}`
+  return `<ul class="market-kpis">${kpiItems}</ul><p class="market-overlap">A role can count in more than one tile, so the tiles don't add up to the total.</p>${chart}${updatedMarkup}`
 }
 
 export function renderMarketFigures(snapshot: MarketSnapshot, selected: CountryCode): string {

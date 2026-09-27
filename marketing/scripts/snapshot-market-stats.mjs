@@ -21,6 +21,10 @@ export function apiKeyFromEnv(env) {
   return key || null;
 }
 
+function optionalCount(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
 export function countryStats(body) {
   if (
     typeof body?.total_jobs !== "number" ||
@@ -36,6 +40,8 @@ export function countryStats(body) {
     total_jobs: body.total_jobs,
     remote_jobs: body.remote_jobs,
     paid_jobs: body.paid_jobs,
+    internship_jobs: optionalCount(body.internship_jobs),
+    student_jobs: optionalCount(body.student_jobs),
     jobs_per_role: body.jobs_per_role,
   };
 }

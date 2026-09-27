@@ -79,6 +79,8 @@ class JobOpenings(JobsAndPages):
     remote_jobs: int
     paid_jobs: int
     unpaid_jobs: int
+    internship_jobs: int
+    student_jobs: int
 
 
 class JobOpportunity(BaseModel):

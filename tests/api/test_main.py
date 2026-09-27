@@ -86,6 +86,8 @@ def test_jobs_stats_returns_openings(load_fixture):
     body = response.json()
     assert body["total_jobs"] == 120
     assert body["remote_jobs"] == 30
+    assert body["internship_jobs"] == 4
+    assert body["student_jobs"] == 2
     assert body["jobs_per_role"]["backend_developer"] == 19
 
 

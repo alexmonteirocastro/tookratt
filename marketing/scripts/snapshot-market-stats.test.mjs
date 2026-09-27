@@ -20,6 +20,8 @@ function statsBody() {
     remote_jobs: 2,
     paid_jobs: 8,
     unpaid_jobs: 2,
+    internship_jobs: 1,
+    student_jobs: 0,
     jobs_per_role: { design: 1 },
   };
 }
@@ -43,14 +45,32 @@ test("countryStats keeps the band fields and drops page counts", () => {
     remote_jobs: 4,
     paid_jobs: 9,
     unpaid_jobs: 3,
+    internship_jobs: 6,
+    student_jobs: 0,
     jobs_per_role: { backend_developer: 5 },
   });
   assert.deepEqual(stats, {
     total_jobs: 12,
     remote_jobs: 4,
     paid_jobs: 9,
+    internship_jobs: 6,
+    student_jobs: 0,
     jobs_per_role: { backend_developer: 5 },
   });
+});
+
+test("countryStats accepts a response that predates internship and student counts", () => {
+  const stats = countryStats({
+    total_jobs: 12,
+    remote_jobs: 4,
+    paid_jobs: 9,
+    jobs_per_role: { backend_developer: 5 },
+  });
+  assert.equal(stats.total_jobs, 12);
+  assert.equal(stats.internship_jobs, undefined);
+  assert.equal(stats.student_jobs, undefined);
+  assert.equal(JSON.stringify(stats).includes("internship_jobs"), false);
+  assert.equal(JSON.stringify(stats).includes("student_jobs"), false);
 });
 
 test("countryStats rejects a body that is not the stats shape", () => {
@@ -143,7 +163,14 @@ test("snapshotMarketStats reuses the live file when every country fails", async 
         async json() {
           return {
             generated_at: "2026-09-24T00:00:00.000Z",
-            countries: { DK: statsBody() },
+            countries: {
+              DK: {
+                total_jobs: 10,
+                remote_jobs: 2,
+                paid_jobs: 8,
+                jobs_per_role: { design: 1 },
+              },
+            },
           };
         },
       };
@@ -163,6 +190,8 @@ test("snapshotMarketStats reuses the live file when every country fails", async 
     assert.equal(written.generated_at, "2026-09-24T00:00:00.000Z");
     assert.equal(written.countries.DK.total_jobs, 10);
     assert.equal(written.countries.DK.unpaid_jobs, undefined);
+    assert.equal(written.countries.DK.internship_jobs, undefined);
+    assert.equal(written.countries.DK.student_jobs, undefined);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
