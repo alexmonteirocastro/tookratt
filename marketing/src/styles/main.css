@@ -495,9 +495,9 @@ ul {
 
 .market-kpis {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
   gap: 16px;
-  margin: 0 0 36px;
+  margin: 0 0 12px;
 }
 
 .market-kpi {
@@ -517,8 +517,16 @@ ul {
   line-height: 1;
 }
 
+.market-kpi-lead .market-kpi-value {
+  font-size: clamp(2.75rem, 5vw, 4.25rem);
+}
+
 .market-kpi-signal .market-kpi-value {
   color: var(--color-signal);
+}
+
+.market-kpi-zero .market-kpi-value {
+  color: rgba(246, 247, 249, 0.45);
 }
 
 .market-kpi-label {
@@ -593,6 +601,12 @@ ul {
 
 .role-more {
   margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--color-on-navy-muted);
+}
+
+.market-overlap {
+  margin: 0 0 36px;
   font-size: 14px;
   color: var(--color-on-navy-muted);
 }
@@ -801,9 +815,16 @@ ul {
   .persona-grid,
   .next-grid,
   .waitlist-layout,
-  .forms-grid,
-  .market-kpis {
+  .forms-grid {
     grid-template-columns: 1fr;
+  }
+
+  .market-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .market-kpi-lead .market-kpi-value {
+    font-size: clamp(2rem, 4vw, 3rem);
   }
 
   .role-label {

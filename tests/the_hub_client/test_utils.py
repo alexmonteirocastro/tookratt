@@ -1,8 +1,12 @@
+import copy
+
 import responses
 
 from the_hub_client.models import CountryCode
 from the_hub_client.utils import (
     HUB_BASE_URL,
+    HUB_POSITION_INTERNSHIP,
+    HUB_POSITION_STUDENT,
     JOB_LISTINGS_ENDPOINT_ROUTE,
     SINGLE_JOB_ENDPOINT_ROUTE,
     build_job_url,
@@ -139,6 +143,43 @@ def test_get_full_jobs_picture_by_country_maps_role_fields(load_fixture):
     assert result.jobs_per_role.ux_ui_designer == 15
     assert result.jobs_per_role.backend_developer == 19
     assert result.jobs_per_role.other == 24
+    assert result.internship_jobs == 4
+    assert result.student_jobs == 2
+
+
+@responses.activate
+def test_position_type_counts_follow_each_country_response(load_fixture):
+    assert HUB_POSITION_INTERNSHIP == "5b8e46b3853f039706b6ea73"
+    assert HUB_POSITION_STUDENT == "5b8e46b3853f039706b6ea72"
+
+    denmark = load_fixture("jobs_listing_summary.json")
+    sweden = copy.deepcopy(denmark)
+    denmark["suggestions"]["jobPositionTypes"] = {
+        HUB_POSITION_INTERNSHIP: 36,
+        HUB_POSITION_STUDENT: 42,
+    }
+    sweden["suggestions"]["jobPositionTypes"] = {HUB_POSITION_INTERNSHIP: 7}
+    sweden["suggestions"]["remote"] = denmark["suggestions"]["remote"]
+
+    responses.add(
+        responses.GET,
+        f"{HUB_BASE_URL}{JOB_LISTINGS_ENDPOINT_ROUTE}?countryCode=DK",
+        json=denmark,
+    )
+    responses.add(
+        responses.GET,
+        f"{HUB_BASE_URL}{JOB_LISTINGS_ENDPOINT_ROUTE}?countryCode=SE",
+        json=sweden,
+    )
+
+    denmark_stats = get_full_jobs_picture_by_country(CountryCode.DENMARK)
+    sweden_stats = get_full_jobs_picture_by_country(CountryCode.SWEDEN)
+
+    assert denmark_stats.internship_jobs == 36
+    assert denmark_stats.student_jobs == 42
+    assert sweden_stats.internship_jobs == 7
+    assert sweden_stats.student_jobs == 0
+    assert denmark_stats.remote_jobs == sweden_stats.remote_jobs
 
 
 @responses.activate

@@ -78,12 +78,48 @@ test("renderMarketFigures disables a missing country and keeps the final number 
   assert.doesNotMatch(html, /Legal/)
   assert.match(html, /Updated 25 Sep 2026/)
   assert.match(html, /market-kpi-label">Open roles</)
-  assert.match(html, /market-kpi-label">Remote</)
-  assert.match(html, /market-kpi-signal">[\s\S]*market-kpi-label">Paid</)
+  assert.match(html, /market-kpi-label">Roles that publish pay</)
+  assert.match(html, /market-kpi-lead market-kpi-signal">[\s\S]*market-kpi-label">Open roles</)
   assert.equal(html.match(/market-kpi-signal/g)?.length, 1)
+  assert.doesNotMatch(html, /Remote/)
+  assert.doesNotMatch(html, /Internships/)
+  assert.match(html, /tiles don't add up to the total/)
   assert.match(html, /data-share="1"/)
   assert.match(html, /data-share="0.5"/)
   assert.doesNotMatch(html, /more role/)
+})
+
+test("renderMarketFigures shows a muted zero and skips a missing type count", () => {
+  const snapshot = parseSnapshot({
+    generated_at: "2026-09-25T00:00:00.000Z",
+    countries: {
+      IS: {
+        total_jobs: 1,
+        remote_jobs: 43,
+        paid_jobs: 1,
+        internship_jobs: 0,
+        jobs_per_role: { design: 1 },
+      },
+      EU: {
+        total_jobs: 339,
+        remote_jobs: 43,
+        paid_jobs: 338,
+        internship_jobs: 6,
+        student_jobs: 0,
+        jobs_per_role: { design: 1 },
+      },
+    },
+  })
+  assert.ok(snapshot)
+  assert.equal(snapshot.countries.IS?.internship_jobs, 0)
+  assert.equal(snapshot.countries.IS?.student_jobs, null)
+  const iceland = renderMarketFigures(snapshot, "IS")
+  assert.match(iceland, /market-kpi-zero">[\s\S]*data-count-to="0"/)
+  assert.match(iceland, /market-kpi-label">Internships</)
+  assert.doesNotMatch(iceland, /Student jobs/)
+  const europe = renderMarketFigures(snapshot, "EU")
+  assert.match(europe, /market-kpi-label">Student jobs</)
+  assert.match(europe, /market-kpi-zero">[\s\S]*data-count-to="0"/)
 })
 
 test("renderMarketFigures keeps the top roles and counts the rest", () => {

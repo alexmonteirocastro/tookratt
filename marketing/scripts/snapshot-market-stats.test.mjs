@@ -20,6 +20,8 @@ function statsBody() {
     remote_jobs: 2,
     paid_jobs: 8,
     unpaid_jobs: 2,
+    internship_jobs: 1,
+    student_jobs: 0,
     jobs_per_role: { design: 1 },
   };
 }
@@ -43,12 +45,16 @@ test("countryStats keeps the band fields and drops page counts", () => {
     remote_jobs: 4,
     paid_jobs: 9,
     unpaid_jobs: 3,
+    internship_jobs: 6,
+    student_jobs: 0,
     jobs_per_role: { backend_developer: 5 },
   });
   assert.deepEqual(stats, {
     total_jobs: 12,
     remote_jobs: 4,
     paid_jobs: 9,
+    internship_jobs: 6,
+    student_jobs: 0,
     jobs_per_role: { backend_developer: 5 },
   });
 });
