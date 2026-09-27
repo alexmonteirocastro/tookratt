@@ -78,7 +78,7 @@ test("renderMarketFigures disables a missing country and keeps the final number 
   assert.doesNotMatch(html, /Legal/)
   assert.match(html, /Updated 25 Sep 2026/)
   assert.match(html, /market-kpi-label">Open roles</)
-  assert.match(html, /market-kpi-label">Roles that publish pay</)
+  assert.match(html, /market-kpi-label">Paid roles</)
   assert.match(html, /market-kpi-lead market-kpi-signal">[\s\S]*market-kpi-label">Open roles</)
   assert.equal(html.match(/market-kpi-signal/g)?.length, 1)
   assert.doesNotMatch(html, /Remote/)

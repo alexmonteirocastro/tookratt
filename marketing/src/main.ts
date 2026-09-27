@@ -123,7 +123,7 @@ root.innerHTML = `
             <p class="eyebrow">The market view</p>
             <h2 id="market-heading">Pick a country. See the numbers.</h2>
             <p>
-              How many roles are open. How many publish pay. How many are
+              How many roles are open. How many of those are paid. How many are
               internships or student jobs. Which kinds of roles dominate.
               Denmark, Sweden, Norway, Finland, Iceland, and Europe as a whole.
             </p>
