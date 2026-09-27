@@ -47,7 +47,7 @@ The second field is labeled "Type it again".
 | Passwords differ | Under "Type it again" | The two passwords don't match. |
 | Password too short | Under the first password field | Use at least 8 characters. |
 | Logging in | Login button | Logging in |
-| Session ended | Gray note above the "Log in" heading | You've been logged out. Log in again to keep going. |
+| Session ended | Light accent-blue note above the "Log in" heading | You've been logged out. Log in again to keep going. |
 | Link expired or already used | Replaces the form | Heading: This link has expired. Body: Links work once and last 24 hours. Ask for a new one at hello@tookratt.com. Link: Go to log in. |
 | Revoked account opening a link | Replaces the form. Error fragment, no session. | Heading: This link doesn't work. Body: Your account can't use it right now. Write to hello@tookratt.com if that seems wrong. |
 | Paused project | Replaces the form | Heading: Paused right now. Body: Töökratt is paused right now. Contact us and we'll get it back up. Link on its own line: hello@tookratt.com. |
@@ -57,7 +57,7 @@ The second field is labeled "Type it again".
 
 The wrong-email and wrong-password cases share one sentence. A revoked account that tries to log in with a password uses that same sentence. The design does not give those two cases different copy, and a different sentence would tell them the email exists.
 
-A session that simply is not there shows the login card with no gray note.
+A session that simply is not there shows the login card with no note. The session-ended note uses a light wash of `--color-accent`, with ink text. It is not a gray panel and not the error panel.
 
 ## 3. `/admin`
 
@@ -76,7 +76,7 @@ Top to bottom:
 
 Columns: Email, Role, Status, Added, Last login, Actions.
 
-- Email for the signed-in user adds "(you)" on a second line. That row has no buttons. The actions cell reads "No actions on your own account".
+- Email for the signed-in user reads "alex@example.com (you)" on one line. That row has no buttons. The actions cell reads "No actions on your own account".
 - Role is "Admin" or "Member" from `app_metadata.role`. A missing role shows "Member".
 - Status is a pill. "Active" uses `--color-accent` text on a light blue wash. "Invited" uses muted ink on a light gray wash. "Revoked" uses `--color-error` text on `--color-error-bg`. Invited means not revoked and no last login. Revoked means `banned_until` is set, and it wins over Invited.
 - Added and last login are short: "2 Oct", "Today", "Yesterday". No last login shows "Never".
@@ -99,7 +99,7 @@ Restore access does not ask again.
 
 ### Show-once link panel
 
-Same panel for invite and reset. Pale wash of `--color-signal` on white, `--radius-lg`, a warning icon in `--color-signal`.
+Same panel for invite and reset. Pale wash of `--color-signal` on white, `--radius-lg`. The warning icon is `#9a6618` (`--color-signal-strong`), the darker amber from the design. `--color-signal` on that wash is below the 3:1 a meaningful icon needs. The warning sentence still carries the message. The icon stays visible to sighted users and is not `aria-hidden`.
 
 - Heading: "Invite link for sara@example.com" or "Reset link for jonas@example.com", with the real address.
 - "Done" dismisses the panel. On desktop it sits at the top right of the panel. On a narrow screen it sits centered under the warning. Closing does not bring the link back.
@@ -117,7 +117,7 @@ At `max-width: 640px`, the same breakpoint as the header nav (ALE-205):
 
 - The subtitle is hidden. Log out is the arrow icon only. The email next to it is hidden. Nav stays, three tabs, Admin underlined.
 - Invite button is full width under the field.
-- The table becomes a stack of cards. Each card: email (and "(you)" if it is you), status pill on the right, then one meta line. Active and revoked use "Role · Last login …". Invited uses "Role · Never logged in". Added is not repeated. Actions sit under the meta line, full width, side by side.
+- The table becomes a stack of cards. Each card: email with "(you)" inline when it is you, status pill on the right, then one meta line. Active and revoked use "Role · Last login …". Invited uses "Role · Never logged in". Added is not repeated. Actions sit under the meta line, full width, side by side.
 - The confirm state replaces the meta line with "Revoke access? Takes effect within an hour." and puts Cancel and Revoke under it.
 
 ## 4. Nav
@@ -191,13 +191,14 @@ An admin invite that hits an existing user can say "That person already has an a
 
 ## Tokens and components
 
-No new colors. The show-once panel is a light wash of `--color-signal`. Status pills reuse accent, muted ink, and the error tokens. No component library. Marketing tokens do not change.
+No component library. Marketing tokens do not change. Status pills reuse accent, muted ink, and the error tokens. The show-once panel is a light wash of `--color-signal`.
 
-Add one layout token in `frontend/src/styles/tokens.css` when ALE-216 builds the card:
+ALE-216 adds two tokens to `frontend/src/styles/tokens.css`:
 
 | Token | Value | Use |
 |---|---|---|
 | `--max-width-auth` | `28rem` | Centered login and set-password card |
+| `--color-signal-strong` | `#9a6618` | Warning icon on the show-once panel. Darker than `--color-signal` so the icon clears 3:1 on the wash |
 
 Local components, in `frontend/src/components/`:
 
