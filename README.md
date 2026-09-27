@@ -107,3 +107,4 @@ Workflow guide (how to read `separation_margin`, judgments, sweeps, etc.):
   - [ADR-0016](docs/adr/0016-marketing-site-topology-and-capture.md) — marketing site topology (apex + `app.`) and waitlist/contact capture
   - [ADR-0017](docs/adr/0017-frontend-e2e-visual-testing.md) — frontend E2E and visual regression testing (Playwright over Cypress)
   - [ADR-0018](docs/adr/0018-chat-sourcing-follows-rrf-rank.md) — `/chat` sourcing follows fused RRF rank; dense cosine is display-only
+  - [ADR-0019](docs/adr/0019-accounts-and-access-control-on-supabase-auth.md) — accounts and access control on Supabase Auth (supersedes ADR-0011)
