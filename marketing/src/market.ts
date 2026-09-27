@@ -218,7 +218,7 @@ function detailMarkup(snapshot: MarketSnapshot, code: CountryCode, shown?: Shown
   }
   const kpis = [
     { label: "Open roles", value: stats.total_jobs, signal: true, lead: true },
-    { label: "Roles that publish pay", value: stats.paid_jobs, signal: false, lead: false },
+    { label: "Paid roles", value: stats.paid_jobs, signal: false, lead: false },
     { label: "Internships", value: stats.internship_jobs, signal: false, lead: false },
     { label: "Student jobs", value: stats.student_jobs, signal: false, lead: false },
   ].filter((kpi): kpi is { label: string; value: number; signal: boolean; lead: boolean } => kpi.value != null)
