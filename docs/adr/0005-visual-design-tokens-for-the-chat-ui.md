@@ -324,3 +324,14 @@ revision-via-follow-up when a later ticket changes a prior decision, so
 readers of this file still see what ALE-174 decided and where the Baltic
 change lives. The change is recorded here, in the ADR whose decisions moved,
 rather than in a new ADR.
+
+### Auth card width (ALE-219)
+
+[ALE-219](https://linear.app/alex-projects/issue/ALE-219/design-decisions-auth-and-admin-screens-login-set-password-admin)
+adds login, set-password, and `/admin` without a new palette.
+[docs/design/auth-and-admin-screens.md](../design/auth-and-admin-screens.md)
+is the screen spec. ALE-216 adds two tokens to `frontend/src/styles/tokens.css`:
+`--max-width-auth: 28rem` for the centered auth card, and
+`--color-signal-strong: #9a6618` for the warning icon on the show-once panel.
+`--color-signal` on that wash misses the 3:1 icon contrast. The marketing
+token file does not change.
