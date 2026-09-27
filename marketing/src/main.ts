@@ -41,11 +41,12 @@ root.innerHTML = `
     <main id="top">
       <section class="shell hero" aria-labelledby="hero-heading">
         <div class="hero-copy">
-          <p class="eyebrow">Job market research</p>
+          <p class="eyebrow">Job market research · Nordics & Europe</p>
           <h1 id="hero-heading">What does the market actually want?</h1>
           <p class="hero-lede">
-            Ask about Nordic and European startup roles. The answer comes from
-            live postings on The Hub, or it doesn't come.
+            Töökratt reads startup job listings and turns them into something you can reason with.
+            Which roles are hiring. Which skills keep showing up. Where. Ask it a question and
+            every answer points back to a real posting.
           </p>
           <div class="hero-ctas">
             <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
@@ -61,20 +62,24 @@ root.innerHTML = `
         </div>
         <div class="persona-grid">
           <article class="persona">
+            <p class="persona-num">01</p>
             <h3>Choosing what to study</h3>
-            <p>See what the market keeps asking for before you commit to a path.</p>
+            <p>Three years is a long time to find out the market moved. See what employers ask for before you commit.</p>
           </article>
           <article class="persona">
+            <p class="persona-num">02</p>
             <h3>Just graduated</h3>
-            <p>See which skills show up in real postings for the field you trained in.</p>
+            <p>You have the degree. Which of your skills get you hired? Which ones are missing? Find out from the listings, not from guesses.</p>
           </article>
           <article class="persona">
+            <p class="persona-num">03</p>
             <h3>Moving to a new country</h3>
-            <p>Check whether your role is in demand where you're moving.</p>
+            <p>Is your role in demand where you're going? Check before you sign the lease.</p>
           </article>
           <article class="persona">
+            <p class="persona-num">04</p>
             <h3>Changing direction</h3>
-            <p>Set what you have next to what's in demand somewhere else.</p>
+            <p>A pivot costs time and money. See where the demand is first. Then decide.</p>
           </article>
         </div>
       </section>
@@ -84,28 +89,28 @@ root.innerHTML = `
           <div class="section-header section-header-left">
             <p class="eyebrow">How it works</p>
             <h2 id="how-heading">Three steps. No magic.</h2>
-            <p>Postings in. An answer out. Nothing in between gets invented.</p>
+            <p>Retrieval over real listings, then an answer built only from what came back.</p>
           </div>
           <ol class="steps">
             <li class="step">
               <span class="step-num">01</span>
               <div>
                 <h3>Read the market</h3>
-                <p>Open roles, remote split, and pay transparency, by country.</p>
+                <p>Töökratt pulls startup listings from The Hub on a schedule. Role, country, remote or on-site, paid or unpaid.</p>
               </div>
             </li>
             <li class="step">
               <span class="step-num">02</span>
               <div>
                 <h3>Ask a real question</h3>
-                <p>It searches live listings and answers from what it finds there.</p>
+                <p>Something a filter can't phrase. What do founding engineers in Finland need to know? The answer is built from the listings it retrieved.</p>
               </div>
             </li>
             <li class="step">
               <span class="step-num">03</span>
               <div>
                 <h3>Check the source</h3>
-                <p>Every claim points at a posting. If the data doesn't say it, neither do I.</p>
+                <p>Every claim links to the posting it came from. Not enough data? Töökratt says so. It doesn't guess.</p>
               </div>
             </li>
           </ol>
@@ -118,9 +123,11 @@ root.innerHTML = `
             <p class="eyebrow">The market view</p>
             <h2 id="market-heading">Pick a country. See the numbers.</h2>
             <p>
-              Open roles, remote roles, and roles that publish pay.
-              Denmark, Sweden, Norway, Finland, Iceland, Europe.
+              How many roles are open. How many are remote. How many are paid.
+              Which kinds of roles dominate. Denmark, Sweden, Norway, Finland,
+              Iceland, and Europe as a whole.
             </p>
+            <p>No commentary. Counts, straight from the listings.</p>
           </div>
           <div class="market-figures" data-market-figures hidden></div>
         </div>
@@ -131,13 +138,13 @@ root.innerHTML = `
           <div class="section-header section-header-left">
             <p class="eyebrow">What it isn't</p>
             <h2 id="isnt-heading">Upstream of the application.</h2>
-            <p>The market, before anyone writes an application.</p>
+            <p>Other tools help you apply, and they do it well. Töökratt comes earlier. Before you enrol. Before you move. Before you apply.</p>
           </div>
           <ul class="not-list">
-            <li>It doesn't write your CV.</li>
-            <li>It doesn't apply for you.</li>
-            <li>It doesn't pick the perfect job for you.</li>
-            <li>It doesn't invent a stat the postings don't support.</li>
+            <li><span class="not-mark">no</span><span>It doesn't write your CV.</span></li>
+            <li><span class="not-mark">no</span><span>It doesn't apply for jobs.</span></li>
+            <li><span class="not-mark">no</span><span>It doesn't keep a profile of you.</span></li>
+            <li><span class="not-mark">yet</span><span>It only reads The Hub. For now.</span></li>
           </ul>
         </div>
       </section>
@@ -147,23 +154,23 @@ root.innerHTML = `
           <div class="section-header section-header-left">
             <p class="eyebrow">What's next</p>
             <h2 id="next-heading">You know what's in demand. Now where do you learn it?</h2>
-            <p>Demand first. A place to learn the skill after that. Planned, not shipped.</p>
+            <p>That's the other half of the answer. Here's what I'm building towards.</p>
           </div>
           <div class="next-grid">
             <article class="next-card">
               <p class="eyebrow">Planned</p>
-              <h3>Skill demand, across vacancies</h3>
-              <p>Which skills keep showing up for a role, across the listings, not a handful of search hits.</p>
+              <h3>Skill demand, across everything</h3>
+              <p>Not ten listings at a time. The whole corpus, counted.</p>
             </article>
             <article class="next-card">
               <p class="eyebrow">Planned</p>
-              <h3>A resource for each skill</h3>
-              <p>When a skill is actually in demand, somewhere to go learn it.</p>
+              <h3>Free resources per skill</h3>
+              <p>Articles, courses and videos you can start today. Free. Linked, not hosted.</p>
             </article>
             <article class="next-card">
               <p class="eyebrow">Planned</p>
-              <h3>From the market back to study</h3>
-              <p>What to learn next, framed by postings rather than a course list.</p>
+              <h3>A second market: Poland</h3>
+              <p>More listings. A second source. A way to compare markets side by side.</p>
             </article>
           </div>
         </div>
@@ -172,9 +179,9 @@ root.innerHTML = `
       <section id="waitlist" class="shell section" aria-labelledby="capture-heading">
         <div class="waitlist-layout">
           <div class="section-header section-header-left">
-            <p class="eyebrow">Waitlist</p>
+            <p class="eyebrow">Get access</p>
             <h2 id="capture-heading">Want in?</h2>
-            <p>Invite only. Leave your email and I'll write when a place opens.</p>
+            <p>Töökratt is invite-only while it's small. Leave your email and I'll send an invite when there's room. No newsletter. No marketing platform. One email.</p>
           </div>
           <div class="forms-grid">
             <form class="form-block" id="waitlist-form" novalidate>

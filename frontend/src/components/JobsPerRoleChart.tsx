@@ -3,19 +3,23 @@ import styles from "./JobsPerRoleChart.module.css";
 
 interface JobsPerRoleChartProps {
   jobsPerRole: Record<string, number>;
+  countryName: string;
 }
 
 /**
  * ALE-192 Decision 1 — CSS horizontal bars, no chart library.
  * Baltic Blue fill on a Paper track; the count sits beside the bar. Sort descending; drop zero-count roles.
  */
-export function JobsPerRoleChart({ jobsPerRole }: JobsPerRoleChartProps) {
+export function JobsPerRoleChart({ jobsPerRole, countryName }: JobsPerRoleChartProps) {
   const rows = rolesByCountDescending(jobsPerRole);
   const maxCount = rows[0]?.count ?? 0;
 
   return (
     <figure className={styles.panel}>
-      <figcaption className={styles.caption}>Jobs per role</figcaption>
+      <figcaption className={styles.caption}>
+        <span>Jobs per role</span>
+        <span className={styles.captionMeta}>{countryName}</span>
+      </figcaption>
       {rows.length === 0 ? (
         <p className={styles.empty}>No roles to show for this country.</p>
       ) : (

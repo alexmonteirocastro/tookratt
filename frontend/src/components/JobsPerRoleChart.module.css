@@ -12,12 +12,24 @@
 }
 
 .caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3) var(--space-4);
   margin: 0 0 var(--space-5);
   font-family: var(--font-family-display);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-heading);
   color: var(--color-ink);
   line-height: var(--line-height-tight);
+}
+
+.captionMeta {
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
 }
 
 .empty {

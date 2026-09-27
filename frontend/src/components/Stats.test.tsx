@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiHttpError, ApiNetworkError } from "../api/client";
@@ -56,6 +56,7 @@ describe("Stats", () => {
     expect(screen.getByText("Unpaid")).toBeInTheDocument();
     expect(screen.getByText("11")).toBeInTheDocument();
     expect(screen.getByText("Jobs per role")).toBeInTheDocument();
+    expect(within(screen.getByRole("figure")).getByText("Denmark")).toBeInTheDocument();
     expect(screen.getByRole("rowheader", { name: "Backend developer" })).toBeInTheDocument();
     expect(screen.queryByText("Legal")).not.toBeInTheDocument();
     expect(mockGetJobsStats).toHaveBeenCalledWith("DK");
@@ -74,6 +75,7 @@ describe("Stats", () => {
       expect(mockGetJobsStats).toHaveBeenLastCalledWith("SE");
     });
     expect(await screen.findByText("12")).toBeInTheDocument();
+    expect(within(screen.getByRole("figure")).getByText("Sweden")).toBeInTheDocument();
   });
 
   it("shows a network error without opening a chat-style bubble", async () => {

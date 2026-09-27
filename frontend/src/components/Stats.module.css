@@ -1,6 +1,6 @@
 /*
- * ALE-192 / ALE-193 — stats dashboard. KPI tiles reuse the chart's cream
- * panel: Space Grotesk figure, uppercase Plex muted label (SourceList heading grammar).
+ * ALE-192 / ALE-193 — stats dashboard. KPI tiles reuse the chart panel:
+ * Space Grotesk figure, sentence-case Plex muted label (ALE-221).
  */
 .stats {
   display: flex;
@@ -32,7 +32,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--size-chart-label), 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
@@ -57,8 +57,6 @@
   margin: var(--space-2) 0 0;
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--color-text-muted);
 }
 

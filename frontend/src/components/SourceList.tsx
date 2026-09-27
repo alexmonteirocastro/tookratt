@@ -74,7 +74,7 @@ export function SourceList({ sources, variant }: SourceListProps) {
       <p className={styles.heading}>Sources</p>
       <ul className={styles.chipList}>
         {sources.map((source) => {
-          const scoreLabel = formatScore(source.score);
+          const meta = [source.company, source.location].filter(Boolean).join(" · ");
           return (
             <li key={source.job_id} className={styles.chip}>
               <a
@@ -85,14 +85,7 @@ export function SourceList({ sources, variant }: SourceListProps) {
               >
                 {source.job_title ?? source.job_role}
               </a>
-              {scoreLabel !== null && (
-                <span className={styles.chipScore}>{scoreLabel}</span>
-              )}
-              {(source.company || source.location) && (
-                <p className={styles.chipMeta}>
-                  {[source.company, source.location].filter(Boolean).join(" · ")}
-                </p>
-              )}
+              {meta ? <span className={styles.chipMeta}>{meta}</span> : null}
             </li>
           );
         })}
