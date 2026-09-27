@@ -1,4 +1,5 @@
 import copy
+import logging
 
 import responses
 
@@ -159,7 +160,6 @@ def test_position_type_counts_follow_each_country_response(load_fixture):
         HUB_POSITION_STUDENT: 42,
     }
     sweden["suggestions"]["jobPositionTypes"] = {HUB_POSITION_INTERNSHIP: 7}
-    sweden["suggestions"]["remote"] = denmark["suggestions"]["remote"]
 
     responses.add(
         responses.GET,
@@ -179,7 +179,24 @@ def test_position_type_counts_follow_each_country_response(load_fixture):
     assert denmark_stats.student_jobs == 42
     assert sweden_stats.internship_jobs == 7
     assert sweden_stats.student_jobs == 0
-    assert denmark_stats.remote_jobs == sweden_stats.remote_jobs
+
+
+@responses.activate
+def test_missing_job_position_types_logs_and_counts_zero(load_fixture, caplog):
+    payload = load_fixture("jobs_listing_summary.json")
+    del payload["suggestions"]["jobPositionTypes"]
+    responses.add(
+        responses.GET,
+        f"{HUB_BASE_URL}{JOB_LISTINGS_ENDPOINT_ROUTE}?countryCode=DK",
+        json=payload,
+    )
+
+    with caplog.at_level(logging.WARNING):
+        result = get_full_jobs_picture_by_country(CountryCode.DENMARK)
+
+    assert result.internship_jobs == 0
+    assert result.student_jobs == 0
+    assert "missing suggestions.jobPositionTypes" in caplog.text
 
 
 @responses.activate

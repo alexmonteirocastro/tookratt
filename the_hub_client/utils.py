@@ -1,3 +1,5 @@
+import logging
+
 from markdownify import markdownify as md
 
 from the_hub_client.http import hub_get
@@ -19,6 +21,8 @@ JOB_PAGE_PATH = "/jobs"
 HUB_POSITION_INTERNSHIP = "5b8e46b3853f039706b6ea73"
 HUB_POSITION_STUDENT = "5b8e46b3853f039706b6ea72"
 
+logger = logging.getLogger(__name__)
+
 
 def build_job_url(job_url_identifier: str) -> str:
     """Public listing URL for a Hub job (verified: /jobs/{id}, not slug-based)."""
@@ -38,10 +42,20 @@ def get_number_of_jobs_and_pages_by_country(country: CountryCode) -> JobsAndPage
     )
 
 
-def _position_type_count(suggestions: dict[str, object], position_id: str) -> int:
-    position_types = suggestions.get("jobPositionTypes") or {}
-    if not isinstance(position_types, dict):
-        return 0
+def _position_types(
+    suggestions: dict[str, object], country: CountryCode
+) -> dict[str, object]:
+    position_types = suggestions.get("jobPositionTypes")
+    if isinstance(position_types, dict):
+        return position_types
+    logger.warning(
+        "Hub listing for %s is missing suggestions.jobPositionTypes",
+        country.value,
+    )
+    return {}
+
+
+def _position_type_count(position_types: dict[str, object], position_id: str) -> int:
     count = position_types.get(position_id, 0)
     return count if isinstance(count, int) and not isinstance(count, bool) else 0
 
@@ -53,6 +67,7 @@ def get_full_jobs_picture_by_country(country: CountryCode) -> JobOpenings:
     jobs_listing_response = response.json()
     suggestions = jobs_listing_response.get("suggestions", {})
     job_roles = suggestions.get("jobRoles", {})
+    position_types = _position_types(suggestions, country)
 
     return JobOpenings(
         total_jobs=jobs_listing_response.get("total", 0),
@@ -61,8 +76,8 @@ def get_full_jobs_picture_by_country(country: CountryCode) -> JobOpenings:
         remote_jobs=suggestions.get("remote", 0),
         paid_jobs=suggestions.get("paid", 0),
         unpaid_jobs=jobs_listing_response.get("total", 0) - suggestions.get("paid", 0),
-        internship_jobs=_position_type_count(suggestions, HUB_POSITION_INTERNSHIP),
-        student_jobs=_position_type_count(suggestions, HUB_POSITION_STUDENT),
+        internship_jobs=_position_type_count(position_types, HUB_POSITION_INTERNSHIP),
+        student_jobs=_position_type_count(position_types, HUB_POSITION_STUDENT),
         jobs_per_role=JobRoles(
             cxo=job_roles.get("cxo", 0),
             human_resources=job_roles.get("humanresources", 0),

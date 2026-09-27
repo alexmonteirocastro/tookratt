@@ -96,7 +96,7 @@ root.innerHTML = `
               <span class="step-num">01</span>
               <div>
                 <h3>Read the market</h3>
-                <p>Open roles, pay transparency, internships, and student jobs, by country.</p>
+                <p>Töökratt pulls startup listings from The Hub on a schedule. Role, country, pay, internships, and student jobs.</p>
               </div>
             </li>
             <li class="step">
@@ -123,9 +123,11 @@ root.innerHTML = `
             <p class="eyebrow">The market view</p>
             <h2 id="market-heading">Pick a country. See the numbers.</h2>
             <p>
-              Open roles, roles that publish pay, internships, and student jobs.
-              Denmark, Sweden, Norway, Finland, Iceland, Europe.
+              How many roles are open. How many publish pay. How many are
+              internships or student jobs. Which kinds of roles dominate.
+              Denmark, Sweden, Norway, Finland, Iceland, and Europe as a whole.
             </p>
+            <p>No commentary. Counts, straight from the listings.</p>
           </div>
           <div class="market-figures" data-market-figures hidden></div>
         </div>

@@ -23,7 +23,9 @@ Checked live against `https://thehub.io/api/v2/jobs` on 2026-09-27. No auth head
 
 Iceland is the report: one listing, and `suggestions.remote` is still 43. That listing's `isRemote` is `false`. The unfiltered listing's `total` is also 43, the same number the facet returns for every country.
 
-`paid` moves with the country (Iceland 1 of 1, Denmark 337 of 381). `jobRoles` moves too (engineer is 76 in Denmark, 72 in Sweden, 99 in Finland). `jobPositionTypes` moves too. Only `remote` stays put. Do not change how `paid_jobs` is read. `unpaid_jobs` is `total - paid`, so it follows the country as long as `paid` does.
+`paid` moves with the country (Iceland 1 of 1, Denmark 337 of 381). `jobRoles` moves too (engineer is 76 in Denmark, 72 in Sweden, 99 in Finland). Only `remote` stays put. Do not change how `paid_jobs` is read. `unpaid_jobs` is `total - paid`, so it follows the country as long as `paid` does.
+
+`suggestions.jobPositionTypes` also follows `countryCode`, checked the same day for all six codes. Internship (`5b8e46b3853f039706b6ea73`) and Student (`5b8e46b3853f039706b6ea72`) were DK 36 and 42, SE 7 and 12, NO 4 and 2, FI 1 and 1, IS 0 and 0, EU 6 and 0. [ALE-224](https://linear.app/alex-projects/issue/ALE-224/tookrattcom-market-band-swap-remote-for-internships-and-student-jobs) reads those two ids. A missing id inside the facet is a real zero. A missing `jobPositionTypes` object is logged, because that would zero every country at once.
 
 `?remote=true` and `?isRemote=true` do not change `total` or the facet. Each item in `docs` does carry `isRemote`. Denmark's first page was 0 remote out of 15, while the facet still said 43.
 
