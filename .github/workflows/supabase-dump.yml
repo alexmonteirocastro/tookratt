@@ -1,0 +1,148 @@
+name: Supabase dump
+
+# ALE-215 / ADR-0019: daily backup and keep-alive for the production Supabase
+# project. The free tier has no backups and pauses after a quiet week. The API
+# does not open SQL, so this job is what keeps the project awake.
+#
+# The session pooler URL (port 5432) comes from the dashboard Connect panel and
+# is stored as SUPABASE_DB_URL. Do not hardcode the pooler host.
+#
+# Dumps go to the private R2 bucket tookratt-supabase-dumps (jurisdiction eu).
+# The bucket and its 30-day lifecycle rule are created once, outside this
+# workflow. Uploads use an R2 S3 key limited to that bucket
+# (R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY), not CLOUDFLARE_API_TOKEN.
+# auth is data only, without schema_migrations. public is schema and data.
+
+on:
+  schedule:
+    - cron: "15 1 * * *" # 01:15 UTC, after ingest.yml at midnight
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-dump
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Set dump timestamp
+        id: stamp
+        run: echo "ts=$(date -u +%Y%m%dT%H%M%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Install PostgreSQL 17 client
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
+
+      - name: Dump and upload
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          STAMP: ${{ steps.stamp.outputs.ts }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in SUPABASE_DB_URL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY CLOUDFLARE_ACCOUNT_ID STAMP; do
+            if [ -z "${!name}" ]; then
+              echo "${name} is unset"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+          pg_bin=/usr/lib/postgresql/17/bin
+          psql="${pg_bin}/psql"
+          pg_dump="${pg_bin}/pg_dump"
+
+          "$psql" "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q -c "select 1" >/dev/null
+          server_num=$("$psql" "$SUPABASE_DB_URL" -tA -v ON_ERROR_STOP=1 -c "show server_version_num")
+          server_num=${server_num//[[:space:]]/}
+          server_major=$((server_num / 10000))
+          client_major=$("$pg_dump" --version | sed -n 's/.* \([0-9][0-9]*\)\..*/\1/p')
+          if [ "$server_major" != "$client_major" ]; then
+            echo "pg_dump major ${client_major} does not match server major ${server_major}"
+            exit 1
+          fi
+
+          workdir=$(mktemp -d)
+          trap 'rm -rf "$workdir"' EXIT
+
+          "$pg_dump" "$SUPABASE_DB_URL" \
+            --format=custom \
+            --data-only \
+            --no-owner \
+            --no-acl \
+            --schema=auth \
+            --exclude-table-data=auth.schema_migrations \
+            --file="$workdir/auth-data.dump"
+          "$pg_dump" "$SUPABASE_DB_URL" \
+            --format=custom \
+            --no-owner \
+            --no-acl \
+            --schema=public \
+            --file="$workdir/public.dump"
+
+          prefix="dumps/${STAMP}"
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.eu.r2.cloudflarestorage.com"
+          aws s3 cp "$workdir/auth-data.dump" \
+            "s3://tookratt-supabase-dumps/${prefix}/auth-data.dump" \
+            --endpoint-url "$endpoint" \
+            --only-show-errors
+          aws s3 cp "$workdir/public.dump" \
+            "s3://tookratt-supabase-dumps/${prefix}/public.dump" \
+            --endpoint-url "$endpoint" \
+            --only-show-errors
+          echo "Uploaded ${prefix}/auth-data.dump and ${prefix}/public.dump"
+
+      - name: Record schedule heartbeat
+        if: success()
+        env:
+          GRAFANA_LOKI_URL: ${{ secrets.GRAFANA_LOKI_URL }}
+          GRAFANA_LOKI_USER_ID: ${{ secrets.GRAFANA_LOKI_USER_ID }}
+          GRAFANA_LOKI_API_KEY: ${{ secrets.GRAFANA_LOKI_API_KEY }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in GRAFANA_LOKI_URL GRAFANA_LOKI_USER_ID GRAFANA_LOKI_API_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "${name} is unset"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          now=$(date +%s%N)
+          payload=$(printf '{"streams":[{"stream":{"app":"tookratt","event":"schedule_heartbeat","source":"supabase_dump"},"values":[["%s","supabase dump uploaded"]]}]}' "$now")
+          code=$(curl --silent --show-error --output /tmp/loki-body --write-out "%{http_code}" \
+            --user "${GRAFANA_LOKI_USER_ID}:${GRAFANA_LOKI_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data "$payload" \
+            --url "$GRAFANA_LOKI_URL" || echo "000")
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "Loki push returned HTTP ${code}"
+            exit 1
+          fi
+          echo "Loki heartbeat accepted"
