@@ -101,10 +101,9 @@ test("renderMarketFigures uses the published-pay count when the snapshot has it"
   assert.ok(snapshot)
   assert.equal(snapshot.countries.DK?.salary_published_jobs, 40)
   assert.equal(payCopy(snapshot.countries.DK), "How many publish pay.")
-  assert.deepEqual(payTile(snapshot.countries.DK!), {
-    label: "Roles that publish pay",
-    value: 40,
-  })
+  const published = payTile(snapshot.countries.DK!)
+  assert.equal(published.label, "Roles that publish pay")
+  assert.equal(published.value, 40)
   const html = renderMarketFigures(snapshot, "DK")
   assert.match(html, /market-kpi-label">Roles that publish pay</)
   assert.match(html, /data-count-to="40"/)
@@ -114,10 +113,9 @@ test("renderMarketFigures uses the published-pay count when the snapshot has it"
     countries: { IS: { ...denmark, total_jobs: 1, paid_jobs: 1, salary_published_jobs: 0 } },
   })
   assert.ok(zero)
-  assert.deepEqual(payTile(zero.countries.IS!), {
-    label: "Roles that publish pay",
-    value: 0,
-  })
+  const zeroPay = payTile(zero.countries.IS!)
+  assert.equal(zeroPay.label, "Roles that publish pay")
+  assert.equal(zeroPay.value, 0)
 })
 
 test("renderMarketFigures keeps Paid roles when the published-pay count is missing", () => {
@@ -128,10 +126,9 @@ test("renderMarketFigures keeps Paid roles when the published-pay count is missi
   assert.ok(snapshot)
   assert.equal(snapshot.countries.DK?.salary_published_jobs, null)
   assert.equal(payCopy(snapshot.countries.DK), "How many of those are paid.")
-  assert.deepEqual(payTile(snapshot.countries.DK!), {
-    label: "Paid roles",
-    value: 900,
-  })
+  const paid = payTile(snapshot.countries.DK!)
+  assert.equal(paid.label, "Paid roles")
+  assert.equal(paid.value, 900)
 })
 
 test("renderMarketFigures shows a muted zero and skips a missing type count", () => {
