@@ -8,50 +8,25 @@ name: Supabase dump
 # is stored as SUPABASE_DB_URL. Do not hardcode the pooler host.
 #
 # Dumps go to the private R2 bucket tookratt-supabase-dumps (jurisdiction eu).
+# The bucket and its 30-day lifecycle rule are created once, outside this
+# workflow. Uploads use an R2 S3 key limited to that bucket
+# (R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY), not CLOUDFLARE_API_TOKEN.
 # auth is data only, without schema_migrations. public is schema and data.
-# Uploads use the existing CLOUDFLARE_API_TOKEN. No separate R2 access key.
 
 on:
   schedule:
     - cron: "15 1 * * *" # 01:15 UTC, after ingest.yml at midnight
   workflow_dispatch:
-    inputs:
-      bucket_only:
-        description: Create the EU R2 bucket and stop
-        type: boolean
-        default: false
 
 permissions:
   contents: read
 
-jobs:
-  ensure-bucket:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    concurrency:
-      group: supabase-dump
-      cancel-in-progress: false
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    steps:
-      - name: Create the private EU bucket
-        run: |
-          set -euo pipefail
-          if [ -z "${CLOUDFLARE_API_TOKEN}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
-            echo "CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is unset"
-            exit 1
-          fi
-          if ! npx --yes wrangler@4 r2 bucket info tookratt-supabase-dumps --jurisdiction eu --json >/tmp/r2-info.json; then
-            npx --yes wrangler@4 r2 bucket create tookratt-supabase-dumps --jurisdiction eu --update-config false
-          fi
-          npx --yes wrangler@4 r2 bucket lifecycle add tookratt-supabase-dumps expire-dumps dumps/ \
-            --expire-days 30 --jurisdiction eu --force || echo "Lifecycle rule was already present"
-          npx --yes wrangler@4 r2 bucket info tookratt-supabase-dumps --jurisdiction eu --json
+concurrency:
+  group: supabase-dump
+  cancel-in-progress: false
 
+jobs:
   dump:
-    needs: ensure-bucket
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.bucket_only == false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -77,13 +52,17 @@ jobs:
       - name: Dump and upload
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           STAMP: ${{ steps.stamp.outputs.ts }}
         run: |
           set -euo pipefail
           missing=0
-          for name in SUPABASE_DB_URL CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID STAMP; do
+          for name in SUPABASE_DB_URL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY CLOUDFLARE_ACCOUNT_ID STAMP; do
             if [ -z "${!name}" ]; then
               echo "${name} is unset"
               missing=1
@@ -126,10 +105,15 @@ jobs:
             --file="$workdir/public.dump"
 
           prefix="dumps/${STAMP}"
-          npx --yes wrangler@4 r2 object put "tookratt-supabase-dumps/${prefix}/auth-data.dump" \
-            --file="$workdir/auth-data.dump" --remote --jurisdiction eu --force
-          npx --yes wrangler@4 r2 object put "tookratt-supabase-dumps/${prefix}/public.dump" \
-            --file="$workdir/public.dump" --remote --jurisdiction eu --force
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.eu.r2.cloudflarestorage.com"
+          aws s3 cp "$workdir/auth-data.dump" \
+            "s3://tookratt-supabase-dumps/${prefix}/auth-data.dump" \
+            --endpoint-url "$endpoint" \
+            --only-show-errors
+          aws s3 cp "$workdir/public.dump" \
+            "s3://tookratt-supabase-dumps/${prefix}/public.dump" \
+            --endpoint-url "$endpoint" \
+            --only-show-errors
           echo "Uploaded ${prefix}/auth-data.dump and ${prefix}/public.dump"
 
       - name: Record schedule heartbeat
