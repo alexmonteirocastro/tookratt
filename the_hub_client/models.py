@@ -81,6 +81,9 @@ class JobOpenings(JobsAndPages):
     unpaid_jobs: int
     internship_jobs: int
     student_jobs: int
+    # Indexed listings that show a salary range or figure. None when that
+    # count could not be read; paid_jobs stays the paid/unpaid facet.
+    salary_published_jobs: int | None = None
 
 
 class JobOpportunity(BaseModel):

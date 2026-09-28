@@ -3,6 +3,7 @@ from typing import cast
 from uuid import UUID
 
 from qdrant_client import QdrantClient, models
+from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import QueryResponse, VectorParams
 
 from db.settings import (
@@ -55,8 +56,10 @@ def create_collection(db_client: QdrantClient, collection_name: str) -> None:
             field_name="Remote",
             field_schema=models.PayloadSchemaType.BOOL,
         )
+        ensure_salary_type_index(db_client, collection_name)
     else:
         ensure_sparse_bm25_vector(db_client, collection_name)
+        ensure_salary_type_index(db_client, collection_name)
 
 
 def ensure_sparse_bm25_vector(db_client: QdrantClient, collection_name: str) -> bool:
@@ -221,6 +224,65 @@ def delete_jobs_from_qdrant(
         ),
     )
     print(f"{len(point_ids)} stale jobs removed from the vector database")
+
+
+# Hub's salary control is competitive, unpaid, range, monthly_range, hourly_rate
+# (thehub.io job form). Blank, competitive, and unpaid do not show a figure.
+# Anything else is a range type or a legacy free-text figure.
+SALARY_TYPES_WITHOUT_FIGURE = ("competitive", "unpaid", "")
+# A space is not a bare JSON-path key. Quote it or the filter is rejected.
+SALARY_TYPE_FIELD = '"Salary Type"'
+
+
+def ensure_salary_type_index(db_client: QdrantClient, collection_name: str) -> None:
+    """Keyword-index Salary Type during seed and sync.
+
+    /jobs/stats only counts. Creating the index on that read would fail every
+    request if the API key cannot write, and the tile would stay on paid roles.
+    """
+    try:
+        db_client.create_payload_index(
+            collection_name=collection_name,
+            field_name=SALARY_TYPE_FIELD,
+            field_schema=models.PayloadSchemaType.KEYWORD,
+        )
+    except UnexpectedResponse as exc:
+        if "already exists" not in str(exc).lower():
+            raise
+
+
+def count_salary_published_jobs(
+    db_client: QdrantClient,
+    collection_name: str,
+    country: CountryCode,
+) -> int:
+    """Count indexed jobs in one country whose Salary Type publishes a figure.
+
+    The Hub listing has no salary facet, and docs[] omit salary, so this is the
+    live source. It can lag total_jobs until the next ingestion. The keyword
+    index is created by seed and sync, not by this read.
+    """
+    country_filter = _build_country_remote_filter(country, None)
+    country_conditions = (
+        list(country_filter.must) if country_filter and country_filter.must else []
+    )
+    counted = db_client.count(
+        collection_name=collection_name,
+        count_filter=models.Filter(
+            must=country_conditions,
+            must_not=[
+                models.IsEmptyCondition(
+                    is_empty=models.PayloadField(key=SALARY_TYPE_FIELD)
+                ),
+                models.FieldCondition(
+                    key=SALARY_TYPE_FIELD,
+                    match=models.MatchAny(any=list(SALARY_TYPES_WITHOUT_FIGURE)),
+                ),
+            ],
+        ),
+        exact=True,
+    )
+    return counted.count
 
 
 def _build_country_remote_filter(

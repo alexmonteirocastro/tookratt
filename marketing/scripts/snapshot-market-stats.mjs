@@ -36,7 +36,7 @@ export function countryStats(body) {
   ) {
     throw new Error("unexpected /jobs/stats shape");
   }
-  return {
+  const stats = {
     total_jobs: body.total_jobs,
     remote_jobs: body.remote_jobs,
     paid_jobs: body.paid_jobs,
@@ -44,6 +44,11 @@ export function countryStats(body) {
     student_jobs: optionalCount(body.student_jobs),
     jobs_per_role: body.jobs_per_role,
   };
+  const salaryPublishedJobs = optionalCount(body.salary_published_jobs);
+  if (salaryPublishedJobs !== undefined) {
+    stats.salary_published_jobs = salaryPublishedJobs;
+  }
+  return stats;
 }
 
 export function buildSnapshot(generatedAt, countries) {

@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import httpx
 import requests
 import responses
 from fastapi.middleware.cors import CORSMiddleware
@@ -72,7 +73,13 @@ def test_cors_preflight_allows_authorization_header():
 
 
 @responses.activate
-def test_jobs_stats_returns_openings(load_fixture):
+@patch("api.main.get_settings")
+@patch("api.main.get_qdrant_client")
+@patch("api.main.count_salary_published_jobs", return_value=11)
+def test_jobs_stats_returns_openings(
+    _mock_count, _mock_client, mock_settings, load_fixture
+):
+    mock_settings.return_value = SimpleNamespace(qdrant_collection_name="JOBS")
     payload = load_fixture("jobs_listing_summary.json")
     responses.add(
         responses.GET,
@@ -86,9 +93,63 @@ def test_jobs_stats_returns_openings(load_fixture):
     body = response.json()
     assert body["total_jobs"] == 120
     assert body["remote_jobs"] == 30
+    assert body["paid_jobs"] == 100
+    assert body["unpaid_jobs"] == 20
+    assert body["salary_published_jobs"] == 11
     assert body["internship_jobs"] == 4
     assert body["student_jobs"] == 2
     assert body["jobs_per_role"]["backend_developer"] == 19
+
+
+@responses.activate
+@patch("api.main.get_settings")
+@patch("api.main.get_qdrant_client")
+@patch("api.main.count_salary_published_jobs", side_effect=[17, 0])
+def test_salary_published_jobs_follows_the_country(
+    mock_count, _mock_client, mock_settings, load_fixture
+):
+    mock_settings.return_value = SimpleNamespace(qdrant_collection_name="JOBS")
+    payload = load_fixture("jobs_listing_summary.json")
+    for code in ("DK", "IS"):
+        responses.add(
+            responses.GET,
+            f"{HUB_BASE_URL}{JOB_LISTINGS_ENDPOINT_ROUTE}?countryCode={code}",
+            json=payload,
+        )
+
+    denmark = client.get("/jobs/stats", params={"country": "DK"})
+    iceland = client.get("/jobs/stats", params={"country": "IS"})
+
+    assert denmark.status_code == 200
+    assert iceland.status_code == 200
+    assert denmark.json()["paid_jobs"] == 100
+    assert iceland.json()["paid_jobs"] == 100
+    assert denmark.json()["unpaid_jobs"] == 20
+    assert iceland.json()["unpaid_jobs"] == 20
+    assert denmark.json()["salary_published_jobs"] == 17
+    assert iceland.json()["salary_published_jobs"] == 0
+    assert mock_count.call_args_list[0].args[2] == CountryCode.DENMARK
+    assert mock_count.call_args_list[1].args[2] == CountryCode.ICELAND
+
+
+@responses.activate
+@patch("api.main.get_qdrant_client", side_effect=httpx.ConnectError("refused"))
+def test_jobs_stats_omits_salary_published_when_qdrant_is_down(
+    _mock_client, load_fixture
+):
+    payload = load_fixture("jobs_listing_summary.json")
+    responses.add(
+        responses.GET,
+        f"{HUB_BASE_URL}{JOB_LISTINGS_ENDPOINT_ROUTE}?countryCode=DK",
+        json=payload,
+    )
+
+    response = client.get("/jobs/stats", params={"country": "DK"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["paid_jobs"] == 100
+    assert "salary_published_jobs" not in body
 
 
 def test_jobs_stats_rejects_invalid_country():

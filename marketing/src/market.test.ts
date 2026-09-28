@@ -9,6 +9,8 @@ import {
   blendCount,
   frameValue,
   parseSnapshot,
+  payCopy,
+  payTile,
   renderMarketFigures,
 } from "./market.ts"
 
@@ -87,6 +89,49 @@ test("renderMarketFigures disables a missing country and keeps the final number 
   assert.match(html, /data-share="1"/)
   assert.match(html, /data-share="0.5"/)
   assert.doesNotMatch(html, /more role/)
+})
+
+test("renderMarketFigures uses the published-pay count when the snapshot has it", () => {
+  const snapshot = parseSnapshot({
+    generated_at: "2026-09-25T00:00:00.000Z",
+    countries: {
+      DK: { ...denmark, salary_published_jobs: 40 },
+    },
+  })
+  assert.ok(snapshot)
+  assert.equal(snapshot.countries.DK?.salary_published_jobs, 40)
+  assert.equal(payCopy(snapshot.countries.DK), "How many publish pay.")
+  const published = payTile(snapshot.countries.DK!)
+  assert.equal(published.label, "Roles that publish pay")
+  assert.equal(published.value, 40)
+  const html = renderMarketFigures(snapshot, "DK")
+  assert.match(html, /market-kpi-label">Roles that publish pay</)
+  assert.match(html, /data-count-to="40"/)
+  assert.match(html, /indexed listings and can lag the open-roles total/)
+  assert.doesNotMatch(html, /Paid roles/)
+  const zero = parseSnapshot({
+    generated_at: "2026-09-25T00:00:00.000Z",
+    countries: { IS: { ...denmark, total_jobs: 1, paid_jobs: 1, salary_published_jobs: 0 } },
+  })
+  assert.ok(zero)
+  const zeroPay = payTile(zero.countries.IS!)
+  assert.equal(zeroPay.label, "Roles that publish pay")
+  assert.equal(zeroPay.value, 0)
+})
+
+test("renderMarketFigures keeps Paid roles when the published-pay count is missing", () => {
+  const snapshot = parseSnapshot({
+    generated_at: "2026-09-25T00:00:00.000Z",
+    countries: { DK: denmark },
+  })
+  assert.ok(snapshot)
+  assert.equal(snapshot.countries.DK?.salary_published_jobs, null)
+  assert.equal(payCopy(snapshot.countries.DK), "How many of those are paid.")
+  const paid = payTile(snapshot.countries.DK!)
+  assert.equal(paid.label, "Paid roles")
+  assert.equal(paid.value, 900)
+  const html = renderMarketFigures(snapshot, "DK")
+  assert.doesNotMatch(html, /indexed listings/)
 })
 
 test("renderMarketFigures shows a muted zero and skips a missing type count", () => {

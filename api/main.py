@@ -1,11 +1,13 @@
+import logging
 from time import perf_counter
 from typing import Any, cast
 
+import httpx
 import requests
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
-from qdrant_client.http.exceptions import UnexpectedResponse
+from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -20,7 +22,12 @@ from api.schemas import (
     JobSearchHit,
     JobSearchResponse,
 )
-from db import get_qdrant_client, get_settings, query_jobs_in_qdrant
+from db import (
+    count_salary_published_jobs,
+    get_qdrant_client,
+    get_settings,
+    query_jobs_in_qdrant,
+)
 from db.query_filters import resolve_chat_filters
 from llm_client import NO_MATCHING_JOBS_MESSAGE, get_generator, get_llm_settings
 from llm_client.base import ChatTurn, Generator
@@ -42,6 +49,7 @@ from the_hub_client import CountryCode, get_full_jobs_picture_by_country
 from the_hub_client.models import JobOpenings
 
 limiter = Limiter(key_func=get_remote_address)
+logger = logging.getLogger(__name__)
 
 
 def _chat_rate_limit() -> str:
@@ -136,15 +144,53 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@protected_router.get("/jobs/stats", response_model=JobOpenings)
+def _with_salary_published_jobs(
+    openings: JobOpenings, country: CountryCode
+) -> JobOpenings:
+    """Attach the indexed pay-transparency count without failing the Hub totals.
+
+    A Qdrant miss leaves the field unset. The marketing tile then shows
+    paid_jobs as "Paid roles" instead of claiming a published-salary count.
+    """
+    try:
+        settings = get_settings()
+        client = get_qdrant_client()
+        openings.salary_published_jobs = count_salary_published_jobs(
+            client,
+            settings.qdrant_collection_name,
+            country,
+        )
+    except (
+        ValidationError,
+        UnexpectedResponse,
+        ResponseHandlingException,
+        httpx.HTTPError,
+        OSError,
+    ):
+        logger.warning(
+            "Salary published count unavailable for %s",
+            country.value,
+            exc_info=True,
+        )
+    return openings
+
+
+@protected_router.get(
+    "/jobs/stats",
+    response_model=JobOpenings,
+    # salary_published_jobs is the only optional field on JobOpenings.
+    # Omitting None lets the marketing tile fall back; paid_jobs stays present.
+    response_model_exclude_none=True,
+)
 def jobs_stats(country: CountryCode) -> JobOpenings:
     try:
-        return get_full_jobs_picture_by_country(country)
+        openings = get_full_jobs_picture_by_country(country)
     except requests.RequestException as exc:
         raise HTTPException(
             status_code=502,
             detail="The Hub API is unavailable.",
         ) from exc
+    return _with_salary_published_jobs(openings, country)
 
 
 @protected_router.get("/jobs/search", response_model=JobSearchResponse)
