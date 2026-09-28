@@ -91,6 +91,7 @@ Workflow guide (how to read `separation_margin`, judgments, sweeps, etc.):
 - [docs/PRODUCT_VISION.md](docs/PRODUCT_VISION.md) — market-research vision, roadmap, and trust bar
 - [docs/ops/grafana-cloud-chat-observability.md](docs/ops/grafana-cloud-chat-observability.md) — Grafana Cloud `/chat` dashboard (ADR-0015)
 - [docs/ops/grafana-cloud-injection-alerting.md](docs/ops/grafana-cloud-injection-alerting.md) — Grafana Cloud injection alert rule (ADR-0015)
+- [docs/ops/grafana-cloud-auth-alerting.md](docs/ops/grafana-cloud-auth-alerting.md) — Grafana Cloud auth-denial alert (ALE-214)
 - [evals_system/GUIDE.md](evals_system/GUIDE.md) — manual eval review UI walkthrough
 - [docs/adr/](docs/adr/) — architectural decision records
   - [ADR-0001](docs/adr/0001-llm-provider-strategy.md) — LLM provider strategy for the RAG generation layer

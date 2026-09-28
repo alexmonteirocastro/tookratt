@@ -5,12 +5,14 @@ description = "Scrape The Hub job portal via API and store embeddings in Qdrant 
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "email-validator>=2.3.0",
     "fastapi>=0.115.0",
     "google-genai>=2.10.0",
     "inuits-python-logging-loki>=1.4.1",
     "markdownify>=1.2.2",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
+    "pyjwt[crypto]>=2.15.1",
     "python-dotenv>=1.2.1",
     "qdrant-client[fastembed]>=1.18.0",
     "requests>=2.32.5",

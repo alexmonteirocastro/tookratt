@@ -299,3 +299,19 @@ def test_settings_rejects_non_positive_chat_session_bounds(monkeypatch, env_name
 
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_settings_validate_without_supabase_env(monkeypatch, tmp_path):
+    """Ingest loads Settings and does not have SUPABASE_URL or SUPABASE_SECRET_KEY."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("QDRANT_URL", "http://localhost:6333")
+    monkeypatch.setenv("QDRANT_COLLECTION_NAME", "JOBS_ON_THE_HUB")
+    monkeypatch.setenv("EMBEDDING_MODEL", E5_MODEL)
+    monkeypatch.setenv("TOOKRATT_API_KEYS", "test-key")
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_SECRET_KEY", raising=False)
+
+    settings = Settings()
+
+    assert settings.supabase_url is None
+    assert settings.supabase_secret_key is None

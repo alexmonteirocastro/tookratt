@@ -166,3 +166,7 @@ Recorded first as a [comment on ALE-212](https://linear.app/alex-projects/issue/
 **Static keys limited to `GET /jobs/stats` (Decision 4).** The only production static key is the marketing prebuild's stats snapshot key. `/jobs/search` and `/chat` require a user caller. A static key gets 403 on both, because a leaked marketing key must not be able to spend Qdrant budget on search or Gemini and Qdrant budget on chat. CI and the Compose `test` service keep `test-api-key` for `/jobs/stats`. `/jobs/search` and `/chat` tests use a token signed with a local test key, which [ALE-214](https://linear.app/alex-projects/issue/ALE-214) builds.
 
 **Consequence.** A leaked service key can only read `GET /jobs/stats`. It still cannot invite or revoke.
+
+### Local verification lag, as shipped (ALE-214)
+
+The API verifies access tokens locally and does not ask GoTrue on each request. A revoke (`ban_duration`) or a demotion stays invisible to this check until the current access token expires, at most one hour. [ALE-213](https://linear.app/alex-projects/issue/ALE-213/spike-run-the-seven-supabase-auth-checks-on-the-dev-project-bet-006) already measured that lag. The hard cutoff (`auth.sessions` or a `user_roles` table) stays out of scope, and it is the moment the API would open SQL. Merging ALE-214 also makes the pre-login frontend key receive 403 on `/chat` and `/jobs/search` until [ALE-216](https://linear.app/alex-projects/issue/ALE-216) ships. That 403 is the cutover, not an outage. `GET /jobs/stats` still accepts the marketing key.

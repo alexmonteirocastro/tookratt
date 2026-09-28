@@ -14,7 +14,8 @@ from slowapi.util import get_remote_address
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from api.auth import require_api_key
+from api.admin import router as admin_router
+from api.auth import UserCaller, require_api_auth_config, require_caller, require_user
 from api.schemas import (
     ChatRequest,
     ChatResponse,
@@ -82,6 +83,7 @@ def _question_too_long_detail(question: str, max_length: int) -> list[dict[str, 
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    require_api_auth_config(settings)
     configure_logging(settings)
     application = FastAPI(
         title="Töökratt API",
@@ -103,7 +105,8 @@ def create_app() -> FastAPI:
 
 app = create_app()
 
-protected_router = APIRouter(dependencies=[Depends(require_api_key)])
+stats_router = APIRouter(dependencies=[Depends(require_caller)])
+user_router = APIRouter(dependencies=[Depends(require_user)])
 
 _REQUIRED_HIT_PAYLOAD_FIELDS = {
     "job_id": "job_url_identifier",
@@ -175,7 +178,7 @@ def _with_salary_published_jobs(
     return openings
 
 
-@protected_router.get(
+@stats_router.get(
     "/jobs/stats",
     response_model=JobOpenings,
     # salary_published_jobs is the only optional field on JobOpenings.
@@ -193,7 +196,7 @@ def jobs_stats(country: CountryCode) -> JobOpenings:
     return _with_salary_published_jobs(openings, country)
 
 
-@protected_router.get("/jobs/search", response_model=JobSearchResponse)
+@user_router.get("/jobs/search", response_model=JobSearchResponse)
 def jobs_search(
     q: str = Query(..., min_length=1, description="Natural-language search query"),
     limit: int = Query(5, ge=1, le=50, description="Maximum number of results"),
@@ -272,11 +275,12 @@ def _log_user_query_injection_matches(question: str) -> None:
         )
 
 
-@protected_router.post("/chat", response_model=ChatResponse)
+@user_router.post("/chat", response_model=ChatResponse)
 @limiter.limit(_chat_rate_limit)
 def chat(
     request: Request,
     chat_request: ChatRequest,
+    caller: UserCaller = Depends(require_user),
     generator: Generator = Depends(get_chat_generator),
     session_store: SessionStore = Depends(get_session_store),
 ) -> ChatResponse:
@@ -305,7 +309,8 @@ def chat(
                 )
             client = get_qdrant_client()
             session_id, session_state = session_store.get_or_create(
-                chat_request.session_id
+                chat_request.session_id,
+                sub=caller.sub,
             )
             prior_history = tuple(session_state.turns) or None
             resolved = resolve_chat_filters(
@@ -442,4 +447,6 @@ def chat(
         )
 
 
-app.include_router(protected_router)
+app.include_router(stats_router)
+app.include_router(user_router)
+app.include_router(admin_router)
