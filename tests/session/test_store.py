@@ -37,6 +37,25 @@ def test_get_or_create_stores_sub_as_a_label():
     assert again.sub == "user-1"
 
 
+def test_other_users_session_starts_fresh_and_leaves_the_original():
+    store, _clock = _store()
+    session_id, _state = store.get_or_create(None, sub="user-a")
+    store.record_turn(
+        session_id,
+        ChatTurn(question="q1", answer="a1"),
+        ExtractedFilters(country=CountryCode.SWEDEN),
+    )
+
+    new_id, taken = store.get_or_create(session_id, sub="user-b")
+    _same_id, original = store.get_or_create(session_id, sub="user-a")
+
+    assert new_id != session_id
+    assert taken.turns == []
+    assert taken.sub == "user-b"
+    assert original.turns == [ChatTurn(question="q1", answer="a1")]
+    assert original.sub == "user-a"
+
+
 def test_get_or_create_mints_id_when_session_id_absent():
     store, _clock = _store()
 

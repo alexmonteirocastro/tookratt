@@ -5,6 +5,7 @@ description = "Scrape The Hub job portal via API and store embeddings in Qdrant 
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "email-validator>=2.3.0",
     "fastapi>=0.115.0",
     "google-genai>=2.10.0",
     "inuits-python-logging-loki>=1.4.1",

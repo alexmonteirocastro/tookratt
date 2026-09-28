@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from collections.abc import Callable
@@ -24,7 +25,11 @@ from api.outbound import REQUEST_TIMEOUT
 
 JWKS_CACHE_TTL_SECONDS = 600
 JWKS_FORCED_REFETCH_SECONDS = 60
+JWKS_REFRESH_BACKOFF_SECONDS = 30
+JWKS_MAX_STALE_SECONDS = 3600
 SUPABASE_JWT_AUDIENCE = "authenticated"
+
+_logger = logging.getLogger("tookratt.auth")
 
 Clock = Callable[[], float]
 JwksFetch = Callable[[], dict[str, Any]]
@@ -51,7 +56,11 @@ class JwksCache:
 
     An unknown ``kid`` may force one extra fetch, and at most one such fetch
     every 60 seconds. A scanner sending random key ids otherwise hits JWKS
-    on every request.
+    on every request. A refresh that fails keeps the keys already cached and
+    waits 30 seconds before trying again. Those keys are used until they are
+    an hour old. The fetch itself runs outside the lock, so other requests
+    keep answering from the cache while one refresh is in flight. A TTL
+    refresh is the only fetch in that call.
     """
 
     def __init__(
@@ -67,20 +76,53 @@ class JwksCache:
         self._keys: dict[str, Any] = {}
         self._fetched_at: float | None = None
         self._last_forced_at: float | None = None
+        self._backoff_until: float | None = None
         self._lock = threading.Lock()
 
     def public_key(self, kid: str) -> Any | None:
         """Return the key for ``kid``, or None when it is not in the document."""
         with self._lock:
             now = self._clock()
-            if self._needs_refresh(now):
-                self._refresh(now)
-            if kid in self._keys:
-                return self._keys[kid]
-            if self._forced_recently(now):
-                return None
-            self._refresh(now)
-            self._last_forced_at = self._clock()
+            kind = self._schedule(kid, now)
+            if kind is None:
+                return self._answer_from_cache(kid, now)
+            if kind == "forced":
+                self._last_forced_at = now
+            self._backoff_until = now + JWKS_REFRESH_BACKOFF_SECONDS
+        return self._fetch_outside_lock(kid)
+
+    def _schedule(self, kid: str, now: float) -> str | None:
+        if self._needs_refresh(now) and not self._in_backoff(now):
+            return "ttl"
+        if (
+            kid not in self._keys
+            and self._keys
+            and not self._forced_recently(now)
+            and not self._in_backoff(now)
+        ):
+            return "forced"
+        return None
+
+    def _answer_from_cache(self, kid: str, now: float) -> Any | None:
+        if self._usable(now):
+            return self._keys.get(kid)
+        raise JwksUnavailable("JWKS unavailable")
+
+    def _fetch_outside_lock(self, kid: str) -> Any | None:
+        try:
+            keys = _keys_from_document(self._fetch())
+        except JwksUnavailable:
+            with self._lock:
+                now = self._clock()
+                if self._usable(now):
+                    _logger.warning("JWKS refresh failed; serving cached keys")
+                    return self._keys.get(kid)
+            _logger.warning("JWKS refresh failed; no usable keys cached")
+            raise
+        with self._lock:
+            self._keys = keys
+            self._fetched_at = self._clock()
+            self._backoff_until = None
             return self._keys.get(kid)
 
     def _needs_refresh(self, now: float) -> bool:
@@ -88,15 +130,18 @@ class JwksCache:
             return True
         return now - self._fetched_at >= JWKS_CACHE_TTL_SECONDS
 
+    def _in_backoff(self, now: float) -> bool:
+        return self._backoff_until is not None and now < self._backoff_until
+
     def _forced_recently(self, now: float) -> bool:
         if self._last_forced_at is None:
             return False
         return now - self._last_forced_at < JWKS_FORCED_REFETCH_SECONDS
 
-    def _refresh(self, now: float) -> None:
-        document = self._fetch()
-        self._keys = _keys_from_document(document)
-        self._fetched_at = now
+    def _usable(self, now: float) -> bool:
+        if self._fetched_at is None or not self._keys:
+            return False
+        return now - self._fetched_at < JWKS_MAX_STALE_SECONDS
 
     def _http_fetch(self) -> dict[str, Any]:
         try:

@@ -126,6 +126,8 @@ def create_invite(
     admin: Annotated[UserCaller, Depends(require_admin)],
     gotrue: Annotated[GoTrueAdmin, Depends(get_gotrue_admin)],
 ) -> ActionLinkResponse:
+    # email_exists is a confirmed account. An invite that was never accepted
+    # gets a fresh link from GoTrue, so sending the form again is the resend.
     try:
         payload = gotrue.generate_link("invite", body.email)
         link = _action_link(payload)

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, EmailStr, Field, computed_field
 
 from the_hub_client.models import CountryCode
 from the_hub_client.utils import build_job_url
@@ -112,7 +112,7 @@ class ChatResponse(BaseModel):
 
 
 class InviteRequest(BaseModel):
-    email: str = Field(min_length=3, max_length=320)
+    email: EmailStr = Field(max_length=320)
 
 
 class ActionLinkResponse(BaseModel):

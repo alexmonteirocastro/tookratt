@@ -187,7 +187,7 @@ Strings ALE-216 should use as written.
 | Confirm field error | The two passwords don't match. |
 | Short password | Use at least 8 characters. |
 
-An admin invite that hits an existing user can say "That person already has an account." The public login form cannot.
+An admin invite that hits a confirmed account can say "That person already has an account." The public login form cannot. Inviting an address that was invited but never set a password returns a new link (checked on the dev project, 2026-09-28). "Create invite link" again is the resend. `email_exists` is only for an account that already confirmed.
 
 ## Tokens and components
 

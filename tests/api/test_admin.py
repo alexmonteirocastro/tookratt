@@ -16,6 +16,7 @@ LINK = "https://example.test/invite#this-must-not-be-logged"
 class FakeGoTrue:
     def __init__(self) -> None:
         self.updates: list[tuple[UUID, dict[str, str]]] = []
+        self.generated: list[str] = []
         self.invite_error: Exception | None = None
         self.user: dict = {
             "id": str(ADMIN_ID),
@@ -25,6 +26,7 @@ class FakeGoTrue:
         }
 
     def generate_link(self, link_type: str, email: str) -> dict:
+        self.generated.append(email)
         if self.invite_error is not None:
             raise self.invite_error
         return {
@@ -168,6 +170,17 @@ def test_reset_link_returns_only_the_link():
     assert response.status_code == 200
     assert response.json() == {"action_link": LINK}
     assert response.headers["cache-control"] == "no-store"
+
+
+def test_invite_rejects_a_bad_email_before_gotrue():
+    client, fake = _client()
+    try:
+        response = client.post("/admin/invites", json={"email": "not-an-email"})
+    finally:
+        app.dependency_overrides.pop(get_gotrue_admin, None)
+
+    assert response.status_code == 422
+    assert fake.generated == []
 
 
 def test_member_cannot_invite():
