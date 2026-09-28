@@ -3,6 +3,7 @@ from typing import cast
 from uuid import UUID
 
 from qdrant_client import QdrantClient, models
+from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import QueryResponse, VectorParams
 
 from db.settings import (
@@ -232,27 +233,22 @@ SALARY_TYPES_WITHOUT_FIGURE = ("competitive", "unpaid", "")
 # A space is not a bare JSON-path key. Quote it or the filter is rejected.
 SALARY_TYPE_FIELD = '"Salary Type"'
 
-# One client creates the keyword index once. Keyed by client so a test mock
-# cannot mark a later real client as already indexed.
-_salary_type_indexed: set[tuple[int, str]] = set()
-
 
 def ensure_salary_type_index(db_client: QdrantClient, collection_name: str) -> None:
-    """Keyword-index Salary Type so an exact filtered count is allowed.
+    """Keyword-index Salary Type during seed and sync.
 
-    Country is indexed when the collection is created. Salary Type was not.
-    A strict-mode cluster can reject an unindexed payload filter, which would
-    drop salary_published_jobs and leave the tile on the paid-roles fallback.
+    /jobs/stats only counts. Creating the index on that read would fail every
+    request if the API key cannot write, and the tile would stay on paid roles.
     """
-    key = (id(db_client), collection_name)
-    if key in _salary_type_indexed:
-        return
-    db_client.create_payload_index(
-        collection_name=collection_name,
-        field_name=SALARY_TYPE_FIELD,
-        field_schema=models.PayloadSchemaType.KEYWORD,
-    )
-    _salary_type_indexed.add(key)
+    try:
+        db_client.create_payload_index(
+            collection_name=collection_name,
+            field_name=SALARY_TYPE_FIELD,
+            field_schema=models.PayloadSchemaType.KEYWORD,
+        )
+    except UnexpectedResponse as exc:
+        if "already exists" not in str(exc).lower():
+            raise
 
 
 def count_salary_published_jobs(
@@ -263,9 +259,9 @@ def count_salary_published_jobs(
     """Count indexed jobs in one country whose Salary Type publishes a figure.
 
     The Hub listing has no salary facet, and docs[] omit salary, so this is the
-    live source. It can lag total_jobs until the next ingestion.
+    live source. It can lag total_jobs until the next ingestion. The keyword
+    index is created by seed and sync, not by this read.
     """
-    ensure_salary_type_index(db_client, collection_name)
     country_filter = _build_country_remote_filter(country, None)
     country_conditions = (
         list(country_filter.must) if country_filter and country_filter.must else []

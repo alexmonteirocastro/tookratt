@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 from qdrant_client import QdrantClient, models
+from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import Distance, VectorParams
 
 from db.database import (
@@ -10,6 +11,7 @@ from db.database import (
     _attach_dense_scores_to_fused_hits,
     count_salary_published_jobs,
     create_collection,
+    ensure_salary_type_index,
     ensure_sparse_bm25_vector,
     get_vector_name,
     load_jobs_into_qdrant,
@@ -612,6 +614,31 @@ def _salary_count_filter(country: CountryCode) -> models.Filter:
     db_client.count.return_value = SimpleNamespace(count=0)
     count_salary_published_jobs(db_client, "JOBS", country)
     return db_client.count.call_args.kwargs["count_filter"]
+
+
+def test_ensure_salary_type_index_ignores_an_index_that_already_exists():
+    db_client = MagicMock()
+    db_client.create_payload_index.side_effect = UnexpectedResponse(
+        400,
+        "Bad Request",
+        b"Field index already exists",
+        {},
+    )
+
+    ensure_salary_type_index(db_client, "JOBS")
+
+
+def test_ensure_salary_type_index_reraises_a_rejected_field_name():
+    db_client = MagicMock()
+    db_client.create_payload_index.side_effect = UnexpectedResponse(
+        400,
+        "Bad Request",
+        b"Invalid json path",
+        {},
+    )
+
+    with pytest.raises(UnexpectedResponse):
+        ensure_salary_type_index(db_client, "JOBS")
 
 
 def test_count_salary_published_jobs_follows_each_country_mix():
