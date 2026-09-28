@@ -249,7 +249,7 @@ def ensure_salary_type_index(db_client: QdrantClient, collection_name: str) -> N
         return
     db_client.create_payload_index(
         collection_name=collection_name,
-        field_name="Salary Type",
+        field_name=SALARY_TYPE_FIELD,
         field_schema=models.PayloadSchemaType.KEYWORD,
     )
     _salary_type_indexed.add(key)

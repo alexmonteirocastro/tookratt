@@ -301,7 +301,7 @@ def test_create_collection_creates_payload_indexes_and_sparse_config():
             ),
             call(
                 collection_name="JOBS_DEV",
-                field_name="Salary Type",
+                field_name='"Salary Type"',
                 field_schema=models.PayloadSchemaType.KEYWORD,
             ),
         ]
@@ -321,7 +321,7 @@ def test_create_collection_ensures_sparse_when_collection_already_exists():
     db_client.create_collection.assert_not_called()
     db_client.create_payload_index.assert_called_once_with(
         collection_name="JOBS_DEV",
-        field_name="Salary Type",
+        field_name='"Salary Type"',
         field_schema=models.PayloadSchemaType.KEYWORD,
     )
     db_client.create_vector_name.assert_called_once()
