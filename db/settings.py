@@ -115,9 +115,10 @@ class Settings(BaseSettings):
         # Prefer TOOKRATT_API_KEYS; HUBSTER_API_KEYS kept as cutover alias (ALE-168).
         validation_alias=AliasChoices("TOOKRATT_API_KEYS", "HUBSTER_API_KEYS"),
         description=(
-            "Comma-separated set of valid bearer tokens for /chat and /jobs/* "
-            "(see ADR-0011). Prefer TOOKRATT_API_KEYS; HUBSTER_API_KEYS remains "
-            "accepted until the rebrand cutover secret is removed."
+            "Comma-separated service keys. After ALE-214 they authorize "
+            "GET /jobs/stats only (ADR-0019 / ALE-220). Prefer TOOKRATT_API_KEYS; "
+            "HUBSTER_API_KEYS remains accepted until the rebrand cutover secret "
+            "is removed."
         ),
     )
     # ADR-0015: optional Grafana Cloud Loki push (all three required to enable).
@@ -142,6 +143,24 @@ class Settings(BaseSettings):
         description=(
             "Grafana Cloud access policy token with logs:write "
             "(HTTP basic auth password)."
+        ),
+    )
+    # Optional here so nightly ingest (main.py) can load Settings without them.
+    # The API process refuses to start when either is missing (ALE-214).
+    supabase_url: str | None = Field(
+        default=None,
+        validation_alias="SUPABASE_URL",
+        description=(
+            "Supabase project URL. The API derives the issuer and JWKS from it. "
+            "Ingest does not read it."
+        ),
+    )
+    supabase_secret_key: str | None = Field(
+        default=None,
+        validation_alias="SUPABASE_SECRET_KEY",
+        description=(
+            "Supabase secret key (sb_secret_…) for the admin API. "
+            "Server-only. Ingest does not read it."
         ),
     )
 
@@ -190,6 +209,8 @@ class Settings(BaseSettings):
         "grafana_loki_url",
         "grafana_loki_user_id",
         "grafana_loki_api_key",
+        "supabase_url",
+        "supabase_secret_key",
         mode="before",
     )
     @classmethod

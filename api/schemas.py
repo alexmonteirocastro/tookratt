@@ -1,3 +1,7 @@
+from datetime import datetime
+from typing import Literal
+from uuid import UUID
+
 from pydantic import BaseModel, Field, computed_field
 
 from the_hub_client.models import CountryCode
@@ -105,3 +109,25 @@ class ChatResponse(BaseModel):
             "continue the conversation."
         ),
     )
+
+
+class InviteRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+
+
+class ActionLinkResponse(BaseModel):
+    action_link: str
+
+
+class AdminUserResponse(BaseModel):
+    id: UUID
+    email: str | None
+    status: Literal["active", "invited", "revoked"]
+    created_at: datetime | None
+    last_sign_in_at: datetime | None
+    role: str | None
+
+
+class AdminUserListResponse(BaseModel):
+    users: list[AdminUserResponse]
+    page: int

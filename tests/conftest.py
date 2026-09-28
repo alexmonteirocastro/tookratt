@@ -12,10 +12,23 @@ os.environ.setdefault("TOOKRATT_API_KEYS", "test-api-key")
 os.environ.setdefault("QDRANT_URL", "http://localhost:6333")
 os.environ.setdefault("QDRANT_COLLECTION_NAME", "JOBS_ON_THE_HUB")
 os.environ.setdefault("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
+os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
+os.environ.setdefault("SUPABASE_SECRET_KEY", "sb_secret_test")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture(autouse=True)
+def install_test_jwks():
+    """Serve the local ES256 key instead of calling Supabase."""
+    from api.jwt_verify import JwksCache, use_jwks_cache_for_tests
+    from tests.api_auth import TEST_JWKS_URL, fetch_test_jwks
+
+    use_jwks_cache_for_tests(JwksCache(TEST_JWKS_URL, fetch=fetch_test_jwks))
+    yield
+    use_jwks_cache_for_tests(None)
 
 
 @pytest.fixture(autouse=True)

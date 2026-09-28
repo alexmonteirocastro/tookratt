@@ -20,6 +20,7 @@ _loki_handler: logging.Handler | None = None
 
 CHAT_LOGGER_NAME = "tookratt.chat"
 INJECTION_LOGGER_NAME = "tookratt.injection"
+AUTH_LOGGER_NAME = "tookratt.auth"
 
 _LOKI_LABEL_PROPS = ["event", "source"]
 # Bound free-text fields shipped to Loki (prompt/response/question), independent
@@ -134,6 +135,31 @@ def log_chat_request(
         error_type=error_type,
         generated=generated,
         provider=provider,
+    )
+
+
+def log_auth_denied(*, reason: str, credential_type: str) -> None:
+    """Log a 401 or 403. ``reason`` and ``credential_type`` stay off the Loki labels."""
+    _emit_structured(
+        logging.getLogger(AUTH_LOGGER_NAME),
+        logging.INFO,
+        event="auth_denied",
+        source="access",
+        reason=reason,
+        credential_type=credential_type,
+    )
+
+
+def log_admin_action(*, action: str, actor_sub: str, target_user_id: str) -> None:
+    """Log an admin mutation. Never include links, tokens, or passwords."""
+    _emit_structured(
+        logging.getLogger(AUTH_LOGGER_NAME),
+        logging.INFO,
+        event="admin_action",
+        source="access",
+        action=action,
+        actor_sub=actor_sub,
+        target_user_id=target_user_id,
     )
 
 

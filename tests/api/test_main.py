@@ -9,12 +9,13 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from api.main import app, create_app
-from tests.api_auth import AUTH_HEADERS, TEST_API_KEY
+from tests.api_auth import AUTH_HEADERS, TEST_API_KEY, USER_HEADERS
 from tests.mock_settings import api_settings_namespace
 from the_hub_client.models import CountryCode
 from the_hub_client.utils import HUB_BASE_URL, JOB_LISTINGS_ENDPOINT_ROUTE
 
-client = TestClient(app, headers=AUTH_HEADERS)
+client = TestClient(app, headers=USER_HEADERS)
+service_client = TestClient(app, headers=AUTH_HEADERS)
 
 
 def test_health_returns_ok():
@@ -87,7 +88,7 @@ def test_jobs_stats_returns_openings(
         json=payload,
     )
 
-    response = client.get("/jobs/stats", params={"country": "SE"})
+    response = service_client.get("/jobs/stats", params={"country": "SE"})
 
     assert response.status_code == 200
     body = response.json()
@@ -117,8 +118,8 @@ def test_salary_published_jobs_follows_the_country(
             json=payload,
         )
 
-    denmark = client.get("/jobs/stats", params={"country": "DK"})
-    iceland = client.get("/jobs/stats", params={"country": "IS"})
+    denmark = service_client.get("/jobs/stats", params={"country": "DK"})
+    iceland = service_client.get("/jobs/stats", params={"country": "IS"})
 
     assert denmark.status_code == 200
     assert iceland.status_code == 200
@@ -144,7 +145,7 @@ def test_jobs_stats_omits_salary_published_when_qdrant_is_down(
         json=payload,
     )
 
-    response = client.get("/jobs/stats", params={"country": "DK"})
+    response = service_client.get("/jobs/stats", params={"country": "DK"})
 
     assert response.status_code == 200
     body = response.json()
@@ -153,7 +154,7 @@ def test_jobs_stats_omits_salary_published_when_qdrant_is_down(
 
 
 def test_jobs_stats_rejects_invalid_country():
-    response = client.get("/jobs/stats", params={"country": "XX"})
+    response = service_client.get("/jobs/stats", params={"country": "XX"})
 
     assert response.status_code == 422
 
@@ -166,7 +167,7 @@ def test_jobs_stats_returns_502_when_hub_is_down():
         body=requests.ConnectionError("connection failed"),
     )
 
-    response = client.get("/jobs/stats", params={"country": "DK"})
+    response = service_client.get("/jobs/stats", params={"country": "DK"})
 
     assert response.status_code == 502
     assert response.json()["detail"] == "The Hub API is unavailable."

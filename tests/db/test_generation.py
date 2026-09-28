@@ -12,7 +12,7 @@ from llm_client.context import (
     find_ungrounded_job_detail_phrases,
     find_ungrounded_link_urls,
 )
-from tests.api_auth import AUTH_HEADERS
+from tests.api_auth import USER_HEADERS
 from tests.mock_settings import api_settings_namespace
 from the_hub_client.utils import build_job_url
 
@@ -56,7 +56,7 @@ def test_golden_generation_cases(retrieval_qdrant):
     client, collection_name = retrieval_qdrant
     golden_set = _load_golden_generation()
     jobs_by_id = {job["job_id"]: job for job in _load_golden_jobs()}
-    api_client = TestClient(app, headers=AUTH_HEADERS)
+    api_client = TestClient(app, headers=USER_HEADERS)
 
     for case in golden_set["cases"]:
         primary_job_id = case["expected_source_job_ids"][0]
@@ -144,7 +144,7 @@ def test_generation_eval_poisoned_document_text_good_answer_ignores_injection(
     mock_query_jobs.return_value = SimpleNamespace(
         points=[SimpleNamespace(score=0.91, payload=_poisoned_retrieval_payload())]
     )
-    api_client = TestClient(app, headers=AUTH_HEADERS)
+    api_client = TestClient(app, headers=USER_HEADERS)
 
     llm_settings = SimpleNamespace(
         llm_provider="gemini",

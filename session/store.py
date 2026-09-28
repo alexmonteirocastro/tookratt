@@ -48,7 +48,9 @@ class SessionStore:
         with self._lock:
             return len(self._sessions)
 
-    def get_or_create(self, session_id: str | None) -> tuple[str, SessionState]:
+    def get_or_create(
+        self, session_id: str | None, *, sub: str | None = None
+    ) -> tuple[str, SessionState]:
         """Return ``(session_id, state)``, minting a new session when needed.
 
         A missing, blank, expired, or otherwise unrecognized ``session_id``
@@ -61,8 +63,10 @@ class SessionStore:
                 state = self._sessions.get(session_id)
                 if state is not None:
                     state.last_seen = self._clock()
+                    if sub is not None:
+                        state.sub = sub
                     return session_id, self._snapshot(state)
-            return self._create_session()
+            return self._create_session(sub=sub)
 
     def record_turn(
         self,
@@ -89,10 +93,10 @@ class SessionStore:
             state.last_filters = filters
             state.last_seen = self._clock()
 
-    def _create_session(self) -> tuple[str, SessionState]:
+    def _create_session(self, *, sub: str | None = None) -> tuple[str, SessionState]:
         self._evict_oldest_if_full()
         session_id = uuid4().hex
-        state = SessionState(last_seen=self._clock())
+        state = SessionState(last_seen=self._clock(), sub=sub)
         self._sessions[session_id] = state
         return session_id, self._snapshot(state)
 
@@ -101,6 +105,7 @@ class SessionStore:
             turns=list(state.turns),
             last_filters=state.last_filters,
             last_seen=state.last_seen,
+            sub=state.sub,
         )
 
     def _is_expired(self, state: SessionState) -> bool:

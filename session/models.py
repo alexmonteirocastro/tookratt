@@ -12,3 +12,5 @@ class SessionState:
     turns: list[ChatTurn] = field(default_factory=list)
     last_filters: ExtractedFilters = field(default_factory=ExtractedFilters)
     last_seen: datetime = field(default_factory=lambda: datetime.now(UTC))
+    # Label only (ADR-0019). The store is still keyed by session_id, not by user.
+    sub: str | None = None

@@ -50,11 +50,13 @@ Copy `.env.example` to `.env` before running anything locally or via Compose.
 | `GRAFANA_LOKI_URL` | Grafana Cloud Loki push URL (optional; ADR-0015 — all three Loki vars required to enable) | `https://logs-prod-….grafana.net/loki/api/v1/push` |
 | `GRAFANA_LOKI_USER_ID` | Grafana Cloud Loki user / instance ID (HTTP basic auth username) | *(set in `.env` / secrets)* |
 | `GRAFANA_LOKI_API_KEY` | Grafana Cloud access policy token with `logs:write` | *(set in `.env` / secrets)* |
-| `SUPABASE_URL` | Dev Supabase project URL (ALE-213). Issuer and JWKS are `{url}/auth/v1` and `{url}/auth/v1/.well-known/jwks.json`. | `https://uuaoiyzztkxzrzvfddil.supabase.co` |
-| `SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_…`) for the Vite app and other browser clients. A legacy anon JWT also exists on the project; use the publishable key. | *(set in `.env`, never committed)* |
-| `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_…`) for server-side admin calls (invite, ban). Never expose it to the browser or `frontend/.env`. | *(set in `.env`, never committed)* |
+| `SUPABASE_URL` | Supabase project URL. The API derives the issuer and JWKS from `{url}/auth/v1`. Required to start the API. Ingest does not read it. Local dev uses the dev project; Render uses production. | `https://uuaoiyzztkxzrzvfddil.supabase.co` |
+| `SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_…`) for the Vite app. Never sent to the API. | *(set in `.env`, never committed)* |
+| `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_…`) for admin API calls. Required to start the API. Never expose it to the browser, `frontend/.env`, or the ingest job. | *(set in `.env`, never committed)* |
 
-The three `SUPABASE_*` variables are dev-project setup only. The API starts reading them in [ALE-214](https://linear.app/alex-projects/issue/ALE-214). Until that change, `Settings` ignores them, so a missing value does not fail startup. The access-control decision is [ADR-0019](adr/0019-accounts-and-access-control-on-supabase-auth.md).
+`SUPABASE_URL` and `SUPABASE_SECRET_KEY` are optional on `Settings`, because nightly ingest loads the same class and has no use for them. The API process (`create_app`) refuses to start when either is missing. Access control is [ADR-0019](adr/0019-accounts-and-access-control-on-supabase-auth.md) ([ALE-214](https://linear.app/alex-projects/issue/ALE-214)).
+
+A service key (`TOOKRATT_API_KEYS`) can call `GET /jobs/stats` only. `POST /jobs/search` and `POST /chat` require a Supabase user access token. Admin routes require `app_metadata.role = admin`. The top-level JWT `role` claim stays `authenticated` and is not an admin flag. Revoke and demotion take effect for this check when the current access token expires, which is at most one hour. Closing that gap needs a database lookup and is out of scope. Until [ALE-216](https://linear.app/alex-projects/issue/ALE-216) ships login, the current frontend key receives 403 on chat and search. The market page only reads `/jobs/stats` and keeps working.
 
 Configuration is loaded via a `Settings` class (`pydantic-settings`) in `db/settings.py`. All required variables must be set in `.env` — missing values raise a clear validation error, not a silently empty string. The FastAPI app validates required settings eagerly at construction time (`create_app()` / `from api.main import app`), so a misconfigured API process fails to start rather than on the first request. The Qdrant client remains lazy — constructed via `get_qdrant_client()` on first real use — so importing `db` alone does not open a network connection. When `QDRANT_URL` points at Qdrant Cloud and `QDRANT_API_KEY` is set, `get_qdrant_client()` enables `cloud_inference=True` automatically. Structured request/ingestion logs push to Grafana Cloud Loki when all three `GRAFANA_LOKI_*` variables are set ([ADR-0015](adr/0015-observability-logging-and-alerting.md)); see [ops/grafana-cloud-injection-alerting.md](ops/grafana-cloud-injection-alerting.md) for the injection alert rule and [ops/grafana-cloud-chat-observability.md](ops/grafana-cloud-chat-observability.md) for the `/chat` dashboard.
 
@@ -126,7 +128,8 @@ Set at minimum:
 - `QDRANT_API_KEY` — cluster API key
 - `QDRANT_COLLECTION_NAME` / `QDRANT_DEV_COLLECTION_NAME` — distinct collection names
 - `EMBEDDING_MODEL=intfloat/multilingual-e5-small`
-- `TOOKRATT_API_KEYS` — service keys for `GET /jobs/stats` only ([ADR-0019](adr/0019-accounts-and-access-control-on-supabase-auth.md) follow-up, [ALE-220](https://linear.app/alex-projects/issue/ALE-220)). `/jobs/search` and `/chat` require a logged-in user. Until [ALE-214](https://linear.app/alex-projects/issue/ALE-214) ships, the running API still accepts these keys on `/chat` and `/jobs/*` as well.
+- `TOOKRATT_API_KEYS` — service keys for `GET /jobs/stats` only ([ADR-0019](adr/0019-accounts-and-access-control-on-supabase-auth.md), [ALE-214](https://linear.app/alex-projects/issue/ALE-214)). `/jobs/search` and `/chat` require a Supabase access token.
+- `SUPABASE_URL` and `SUPABASE_SECRET_KEY` — required for the API process. Ingest does not set them.
 - `GEMINI_API_KEY` — if using `/chat` with the default Gemini provider
 
 `intfloat/multilingual-e5-small` is served via Qdrant Cloud Inference only — there is no local FastEmbed fallback ([ADR-0014](adr/0014-embedding-model-migration.md)). Ingestion, `/jobs/search`, and `/chat` retrieval all fail against a local Qdrant container with the current defaults.

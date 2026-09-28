@@ -27,6 +27,16 @@ def _store(**overrides) -> tuple[SessionStore, FakeClock]:
     return SessionStore(**defaults), clock
 
 
+def test_get_or_create_stores_sub_as_a_label():
+    store, _clock = _store()
+
+    session_id, state = store.get_or_create(None, sub="user-1")
+    _same_id, again = store.get_or_create(session_id, sub="user-1")
+
+    assert state.sub == "user-1"
+    assert again.sub == "user-1"
+
+
 def test_get_or_create_mints_id_when_session_id_absent():
     store, _clock = _store()
 
