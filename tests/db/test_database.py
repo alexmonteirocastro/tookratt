@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, call
 
 import pytest
-from qdrant_client import models
+from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import Distance, VectorParams
 
 from db.database import (
@@ -13,7 +13,6 @@ from db.database import (
     ensure_sparse_bm25_vector,
     get_vector_name,
     load_jobs_into_qdrant,
-    publishes_salary,
     query_jobs_in_qdrant,
     sanitize_document_text,
 )
@@ -300,6 +299,11 @@ def test_create_collection_creates_payload_indexes_and_sparse_config():
                 field_name="Remote",
                 field_schema=models.PayloadSchemaType.BOOL,
             ),
+            call(
+                collection_name="JOBS_DEV",
+                field_name="Salary Type",
+                field_schema=models.PayloadSchemaType.KEYWORD,
+            ),
         ]
     )
 
@@ -315,7 +319,11 @@ def test_create_collection_ensures_sparse_when_collection_already_exists():
     create_collection(db_client, "JOBS_DEV")
 
     db_client.create_collection.assert_not_called()
-    db_client.create_payload_index.assert_not_called()
+    db_client.create_payload_index.assert_called_once_with(
+        collection_name="JOBS_DEV",
+        field_name="Salary Type",
+        field_schema=models.PayloadSchemaType.KEYWORD,
+    )
     db_client.create_vector_name.assert_called_once()
     _, kwargs = db_client.create_vector_name.call_args
     assert kwargs["vector_name"] == BM25_SPARSE_VECTOR_NAME
@@ -606,14 +614,34 @@ def _salary_count_filter(country: CountryCode) -> models.Filter:
     return db_client.count.call_args.kwargs["count_filter"]
 
 
-def test_publishes_salary_differs_between_country_mixes():
-    denmark = sum(publishes_salary(salary_type) for salary_type in _DENMARK_SALARY_MIX)
-    iceland = sum(publishes_salary(salary_type) for salary_type in _ICELAND_SALARY_MIX)
+def test_count_salary_published_jobs_follows_each_country_mix():
+    client = QdrantClient(":memory:")
+    client.create_collection(
+        collection_name="salary",
+        vectors_config=models.VectorParams(size=1, distance=models.Distance.COSINE),
+    )
+    points: list[models.PointStruct] = []
+    next_id = 1
 
-    assert denmark == 4
-    assert iceland == 0
-    assert publishes_salary(None) is False
-    assert publishes_salary("unpaid") is False
+    def add(country: str, salary_type: str | None) -> None:
+        nonlocal next_id
+        payload: dict[str, str] = {"Country": country}
+        if salary_type is not None:
+            payload["Salary Type"] = salary_type
+        points.append(models.PointStruct(id=next_id, vector=[0.0], payload=payload))
+        next_id += 1
+
+    for salary_type in _DENMARK_SALARY_MIX:
+        add("Denmark", salary_type)
+    add("Denmark", None)
+    for salary_type in _ICELAND_SALARY_MIX:
+        add("Iceland", salary_type)
+    add("Germany", "range")
+    client.upsert(collection_name="salary", points=points)
+
+    assert count_salary_published_jobs(client, "salary", CountryCode.DENMARK) == 4
+    assert count_salary_published_jobs(client, "salary", CountryCode.ICELAND) == 0
+    assert count_salary_published_jobs(client, "salary", CountryCode.EUROPE) == 1
 
 
 def test_salary_published_count_follows_the_country():
@@ -627,4 +655,4 @@ def test_salary_published_count_follows_the_country():
     for country_filter in (denmark, iceland, europe):
         excluded = country_filter.must_not[1].match.any
         assert excluded == list(SALARY_TYPES_WITHOUT_FIGURE)
-        assert country_filter.must_not[0].is_empty.key == "Salary Type"
+        assert country_filter.must_not[0].is_empty.key == '"Salary Type"'

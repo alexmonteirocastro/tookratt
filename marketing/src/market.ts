@@ -290,9 +290,13 @@ function detailMarkup(snapshot: MarketSnapshot, code: CountryCode, shown?: Shown
           </table>
           ${more}
         </figure>`
+  const overlap =
+    stats.salary_published_jobs != null
+      ? "A role can count in more than one tile, so the tiles don't add up to the total. Roles that publish pay come from the indexed listings and can lag the open-roles total."
+      : "A role can count in more than one tile, so the tiles don't add up to the total."
   const updated = formatUpdated(snapshot.generated_at)
   const updatedMarkup = updated ? `<p class="market-updated">${escapeHtml(updated)}</p>` : ""
-  return `<ul class="market-kpis">${kpiItems}</ul><p class="market-overlap">A role can count in more than one tile, so the tiles don't add up to the total.</p>${chart}${updatedMarkup}`
+  return `<ul class="market-kpis">${kpiItems}</ul><p class="market-overlap">${overlap}</p>${chart}${updatedMarkup}`
 }
 
 export function renderMarketFigures(snapshot: MarketSnapshot, selected: CountryCode): string {

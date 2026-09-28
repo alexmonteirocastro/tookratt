@@ -107,6 +107,7 @@ test("renderMarketFigures uses the published-pay count when the snapshot has it"
   const html = renderMarketFigures(snapshot, "DK")
   assert.match(html, /market-kpi-label">Roles that publish pay</)
   assert.match(html, /data-count-to="40"/)
+  assert.match(html, /indexed listings and can lag the open-roles total/)
   assert.doesNotMatch(html, /Paid roles/)
   const zero = parseSnapshot({
     generated_at: "2026-09-25T00:00:00.000Z",
@@ -129,6 +130,8 @@ test("renderMarketFigures keeps Paid roles when the published-pay count is missi
   const paid = payTile(snapshot.countries.DK!)
   assert.equal(paid.label, "Paid roles")
   assert.equal(paid.value, 900)
+  const html = renderMarketFigures(snapshot, "DK")
+  assert.doesNotMatch(html, /indexed listings/)
 })
 
 test("renderMarketFigures shows a muted zero and skips a missing type count", () => {

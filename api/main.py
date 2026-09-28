@@ -178,6 +178,8 @@ def _with_salary_published_jobs(
 @protected_router.get(
     "/jobs/stats",
     response_model=JobOpenings,
+    # salary_published_jobs is the only optional field on JobOpenings.
+    # Omitting None lets the marketing tile fall back; paid_jobs stays present.
     response_model_exclude_none=True,
 )
 def jobs_stats(country: CountryCode) -> JobOpenings:

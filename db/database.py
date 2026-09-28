@@ -55,8 +55,10 @@ def create_collection(db_client: QdrantClient, collection_name: str) -> None:
             field_name="Remote",
             field_schema=models.PayloadSchemaType.BOOL,
         )
+        ensure_salary_type_index(db_client, collection_name)
     else:
         ensure_sparse_bm25_vector(db_client, collection_name)
+        ensure_salary_type_index(db_client, collection_name)
 
 
 def ensure_sparse_bm25_vector(db_client: QdrantClient, collection_name: str) -> bool:
@@ -227,13 +229,30 @@ def delete_jobs_from_qdrant(
 # (thehub.io job form). Blank, competitive, and unpaid do not show a figure.
 # Anything else is a range type or a legacy free-text figure.
 SALARY_TYPES_WITHOUT_FIGURE = ("competitive", "unpaid", "")
+# A space is not a bare JSON-path key. Quote it or the filter is rejected.
+SALARY_TYPE_FIELD = '"Salary Type"'
+
+# One client creates the keyword index once. Keyed by client so a test mock
+# cannot mark a later real client as already indexed.
+_salary_type_indexed: set[tuple[int, str]] = set()
 
 
-def publishes_salary(salary_type: str | None) -> bool:
-    """True when a stored Salary Type is a range or a figure, not merely paid."""
-    if not salary_type:
-        return False
-    return salary_type not in SALARY_TYPES_WITHOUT_FIGURE
+def ensure_salary_type_index(db_client: QdrantClient, collection_name: str) -> None:
+    """Keyword-index Salary Type so an exact filtered count is allowed.
+
+    Country is indexed when the collection is created. Salary Type was not.
+    A strict-mode cluster can reject an unindexed payload filter, which would
+    drop salary_published_jobs and leave the tile on the paid-roles fallback.
+    """
+    key = (id(db_client), collection_name)
+    if key in _salary_type_indexed:
+        return
+    db_client.create_payload_index(
+        collection_name=collection_name,
+        field_name="Salary Type",
+        field_schema=models.PayloadSchemaType.KEYWORD,
+    )
+    _salary_type_indexed.add(key)
 
 
 def count_salary_published_jobs(
@@ -246,6 +265,7 @@ def count_salary_published_jobs(
     The Hub listing has no salary facet, and docs[] omit salary, so this is the
     live source. It can lag total_jobs until the next ingestion.
     """
+    ensure_salary_type_index(db_client, collection_name)
     country_filter = _build_country_remote_filter(country, None)
     country_conditions = (
         list(country_filter.must) if country_filter and country_filter.must else []
@@ -256,10 +276,10 @@ def count_salary_published_jobs(
             must=country_conditions,
             must_not=[
                 models.IsEmptyCondition(
-                    is_empty=models.PayloadField(key="Salary Type")
+                    is_empty=models.PayloadField(key=SALARY_TYPE_FIELD)
                 ),
                 models.FieldCondition(
-                    key="Salary Type",
+                    key=SALARY_TYPE_FIELD,
                     match=models.MatchAny(any=list(SALARY_TYPES_WITHOUT_FIGURE)),
                 ),
             ],
