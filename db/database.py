@@ -223,6 +223,52 @@ def delete_jobs_from_qdrant(
     print(f"{len(point_ids)} stale jobs removed from the vector database")
 
 
+# Hub's salary control is competitive, unpaid, range, monthly_range, hourly_rate
+# (thehub.io job form). Blank, competitive, and unpaid do not show a figure.
+# Anything else is a range type or a legacy free-text figure.
+SALARY_TYPES_WITHOUT_FIGURE = ("competitive", "unpaid", "")
+
+
+def publishes_salary(salary_type: str | None) -> bool:
+    """True when a stored Salary Type is a range or a figure, not merely paid."""
+    if not salary_type:
+        return False
+    return salary_type not in SALARY_TYPES_WITHOUT_FIGURE
+
+
+def count_salary_published_jobs(
+    db_client: QdrantClient,
+    collection_name: str,
+    country: CountryCode,
+) -> int:
+    """Count indexed jobs in one country whose Salary Type publishes a figure.
+
+    The Hub listing has no salary facet, and docs[] omit salary, so this is the
+    live source. It can lag total_jobs until the next ingestion.
+    """
+    country_filter = _build_country_remote_filter(country, None)
+    country_conditions = (
+        list(country_filter.must) if country_filter and country_filter.must else []
+    )
+    counted = db_client.count(
+        collection_name=collection_name,
+        count_filter=models.Filter(
+            must=country_conditions,
+            must_not=[
+                models.IsEmptyCondition(
+                    is_empty=models.PayloadField(key="Salary Type")
+                ),
+                models.FieldCondition(
+                    key="Salary Type",
+                    match=models.MatchAny(any=list(SALARY_TYPES_WITHOUT_FIGURE)),
+                ),
+            ],
+        ),
+        exact=True,
+    )
+    return counted.count
+
+
 def _build_country_remote_filter(
     country: CountryCode | None,
     remote: bool | None,

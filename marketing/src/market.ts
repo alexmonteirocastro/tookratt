@@ -47,6 +47,7 @@ export interface CountryStats {
   paid_jobs: number
   internship_jobs: number | null
   student_jobs: number | null
+  salary_published_jobs: number | null
   jobs_per_role: Record<string, number>
 }
 
@@ -98,6 +99,7 @@ function countryStats(body: unknown): CountryStats | null {
     paid_jobs: record.paid_jobs,
     internship_jobs: optionalCount(record.internship_jobs),
     student_jobs: optionalCount(record.student_jobs),
+    salary_published_jobs: optionalCount(record.salary_published_jobs),
     jobs_per_role: roles,
   }
 }
@@ -211,14 +213,28 @@ interface ShownCounts {
   roles: Map<string, { count: number; share: number }>
 }
 
+export function payTile(stats: CountryStats): { label: string; value: number } {
+  if (stats.salary_published_jobs != null) {
+    return { label: "Roles that publish pay", value: stats.salary_published_jobs }
+  }
+  return { label: "Paid roles", value: stats.paid_jobs }
+}
+
+export function payCopy(stats: CountryStats | undefined): string {
+  return stats?.salary_published_jobs != null
+    ? "How many publish pay."
+    : "How many of those are paid."
+}
+
 function detailMarkup(snapshot: MarketSnapshot, code: CountryCode, shown?: ShownCounts): string {
   const stats = snapshot.countries[code]
   if (!stats) {
     return ""
   }
+  const pay = payTile(stats)
   const kpis = [
     { label: "Open roles", value: stats.total_jobs, signal: true, lead: true },
-    { label: "Paid roles", value: stats.paid_jobs, signal: false, lead: false },
+    { label: pay.label, value: pay.value, signal: false, lead: false },
     { label: "Internships", value: stats.internship_jobs, signal: false, lead: false },
     { label: "Student jobs", value: stats.student_jobs, signal: false, lead: false },
   ].filter((kpi): kpi is { label: string; value: number; signal: boolean; lead: boolean } => kpi.value != null)
@@ -383,6 +399,13 @@ export function mountMarket(root: HTMLElement): void {
       }
       slot.innerHTML = renderMarketFigures(snapshot, selected)
       slot.hidden = false
+      const paySentence = root.querySelector<HTMLElement>("[data-market-pay-copy]")
+      const setPayCopy = (code: CountryCode) => {
+        if (paySentence) {
+          paySentence.textContent = payCopy(snapshot.countries[code])
+        }
+      }
+      setPayCopy(selected)
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
       const cancel = { id: 0 }
       let revealed = false
@@ -408,6 +431,7 @@ export function mountMarket(root: HTMLElement): void {
           return
         }
         paint(input.value)
+        setPayCopy(input.value)
       })
       const detail = slot.querySelector<HTMLElement>("[data-market-detail]")
       if (reduced && detail) {

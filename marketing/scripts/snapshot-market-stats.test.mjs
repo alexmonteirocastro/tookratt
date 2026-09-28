@@ -47,6 +47,7 @@ test("countryStats keeps the band fields and drops page counts", () => {
     unpaid_jobs: 3,
     internship_jobs: 6,
     student_jobs: 0,
+    salary_published_jobs: 3,
     jobs_per_role: { backend_developer: 5 },
   });
   assert.deepEqual(stats, {
@@ -55,6 +56,7 @@ test("countryStats keeps the band fields and drops page counts", () => {
     paid_jobs: 9,
     internship_jobs: 6,
     student_jobs: 0,
+    salary_published_jobs: 3,
     jobs_per_role: { backend_developer: 5 },
   });
 });
@@ -69,8 +71,10 @@ test("countryStats accepts a response that predates internship and student count
   assert.equal(stats.total_jobs, 12);
   assert.equal(stats.internship_jobs, undefined);
   assert.equal(stats.student_jobs, undefined);
+  assert.equal(stats.salary_published_jobs, undefined);
   assert.equal(JSON.stringify(stats).includes("internship_jobs"), false);
   assert.equal(JSON.stringify(stats).includes("student_jobs"), false);
+  assert.equal(JSON.stringify(stats).includes("salary_published_jobs"), false);
 });
 
 test("countryStats rejects a body that is not the stats shape", () => {

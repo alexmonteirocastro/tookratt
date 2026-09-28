@@ -6,11 +6,14 @@ from qdrant_client import models
 from qdrant_client.http.models import Distance, VectorParams
 
 from db.database import (
+    SALARY_TYPES_WITHOUT_FIGURE,
     _attach_dense_scores_to_fused_hits,
+    count_salary_published_jobs,
     create_collection,
     ensure_sparse_bm25_vector,
     get_vector_name,
     load_jobs_into_qdrant,
+    publishes_salary,
     query_jobs_in_qdrant,
     sanitize_document_text,
 )
@@ -580,3 +583,48 @@ def test_query_jobs_in_qdrant_combines_europe_and_remote_filters(monkeypatch):
             ),
         ]
     )
+
+
+# Live Hub values seen on 2026-09-28, plus blank. Denmark publishes four;
+# Iceland's only listing is competitive.
+_DENMARK_SALARY_MIX = [
+    "competitive",
+    "range",
+    "monthly_range",
+    "hourly_rate",
+    "50000 - 70000 DKK/Monthly",
+    "unpaid",
+    "",
+]
+_ICELAND_SALARY_MIX = ["competitive"]
+
+
+def _salary_count_filter(country: CountryCode) -> models.Filter:
+    db_client = MagicMock()
+    db_client.count.return_value = SimpleNamespace(count=0)
+    count_salary_published_jobs(db_client, "JOBS", country)
+    return db_client.count.call_args.kwargs["count_filter"]
+
+
+def test_publishes_salary_differs_between_country_mixes():
+    denmark = sum(publishes_salary(salary_type) for salary_type in _DENMARK_SALARY_MIX)
+    iceland = sum(publishes_salary(salary_type) for salary_type in _ICELAND_SALARY_MIX)
+
+    assert denmark == 4
+    assert iceland == 0
+    assert publishes_salary(None) is False
+    assert publishes_salary("unpaid") is False
+
+
+def test_salary_published_count_follows_the_country():
+    denmark = _salary_count_filter(CountryCode.DENMARK)
+    iceland = _salary_count_filter(CountryCode.ICELAND)
+    europe = _salary_count_filter(CountryCode.EUROPE)
+
+    assert denmark.must[0].match.value == "Denmark"
+    assert iceland.must[0].match.value == "Iceland"
+    assert europe.must[0].match.except_ == EU_COUNTRY_FILTER_EXCLUSIONS
+    for country_filter in (denmark, iceland, europe):
+        excluded = country_filter.must_not[1].match.any
+        assert excluded == list(SALARY_TYPES_WITHOUT_FIGURE)
+        assert country_filter.must_not[0].is_empty.key == "Salary Type"

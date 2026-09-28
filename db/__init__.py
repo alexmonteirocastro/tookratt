@@ -5,6 +5,7 @@ from db.backfill import (
 )
 from db.database import (
     clear_db,
+    count_salary_published_jobs,
     create_collection,
     delete_jobs_from_qdrant,
     drop_db,
@@ -23,6 +24,7 @@ from db.db_utils import (
 from db.settings import get_qdrant_client, get_settings
 
 __all__ = [
+    "count_salary_published_jobs",
     "backfill_job_title_company_metadata",
     "backfill_sparse_bm25_vectors",
     "extract_title_company_from_document_text",
