@@ -173,7 +173,7 @@ Stop if the rule does not fire while ingest is absent, or does not resolve after
 
 ## Privacy
 
-A short privacy notice is needed. The app stores account emails and password hashes. That decision is recorded on [ALE-250](https://linear.app/alex-projects/issue/ALE-250). This doc does not write the notice.
+The notice is [https://tookratt.com/privacy](https://tookratt.com/privacy) ([ALE-250](https://linear.app/alex-projects/issue/ALE-250)).
 
 The Supabase DPA is published at <https://supabase.com/legal/dpa>. It supplements and forms part of the [Supabase Terms of Service](https://supabase.com/terms), and it is effective as of the effective date of that agreement. It does not need a separate countersignature. The organization legal settings page was not opened for this note.
 

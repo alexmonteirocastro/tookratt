@@ -16,6 +16,19 @@ describe("LoginPage", () => {
     signInWithPassword.mockReset();
   });
 
+  it("links out for access and for the privacy notice", () => {
+    render(<LoginPage sessionEnded={false} />);
+
+    expect(screen.getByRole("link", { name: "Request access at tookratt.com" })).toHaveAttribute(
+      "href",
+      "https://tookratt.com",
+    );
+    expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute(
+      "href",
+      "https://tookratt.com/privacy",
+    );
+  });
+
   it("asks for a full email before calling Supabase", async () => {
     const user = userEvent.setup();
     render(<LoginPage sessionEnded={false} />);
