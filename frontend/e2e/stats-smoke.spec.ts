@@ -4,14 +4,14 @@ import {
   createGate,
   mockJobsStats,
   openApp,
-  seedApiKey,
+  seedSession,
 } from "./helpers";
 
 test("stats page shows country selector and jobs_per_role", { tag: "@smoke" }, async ({
   page,
 }) => {
   const gate = createGate();
-  await seedApiKey(page);
+  await seedSession(page);
   await mockJobsStats(page, { holdUntil: gate.promise });
   await openApp(page, "/");
 
@@ -44,7 +44,7 @@ test("stats page shows country selector and jobs_per_role", { tag: "@smoke" }, a
 });
 
 test("stats page shows an error when jobs/stats fails", { tag: "@smoke" }, async ({ page }) => {
-  await seedApiKey(page);
+  await seedSession(page);
   await page.route("**/api/jobs/stats**", (route) =>
     route.fulfill({
       status: 500,

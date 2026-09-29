@@ -8,10 +8,6 @@ import styles from "./Stats.module.css";
 
 const DEFAULT_COUNTRY: CountryCode = "DK";
 
-interface StatsProps {
-  enabled: boolean;
-}
-
 interface KpiTile {
   label: string;
   value: number;
@@ -29,20 +25,13 @@ function kpiTiles(data: JobOpenings): KpiTile[] {
   ];
 }
 
-export function Stats({ enabled }: StatsProps) {
+export function Stats() {
   const [country, setCountry] = useState<CountryCode>(DEFAULT_COUNTRY);
   const [data, setData] = useState<JobOpenings | null>(null);
-  const [isLoading, setIsLoading] = useState(enabled);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!enabled) {
-      setIsLoading(false);
-      setData(null);
-      setError(null);
-      return;
-    }
-
     let cancelled = false;
     setIsLoading(true);
     setError(null);
@@ -77,11 +66,11 @@ export function Stats({ enabled }: StatsProps) {
     return () => {
       cancelled = true;
     };
-  }, [country, enabled]);
+  }, [country]);
 
   return (
     <div className={styles.stats}>
-      <CountrySelector value={country} onChange={setCountry} disabled={!enabled || isLoading} />
+      <CountrySelector value={country} onChange={setCountry} disabled={isLoading} />
       {isLoading ? (
         <p className={styles.status} role="status">
           Loading job stats…

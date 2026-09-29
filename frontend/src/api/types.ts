@@ -39,3 +39,23 @@ export interface ChatResponse {
   applied_remote?: boolean | null;
   session_id: string;
 }
+
+export type AdminUserStatus = "active" | "invited" | "revoked";
+
+export interface AdminUser {
+  id: string;
+  email: string | null;
+  status: AdminUserStatus;
+  created_at: string | null;
+  last_sign_in_at: string | null;
+  role: string | null;
+}
+
+export interface AdminUserList {
+  users: AdminUser[];
+  page: number;
+}
+
+export interface ActionLink {
+  action_link: string;
+}

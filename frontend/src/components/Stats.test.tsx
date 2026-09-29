@@ -42,7 +42,7 @@ describe("Stats", () => {
   });
 
   it("loads default DK stats and shows KPI tiles plus the role chart", async () => {
-    render(<Stats enabled />);
+    render(<Stats />);
 
     expect(screen.getByRole("status")).toHaveTextContent(/loading job stats/i);
     expect(await screen.findByText("100")).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe("Stats", () => {
   it("refetches when the country selector changes", async () => {
     const user = userEvent.setup();
     mockGetJobsStats.mockResolvedValue(sampleStats);
-    render(<Stats enabled />);
+    render(<Stats />);
     await screen.findByText("100");
 
     mockGetJobsStats.mockResolvedValue({ ...sampleStats, total_jobs: 12 });
@@ -80,28 +80,20 @@ describe("Stats", () => {
 
   it("shows a network error without opening a chat-style bubble", async () => {
     mockGetJobsStats.mockRejectedValue(new ApiNetworkError());
-    render(<Stats enabled />);
+    render(<Stats />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/unable to reach the api/i);
     expect(screen.queryByText("Jobs per role")).not.toBeInTheDocument();
   });
 
-  it("swallows 401 so the auth modal can take over", async () => {
+  it("swallows 401 so login can take over", async () => {
     mockGetJobsStats.mockRejectedValue(new ApiHttpError(401, "API key is not authorized."));
-    render(<Stats enabled />);
+    render(<Stats />);
 
     await waitFor(() => {
       expect(mockGetJobsStats).toHaveBeenCalled();
     });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByText("Jobs per role")).not.toBeInTheDocument();
-  });
-
-  it("does not fetch while auth is disabled", () => {
-    render(<Stats enabled={false} />);
-
-    expect(mockGetJobsStats).not.toHaveBeenCalled();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Denmark" })).toBeDisabled();
   });
 });

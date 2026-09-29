@@ -24,6 +24,16 @@ ENV VITE_SHOW_SOURCES=$VITE_SHOW_SOURCES
 ARG VITE_LOADING_MESSAGE="Searching and thinking — this can take a few moments, thanks for your patience."
 ENV VITE_LOADING_MESSAGE=$VITE_LOADING_MESSAGE
 
+# Public Supabase settings only. Compose reads these from the root .env.
+# A production bundle throws in the browser when they are missing, which is a
+# blank page, so the image build fails first.
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
+RUN test -n "$VITE_SUPABASE_URL" && test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" \
+  || (echo "Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in the root .env" >&2 && exit 1)
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
+
 RUN npm run build
 
 FROM nginx:alpine

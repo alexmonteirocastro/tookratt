@@ -41,4 +41,16 @@ describe("AppNav", () => {
     );
     expect(screen.getByRole("link", { name: "Chat" })).not.toHaveAttribute("aria-current");
   });
+
+  it("adds Admin only when asked", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <AppNav showAdmin />
+      </MemoryRouter>,
+    );
+
+    const links = screen.getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual(["Job market", "Chat", "Admin"]);
+    expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute("aria-current", "page");
+  });
 });

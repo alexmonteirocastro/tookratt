@@ -20,6 +20,8 @@
   /* Charts on Ink. Non-text amber stays on --color-signal. */
   --color-accent-on-ink: #7fa3d6;
   --color-signal: #c68a2e;
+  /* Darker amber so the show-once warning icon clears 3:1 on a signal wash. */
+  --color-signal-strong: #9a6618;
   --color-bubble-user: #16407a;
   --color-bubble-user-text: #f6f7f9;
   --color-bubble-assistant: #ffffff;
@@ -74,6 +76,7 @@
 
   /* Layout */
   --max-width-chat: 980px;
+  --max-width-auth: 28rem;
   --size-chart-label: 11rem; /* ALE-192 jobs_per_role chart label column */
   --min-height-conversation: 420px;
   --size-mark-header: 40px;
