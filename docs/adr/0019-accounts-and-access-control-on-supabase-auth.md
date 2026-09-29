@@ -177,4 +177,4 @@ Decision 5's text is unchanged. The accepted risks in Consequences — a free pr
 
 The workflow dumps `auth` (data only) and `public` once a day into the private EU bucket `tookratt-supabase-dumps`. Objects expire after 30 days. The same run issues a trivial query so the free project does not pause. A Loki line `event=schedule_heartbeat` is written only after a scheduled success, on the dump workflow and on `ingest.yml`. The ops doc specifies the Grafana absence rule that pages `tookratt-email` when either source is missing for 36 hours. A manual `workflow_dispatch` does not refresh that window.
 
-A restore of `dumps/20260929T065405Z` into a scratch local stack confirmed the admin account. The ownership workaround is in the ops doc. Legacy `anon` and `service_role` keys are disabled on the dev project and on production.
+A restore of `dumps/20260929T065405Z` into a scratch local stack confirmed the admin account. The restore commands and the expected `pg_restore` messages are in the ops doc. Legacy `anon` and `service_role` keys are disabled on the dev project and on production.

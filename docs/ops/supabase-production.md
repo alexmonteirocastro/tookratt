@@ -93,7 +93,7 @@ docker cp ./auth-data.dump "$container":/tmp/auth-data.dump
 docker cp ./public.dump "$container":/tmp/public.dump
 
 docker exec "$container" pg_restore \
-  --data-only --disable-triggers --no-owner \
+  --data-only --no-owner \
   --dbname=postgres --username=postgres \
   /tmp/auth-data.dump
 
@@ -103,20 +103,21 @@ docker exec "$container" pg_restore \
   /tmp/public.dump
 ```
 
-`pg_restore` exits 1 on this stack. That is the local role, not a bad dump.
+Do not pass `--disable-triggers`. The local `postgres` role is not a superuser, and `auth` tables are owned by `supabase_auth_admin`, so that flag fails every `ALTER TABLE … DISABLE TRIGGER ALL` with `must be owner of table`. The `COPY` does not need it. A hosted Supabase project has the same limit: you are not a superuser there either.
 
-The local `postgres` role is not a superuser (`rolsuper` is false). `auth` tables are owned by `supabase_auth_admin`, and `postgres` cannot `SET ROLE` to that owner. Every `ALTER TABLE … DISABLE TRIGGER ALL` and `ENABLE TRIGGER ALL` from `--disable-triggers` fails with `must be owner of table`. Adding `--role=supabase_auth_admin` fails first with `permission denied to set role`. The `COPY` still loads. There was no column mismatch with local GoTrue (`v2.197.0` on Postgres 17.6).
+On 2026-09-29, against local GoTrue `v2.197.0` and Postgres 17.6:
 
-`public.dump` reports `schema "public" already exists` on `CREATE SCHEMA public`. That is the only public error. The 2026-09-29 dump had no tables in `public`.
+- `auth-data.dump` exited 0 and printed nothing.
+- `public.dump` exited 1 with one ignored error, `schema "public" already exists` on `CREATE SCHEMA public`, and the line `errors ignored on restore: 1`. That dump had no tables in `public`.
 
-Ignore the exit code. Confirm the admin account without selecting an email:
+Stop if either restore prints something else. Then confirm the admin account without selecting an email:
 
 ```bash
 docker exec "$container" psql -U postgres -d postgres -c \
   "select count(*) filter (where raw_app_meta_data->>'role' = 'admin') as admin_accounts, count(*) as accounts from auth.users;"
 ```
 
-On 2026-09-29 that query returned `admin_accounts = 1` and `accounts = 1`. Then:
+On 2026-09-29 that query returned `admin_accounts = 1` and `accounts = 1`. Stop if a restore of this same dump does not. Then:
 
 ```bash
 npx supabase stop --no-backup
@@ -160,18 +161,15 @@ Leave the 36-hour window in place. The two jobs run about a day apart; 36 hours 
 
 ### Prove it once
 
-1. Add a third query for a source that has never been written, and OR it into the same condition:
+No `source="ingest"` heartbeat exists until the first scheduled ingest after this change is on `main`. Ingest runs at 00:00 UTC. Create the rule after that merge and before that run. A third query for a source that was never written is not needed.
 
-```logql
-absent_over_time({app="tookratt", event="schedule_heartbeat", source="restore_proof"}[36h])
-```
+1. Set the evaluation interval to `5m` for the test. Pending period stays `0`. An interval of `1h` would hide each state change for up to an hour.
+2. On the next evaluation the ingest query should return a value and the rule should fire. The dump query stays empty if a scheduled dump heartbeat is already in Loki. That is the check that a classic OR fires when one query has a value and the other returns nothing.
+3. After the 00:00 UTC ingest succeeds, the ingest query goes empty and the rule should return to Normal.
+4. Set the evaluation interval back to `1h`. Leave both queries and the 36-hour window.
+5. Write the firing time and the resolving time on [ALE-247](https://linear.app/alex-projects/issue/ALE-247).
 
-2. Confirm the rule fires.
-3. Remove that query and the extra OR.
-4. Confirm the rule resolves.
-5. Leave the two real queries and the 36-hour window.
-
-This fire-and-resolve check has not been clicked in Grafana yet. The Loki push secret is `logs:write` and cannot create alert rules.
+Stop if the rule does not fire while ingest is absent, or does not resolve after that ingest. The Loki push secret is `logs:write` and cannot create the rule; this is a Grafana Cloud click.
 
 ## Privacy
 
