@@ -192,6 +192,11 @@ jobs:
           PLAYWRIGHT_VISUAL: "0"
         run: npx playwright test --grep @smoke
 
+      - name: Run CSP report-only checks
+        if: ${{ !inputs.skip_heavy_tests }}
+        working-directory: frontend
+        run: npx playwright test --config playwright.csp.config.ts
+
       - name: Skipping visual snapshots (no frontend changes)
         if: ${{ !inputs.skip_heavy_tests && !inputs.run_visual_tests }}
         run: echo "Skipping visual snapshots (no frontend/ changes)"

@@ -16,6 +16,7 @@ const runVisual = process.env.PLAYWRIGHT_VISUAL !== "0";
  */
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: /csp\.spec\.ts/,
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
@@ -42,7 +43,8 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /debug-sources/,
+      // Project testIgnore replaces the config-level one, so both exclusions live here.
+      testIgnore: [/debug-sources/, /csp\.spec\.ts/],
       use: { ...devices["Desktop Chrome"] },
     },
     ...(runVisual
