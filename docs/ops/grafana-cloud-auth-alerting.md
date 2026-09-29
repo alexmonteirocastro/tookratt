@@ -26,9 +26,9 @@ Equivalent explore filter:
 
 A JWKS outage is HTTP 503 and is not an `auth_denied` event, so this rule does not fire for it.
 
-## Until login ships
+## After login ships
 
-[ALE-216](https://linear.app/alex-projects/issue/ALE-216) is the login UI. Until then, opening chat on `app.tookratt.com` sends the old API key and the API answers 403. A few of those denials are expected. They should stay well under 20 in 5 minutes. If this alert fires in the days after ALE-214 deploys, check whether it is that frontend before treating it as an attack.
+[ALE-216](https://linear.app/alex-projects/issue/ALE-216) sends the signed-in session token. The app no longer sends a static API key, so a burst of 403s from chat is no longer the expected pre-login cutover. A few scanner denials can still stay under 20 in 5 minutes. Above that, treat the alert as an attack or a bad client.
 
 ## Related
 

@@ -61,10 +61,12 @@ export default defineConfig({
       url: "http://127.0.0.1:5173",
       reuseExistingServer: !isCI,
       timeout: 120_000,
-      env: {
-        VITE_SHOW_SOURCES: "true",
-        VITE_SHOW_DEBUG_SOURCES: "false",
-      },
+        env: {
+          VITE_SHOW_SOURCES: "true",
+          VITE_SHOW_DEBUG_SOURCES: "false",
+          VITE_SUPABASE_URL: "https://example.supabase.co",
+          VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_e2e",
+        },
     },
     ...(runVisual
       ? [
@@ -76,6 +78,8 @@ export default defineConfig({
             env: {
               VITE_SHOW_SOURCES: "true",
               VITE_SHOW_DEBUG_SOURCES: "true",
+              VITE_SUPABASE_URL: "https://example.supabase.co",
+              VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_e2e",
             },
           },
         ]

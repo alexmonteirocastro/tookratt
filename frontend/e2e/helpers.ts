@@ -1,5 +1,4 @@
 import { type Page, type Route } from "@playwright/test";
-import { API_KEY_STORAGE_KEY } from "../src/api/authStorage";
 import type { ChatResponse, JobOpenings } from "../src/api/types";
 
 export const MOCK_CHAT_QUESTION = "backend engineer in Denmark";
@@ -35,10 +34,34 @@ export function createGate(): { promise: Promise<void>; release: () => void } {
   return { promise, release };
 }
 
-export async function seedApiKey(page: Page): Promise<void> {
-  await page.addInitScript((key: string) => {
-    sessionStorage.setItem(key, "e2e-test-key");
-  }, API_KEY_STORAGE_KEY);
+export const E2E_AUTH_STORAGE_KEY = "sb-example-auth-token";
+
+export async function seedSession(
+  page: Page,
+  role: "admin" | "member" = "member",
+): Promise<void> {
+  await page.addInitScript(
+    ({ key, role: sessionRole }: { key: string; role: "admin" | "member" }) => {
+      const session = {
+        access_token: "e2e-access-token",
+        refresh_token: "e2e-refresh-token",
+        expires_in: 3600,
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        token_type: "bearer",
+        user: {
+          id: "e2e-user",
+          aud: "authenticated",
+          role: "authenticated",
+          email: "alex@example.com",
+          app_metadata: { role: sessionRole },
+          user_metadata: {},
+          created_at: "2026-01-01T00:00:00.000Z",
+        },
+      };
+      sessionStorage.setItem(key, JSON.stringify(session));
+    },
+    { key: E2E_AUTH_STORAGE_KEY, role },
+  );
 }
 
 export async function mockChat(
@@ -95,7 +118,7 @@ export async function mockJobsStats(
 
 export async function openApp(page: Page, path = "/"): Promise<void> {
   await page.goto(path);
-  await page.getByRole("heading", { name: "töökratt" }).waitFor();
+  await page.getByRole("heading", { name: "töökratt", exact: true }).waitFor();
   await page.evaluate(async () => {
     await document.fonts.ready;
     await Promise.all(

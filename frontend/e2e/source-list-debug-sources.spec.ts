@@ -3,7 +3,7 @@ import {
   MOCK_CHAT_QUESTION,
   mockChat,
   openApp,
-  seedApiKey,
+  seedSession,
   sourceListLocator,
   submitQuestion,
 } from "./helpers";
@@ -13,7 +13,7 @@ test.describe("debug sources", { tag: "@visual" }, () => {
   test.describe.configure({ retries: 0 });
 
   test("source list debug variant", async ({ page }) => {
-    await seedApiKey(page);
+    await seedSession(page);
     await mockChat(page);
     await openApp(page, "/chat");
     await submitQuestion(page, MOCK_CHAT_QUESTION);

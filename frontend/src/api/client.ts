@@ -1,7 +1,18 @@
-import { clearStoredApiKey, getStoredApiKey } from "./authStorage";
-import type { ChatRequest, ChatResponse, CountryCode, JobOpenings } from "./types";
+import { armSessionEndedNote, markUserAskedToLeave, signOutLocal } from "./authSession";
+import { supabase } from "./supabase";
+import type {
+  ActionLink,
+  AdminUserList,
+  ChatRequest,
+  ChatResponse,
+  CountryCode,
+  JobOpenings,
+} from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+
+/** GoTrue list_users page size. A full page means another page may exist. */
+export const ADMIN_PAGE_SIZE = 50;
 
 /** Default for local dev / Ollama; production builds set VITE_CHAT_REQUEST_TIMEOUT_MS via .env.production. */
 export const DEFAULT_CHAT_REQUEST_TIMEOUT_MS = 600_000;
@@ -84,24 +95,26 @@ export class ApiTimeoutError extends ApiNetworkError {
 
 export class ApiHttpError extends Error {
   readonly status: number;
+  readonly code: string | undefined;
 
-  constructor(status: number, detail?: string) {
+  constructor(status: number, detail?: string, code?: string) {
     const message = detail ?? defaultHttpMessage(status);
     super(message);
     this.name = "ApiHttpError";
     this.status = status;
+    this.code = code;
   }
 }
 
-let unauthorizedHandler: (() => void) | null = null;
+let unauthorizedHandler: (() => void | Promise<void>) | null = null;
 
-export function setUnauthorizedHandler(handler: (() => void) | null): void {
+export function setUnauthorizedHandler(handler: (() => void | Promise<void>) | null): void {
   unauthorizedHandler = handler;
 }
 
 function defaultHttpMessage(status: number): string {
   if (status === 401) {
-    return "API key is not authorized.";
+    return "Your session has ended.";
   }
   if (status === 429) {
     return "The service is rate-limited. Please wait a moment and try again.";
@@ -112,25 +125,18 @@ function defaultHttpMessage(status: number): string {
   return `Request failed with status ${status}.`;
 }
 
-function buildAuthHeaders(extra?: Record<string, string>): Record<string, string> {
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    ...extra,
-  };
-  const apiKey = getStoredApiKey();
-  if (apiKey) {
-    headers.Authorization = `Bearer ${apiKey}`;
-  }
-  return headers;
+interface ParsedError {
+  message?: string;
+  code?: string;
 }
 
-export async function parseErrorDetail(response: Response): Promise<string | undefined> {
+export async function parseErrorDetail(response: Response): Promise<ParsedError> {
   try {
     const body = (await response.json()) as {
       detail?: string | { msg: string }[] | { message: string; code?: string };
     };
     if (typeof body.detail === "string") {
-      return body.detail;
+      return { message: body.detail };
     }
     if (
       typeof body.detail === "object" &&
@@ -138,44 +144,65 @@ export async function parseErrorDetail(response: Response): Promise<string | und
       !Array.isArray(body.detail) &&
       "message" in body.detail
     ) {
-      return body.detail.message;
+      return {
+        message: body.detail.message,
+        code: typeof body.detail.code === "string" ? body.detail.code : undefined,
+      };
     }
     if (Array.isArray(body.detail) && body.detail.length > 0) {
-      return body.detail.map((item) => item.msg).join("; ");
+      return { message: body.detail.map((item) => item.msg).join("; ") };
     }
   } catch {
     // Response body is not JSON — fall back to generic message.
   }
-  return undefined;
+  return {};
 }
 
-function handleUnauthorizedResponse(): void {
-  clearStoredApiKey();
-  unauthorizedHandler?.();
-}
-
-async function readErrorResponse(response: Response): Promise<never> {
-  const detail = await parseErrorDetail(response);
-  throw new ApiHttpError(response.status, detail);
-}
-
-export async function verifyApiKey(apiKey: string): Promise<void> {
-  let response: Response;
-  try {
-    // SE is arbitrary — verifyApiKey only checks auth via response.ok, not stats data.
-    response = await fetch(`${API_BASE_URL}/jobs/stats?country=SE`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-    });
-  } catch {
-    throw new ApiNetworkError();
+/**
+ * `getSession()` refreshes a session that is expired or close to expiry.
+ * Do not call `refreshSession()` as well. That races the background refresh.
+ */
+async function accessToken(): Promise<string | null> {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    return null;
   }
+  return data.session?.access_token ?? null;
+}
 
+async function authHeaders(extra?: Record<string, string>): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...extra,
+  };
+  const token = await accessToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+async function failAuth(): Promise<void> {
+  markUserAskedToLeave();
+  armSessionEndedNote();
+  await signOutLocal();
+  await unauthorizedHandler?.();
+}
+
+async function throwHttp(response: Response): Promise<never> {
+  const parsed = await parseErrorDetail(response);
+  throw new ApiHttpError(response.status, parsed.message, parsed.code);
+}
+
+async function readResponse(response: Response): Promise<Response> {
+  if (response.status === 401) {
+    await failAuth();
+    await throwHttp(response);
+  }
   if (!response.ok) {
-    await readErrorResponse(response);
+    await throwHttp(response);
   }
+  return response;
 }
 
 export async function postChat(request: ChatRequest): Promise<ChatResponse> {
@@ -186,7 +213,7 @@ export async function postChat(request: ChatRequest): Promise<ChatResponse> {
   try {
     response = await fetch(`${API_BASE_URL}/chat`, {
       method: "POST",
-      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
+      headers: await authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(request),
       signal: controller.signal,
     });
@@ -199,37 +226,82 @@ export async function postChat(request: ChatRequest): Promise<ChatResponse> {
     clearTimeout(timeoutId);
   }
 
-  if (response.status === 401) {
-    handleUnauthorizedResponse();
-    await readErrorResponse(response);
-  }
-
-  if (!response.ok) {
-    await readErrorResponse(response);
-  }
-
+  await readResponse(response);
   return (await response.json()) as ChatResponse;
 }
 
 export async function getJobsStats(country: CountryCode): Promise<JobOpenings> {
   let response: Response;
   try {
-    response = await fetch(
-      `${API_BASE_URL}/jobs/stats?country=${encodeURIComponent(country)}`,
-      { headers: buildAuthHeaders() },
-    );
+    response = await fetch(`${API_BASE_URL}/jobs/stats?country=${encodeURIComponent(country)}`, {
+      headers: await authHeaders(),
+    });
   } catch {
     throw new ApiNetworkError();
   }
 
-  if (response.status === 401) {
-    handleUnauthorizedResponse();
-    await readErrorResponse(response);
-  }
-
-  if (!response.ok) {
-    await readErrorResponse(response);
-  }
-
+  await readResponse(response);
   return (await response.json()) as JobOpenings;
+}
+
+export async function listAdminUsers(page = 1): Promise<AdminUserList> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/admin/users?page=${page}`, {
+      headers: await authHeaders(),
+    });
+  } catch {
+    throw new ApiNetworkError();
+  }
+  await readResponse(response);
+  return (await response.json()) as AdminUserList;
+}
+
+export async function createInvite(email: string): Promise<string> {
+  const body = await postAdmin("/admin/invites", { email });
+  return readActionLink(body);
+}
+
+export async function revokeUser(userId: string): Promise<void> {
+  await postAdmin(`/admin/users/${userId}/revoke`);
+}
+
+export async function restoreUser(userId: string): Promise<void> {
+  await postAdmin(`/admin/users/${userId}/restore`);
+}
+
+export async function createResetLink(userId: string): Promise<string> {
+  const body = await postAdmin(`/admin/users/${userId}/reset-link`);
+  return readActionLink(body);
+}
+
+async function postAdmin(path: string, body?: unknown): Promise<unknown> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: await authHeaders(body === undefined ? undefined : { "Content-Type": "application/json" }),
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiNetworkError();
+  }
+  await readResponse(response);
+  if (response.status === 204) {
+    return null;
+  }
+  return response.json();
+}
+
+function readActionLink(body: unknown): string {
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "action_link" in body &&
+    typeof body.action_link === "string" &&
+    body.action_link
+  ) {
+    return (body as ActionLink).action_link;
+  }
+  throw new ApiHttpError(502, "Auth service is unavailable.", "auth_unavailable");
 }

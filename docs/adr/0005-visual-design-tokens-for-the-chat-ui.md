@@ -112,8 +112,8 @@ part of the live language (bubbles / bordered cream panels instead).
 
 ## Decision 5: Application to the chat UI specifically
 
-- **Header** — mascot + lowercase Sora wordmark "töökratt", subtitle, cream lock
-  button (API key modal trigger).
+- **Header** — mascot + lowercase Sora wordmark "töökratt", subtitle, signed-in email,
+  and a bordered Log out control (ALE-216). On `/chat`, New conversation sits to the left of the email.
 - **Info banner** — cream surface, teal border/icon, stateless-question copy.
 - **Conversation** — empty state with large mascot; user bubbles amber/navy text;
   assistant bubbles navy/parchment text; loading indicator matches assistant
@@ -155,7 +155,7 @@ accessible name is the country (`Denmark`, …, `Europe`).
 `--font-size-sm`, Job market first (left) as the landing view. Active: `--font-weight-heading`, `--color-ink`, 2px
 `--color-teal` underline. Inactive: `--color-text-secondary`. Not amber
 pills, not a sidebar. Place in a brand column *below* the wordmark/subtitle so
-header actions (new conversation, API key) stay un-squeezed. Chat-only chrome
+header actions (new conversation, email, Log out) stay un-squeezed. Chat-only chrome
 (memory banner, new-conversation control) stays off `/market`.
 
 **KPI tiles (handoff, not a fourth invention):** total / remote / paid /
@@ -330,7 +330,7 @@ rather than in a new ADR.
 [ALE-219](https://linear.app/alex-projects/issue/ALE-219/design-decisions-auth-and-admin-screens-login-set-password-admin)
 adds login, set-password, and `/admin` without a new palette.
 [docs/design/auth-and-admin-screens.md](../design/auth-and-admin-screens.md)
-is the screen spec. ALE-216 adds two tokens to `frontend/src/styles/tokens.css`:
+is the screen spec. ALE-216 added two tokens to `frontend/src/styles/tokens.css`:
 `--max-width-auth: 28rem` for the centered auth card, and
 `--color-signal-strong: #9a6618` for the warning icon on the show-once panel.
 `--color-signal` on that wash misses the 3:1 icon contrast. The marketing

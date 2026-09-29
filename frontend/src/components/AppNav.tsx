@@ -7,7 +7,7 @@ import styles from "./AppNav.module.css";
  * Place under the wordmark (brand column), not between brand and header
  * actions, so lock / new-conversation controls stay un-squeezed on mobile.
  */
-export function AppNav() {
+export function AppNav({ showAdmin = false }: { showAdmin?: boolean }) {
   return (
     <nav aria-label="Primary" className={styles.nav}>
       <NavLink to="/market" className={styles.link}>
@@ -16,6 +16,11 @@ export function AppNav() {
       <NavLink to="/chat" className={styles.link} end>
         Chat
       </NavLink>
+      {showAdmin ? (
+        <NavLink to="/admin" className={styles.link}>
+          Admin
+        </NavLink>
+      ) : null}
     </nav>
   );
 }

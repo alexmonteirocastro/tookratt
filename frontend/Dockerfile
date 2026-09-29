@@ -24,6 +24,12 @@ ENV VITE_SHOW_SOURCES=$VITE_SHOW_SOURCES
 ARG VITE_LOADING_MESSAGE="Searching and thinking — this can take a few moments, thanks for your patience."
 ENV VITE_LOADING_MESSAGE=$VITE_LOADING_MESSAGE
 
+# Public Supabase settings only. Empty leaves the app's dummy fallback.
+ARG VITE_SUPABASE_URL
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
+ENV VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
+
 RUN npm run build
 
 FROM nginx:alpine

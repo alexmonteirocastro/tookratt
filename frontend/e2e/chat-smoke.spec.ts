@@ -5,7 +5,7 @@ import {
   createGate,
   mockChat,
   openApp,
-  seedApiKey,
+  seedSession,
   submitQuestion,
 } from "./helpers";
 
@@ -13,7 +13,7 @@ test("chat flow shows loading, markdown answer, and sources", { tag: "@smoke" },
   page,
 }) => {
   const gate = createGate();
-  await seedApiKey(page);
+  await seedSession(page);
   await mockChat(page, { holdUntil: gate.promise });
   await openApp(page, "/chat");
 
@@ -40,7 +40,7 @@ test("multi-turn follow-up sends session_id and keeps the scoped sources", { tag
   page,
 }) => {
   const posts: Record<string, unknown>[] = [];
-  await seedApiKey(page);
+  await seedSession(page);
   await page.route("**/api/chat", async (route) => {
     const body = route.request().postDataJSON() as Record<string, unknown>;
     posts.push(body);
@@ -84,7 +84,7 @@ test("new conversation and a page refresh both omit session_id on the next ask",
   page,
 }) => {
   const posts: Record<string, unknown>[] = [];
-  await seedApiKey(page);
+  await seedSession(page);
   await page.route("**/api/chat", async (route) => {
     const body = route.request().postDataJSON() as Record<string, unknown>;
     posts.push(body);
