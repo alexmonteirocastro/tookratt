@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 import type { Session } from "@supabase/supabase-js";
 import { CHAT_HISTORY_MAX_TURNS, setUnauthorizedHandler } from "./api/client";
 import { handleAuthChange } from "./api/authEvents";
-import { readPendingPasswordType } from "./api/authHash";
+import { clearPendingPasswordType, readPendingPasswordType } from "./api/authHash";
 import { initialAuthRedirect, supabase } from "./api/supabase";
 import {
   armSessionEndedNote,
@@ -55,11 +55,11 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((event, next) => {
       const nextSession = event === "SIGNED_OUT" ? null : next;
       sessionRef.current = nextSession;
+      if (event === "SIGNED_OUT") {
+        clearPendingPasswordType();
+      }
       handleAuthChange(event, {
         userAskedToLeave: didUserAskToLeave(),
-        signOut: () => {
-          // The listener must not call signOut. The property exists so tests can prove it.
-        },
         navigateToSessionEnded: () => {
           armSessionEndedNote();
           navigate("/login", { replace: true, state: { sessionEnded: true } });
@@ -118,7 +118,7 @@ export default function App() {
       <Route
         path="/login"
         element={
-          sessionRef.current && !sessionEndedFrom(location.state) ? (
+          sessionRef.current ? (
             <Navigate to="/market" replace />
           ) : (
             <AuthLayout>

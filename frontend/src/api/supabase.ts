@@ -4,9 +4,31 @@ import { captureAuthRedirect, type AuthRedirect } from "./authHash";
 const configuredUrl = import.meta.env.VITE_SUPABASE_URL;
 const configuredKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-/** Dev and Playwright fall back so the storage key stays stable when env is unset. */
-export const SUPABASE_URL = configuredUrl || "https://example.supabase.co";
-export const SUPABASE_PUBLISHABLE_KEY = configuredKey || "test-publishable-key";
+/**
+ * Production must name the real project. A missing var used to fall through to
+ * a dummy host, and the failed login was shown as "Paused right now".
+ * Dev and unit tests keep the dummy host. Playwright sets its own values.
+ */
+function publicAuthEnv(name: string, value: string | undefined, fallback: string): string {
+  if (value) {
+    return value;
+  }
+  if (import.meta.env.PROD) {
+    throw new Error(`${name} is required`);
+  }
+  return fallback;
+}
+
+export const SUPABASE_URL = publicAuthEnv(
+  "VITE_SUPABASE_URL",
+  configuredUrl,
+  "https://example.supabase.co",
+);
+export const SUPABASE_PUBLISHABLE_KEY = publicAuthEnv(
+  "VITE_SUPABASE_PUBLISHABLE_KEY",
+  configuredKey,
+  "test-publishable-key",
+);
 
 export const AUTH_STORAGE_KEY = `sb-${new URL(SUPABASE_URL).hostname.split(".")[0]}-auth-token`;
 

@@ -139,6 +139,7 @@ describe("App", () => {
     disarmSessionEndedNote();
     auth.listeners.clear();
     auth.signOut.mockClear();
+    auth.signInWithPassword.mockReset();
     auth.getUser.mockClear();
     auth.state.session = sessionFor("member");
     installFetch();
@@ -157,6 +158,53 @@ describe("App", () => {
     expect(await screen.findByRole("heading", { name: "Log in" })).toBeInTheDocument();
     expect(screen.queryByText(/you've been logged out/i)).not.toBeInTheDocument();
     expect(sessionStorage.getItem("tookratt_api_key")).toBeNull();
+  });
+
+  it("leaves the session-ended login screen after a successful login", async () => {
+    auth.state.session = null;
+    auth.signInWithPassword.mockImplementation(async () => {
+      const next = sessionFor("member");
+      auth.state.session = next;
+      for (const listener of auth.listeners) {
+        listener("SIGNED_IN", next);
+      }
+      return { data: { session: next, user: next.user }, error: null };
+    });
+    const user = userEvent.setup();
+    renderApp({ pathname: "/login", state: { sessionEnded: true } });
+    expect(await screen.findByRole("status")).toHaveTextContent(/you've been logged out/i);
+
+    await user.type(screen.getByLabelText("Email"), "alex@example.com");
+    await user.type(screen.getByLabelText("Password"), "long-enough");
+    await user.click(screen.getByRole("button", { name: "Log in" }));
+
+    expect(await screen.findByRole("link", { name: "Job market" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Log in" })).not.toBeInTheDocument();
+  });
+
+  it("drops a pending password on sign-out so the next login reaches the app", async () => {
+    sessionStorage.setItem(PENDING_PASSWORD_TYPE_KEY, "invite");
+    renderApp("/");
+    expect(await screen.findByRole("heading", { name: "Welcome to Töökratt" })).toBeInTheDocument();
+
+    auth.state.session = null;
+    for (const listener of auth.listeners) {
+      listener("SIGNED_OUT", null);
+    }
+
+    expect(await screen.findByRole("heading", { name: "Log in" })).toBeInTheDocument();
+    expect(sessionStorage.getItem(PENDING_PASSWORD_TYPE_KEY)).toBeNull();
+
+    const next = sessionFor("member");
+    next.user.email = "sara@example.com";
+    auth.state.session = next;
+    for (const listener of auth.listeners) {
+      listener("SIGNED_IN", next);
+    }
+
+    expect(await screen.findByRole("link", { name: "Job market" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Welcome to Töökratt" })).not.toBeInTheDocument();
+    expect(screen.getByText("sara@example.com")).toBeInTheDocument();
   });
 
   it("shows the session note from router state and not after a plain visit", async () => {
@@ -216,6 +264,7 @@ describe("App", () => {
     renderApp("/market");
     expect(await screen.findByRole("link", { name: "Job market" })).toBeInTheDocument();
     auth.signOut.mockClear();
+    auth.state.session = null;
 
     for (const listener of auth.listeners) {
       listener("SIGNED_OUT", null);

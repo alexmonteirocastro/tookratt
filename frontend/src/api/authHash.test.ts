@@ -87,37 +87,30 @@ describe("classifyAuthError", () => {
 });
 
 describe("handleAuthChange", () => {
-  it("navigates once on a spontaneous SIGNED_OUT and does not call signOut", () => {
-    const signOut = vi.fn();
+  it("navigates once on a spontaneous SIGNED_OUT", () => {
     const navigateToSessionEnded = vi.fn();
     handleAuthChange("SIGNED_OUT", {
       userAskedToLeave: false,
-      signOut,
       navigateToSessionEnded,
       resetLeaveFlag: vi.fn(),
     });
     expect(navigateToSessionEnded).toHaveBeenCalledTimes(1);
-    expect(signOut).not.toHaveBeenCalled();
   });
 
   it("does not navigate when the user already asked to leave", () => {
     const navigateToSessionEnded = vi.fn();
-    const signOut = vi.fn();
     handleAuthChange("SIGNED_OUT", {
       userAskedToLeave: true,
-      signOut,
       navigateToSessionEnded,
       resetLeaveFlag: vi.fn(),
     });
     expect(navigateToSessionEnded).not.toHaveBeenCalled();
-    expect(signOut).not.toHaveBeenCalled();
   });
 
   it("resets the leave flag on SIGNED_IN", () => {
     const resetLeaveFlag = vi.fn();
     handleAuthChange("SIGNED_IN", {
       userAskedToLeave: true,
-      signOut: vi.fn(),
       navigateToSessionEnded: vi.fn(),
       resetLeaveFlag,
     });
