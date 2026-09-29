@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy · Töökratt</title>
+    <meta
+      name="description"
+      content="What Töökratt keeps about your account, where it lives, and how to ask for a copy or for deletion."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="shell nav">
+        <a class="brand" href="/" aria-label="Töökratt home">
+          <svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
+            <line class="mark-connector" x1="17" y1="8" x2="31" y2="8" stroke-width="2"></line>
+            <circle class="mark-dot" cx="17" cy="8" r="4"></circle>
+            <circle class="mark-dot" cx="31" cy="8" r="4"></circle>
+            <circle class="mark-ring" cx="24" cy="29" r="13" stroke-width="5.5"></circle>
+          </svg>
+          <span class="brand-name">töökratt</span>
+        </a>
+      </header>
+
+      <main class="shell">
+        <article class="privacy">
+          <h1>Privacy</h1>
+          <p class="updated">Last updated 29 September 2026</p>
+
+          <h2>What we keep</h2>
+          <ul>
+            <li>Your email, when the account was created, your last sign-in, and your role.</li>
+            <li>A password hash. Supabase stores it. We never see your password.</li>
+            <li>
+              Chat questions and answers. The app remembers the last 5 turns, and that memory is gone
+              when you refresh or the server restarts. It is not saved on your account.
+            </li>
+            <li>
+              Our logs keep the first 1,000 characters of each question and answer. They are not tied to your
+              account. Render, which hosts the API, also keeps them in its logs.
+            </li>
+            <li>Our hosts see your IP address when you load the site and keep it in their logs for a short time.</li>
+            <li>The login session stays in this browser tab. We do not use tracking or analytics cookies.</li>
+            <li>Job listings come from public posts on thehub.io. They are not data about you.</li>
+          </ul>
+
+          <h2>Why</h2>
+          <p>
+            So an invited person can sign in, and so we can invite someone, revoke access, or restore it.
+            A chat question is sent so we can write an answer. Logs help us fix bugs and spot abuse.
+          </p>
+
+          <h2>Where it lives</h2>
+          <ul>
+            <li>Supabase, in Frankfurt, stores the account.</li>
+            <li>Cloudflare keeps a nightly backup in a private bucket in the EU, and serves the websites.</li>
+            <li>Cloudflare Turnstile checks the forms for bots.</li>
+            <li>Render hosts the API in Frankfurt.</li>
+            <li>Grafana Cloud stores the API logs in the EU.</li>
+            <li>
+              Google (Gemini) writes the chat answers. Google does not use those questions to improve its
+              products. It keeps them for a limited time to check for misuse or when the law requires it, and
+              it may store them outside the EU.
+            </li>
+            <li>Microsoft holds our mailbox.</li>
+          </ul>
+
+          <h2>How long</h2>
+          <ul>
+            <li>The account stays until you ask us to delete it.</li>
+            <li>A backup can still hold it for up to 30 days after that.</li>
+            <li>A conversation in the app is gone on refresh or restart.</li>
+            <li>Grafana Cloud keeps logs for 14 days.</li>
+            <li>Render keeps logs for 7 days.</li>
+          </ul>
+
+          <h2>How to ask</h2>
+          <p>
+            Email
+            <a href="mailto:hello@tookratt.com">hello@tookratt.com</a>
+            and ask for a copy or for deletion. We delete the account in Supabase. There is no delete button
+            in the app. A backup can still hold it for up to 30 days.
+          </p>
+
+          <h2>If you use the waitlist or contact form</h2>
+          <p>
+            Your name, email and message are emailed to us and kept in our mailbox (hosted by Microsoft).
+            Cloudflare checks the form for bots.
+          </p>
+
+          <p class="privacy-contact">
+            <a href="mailto:hello@tookratt.com">hello@tookratt.com</a>
+          </p>
+        </article>
+      </main>
+
+      <footer class="shell footer">
+        <span class="footer-brand">töökratt</span>
+        <p class="footer-meta">© <span data-year>2026</span> Töökratt · Built in the EU · <a href="/privacy">Privacy</a></p>
+      </footer>
+    </div>
+    <script type="module" src="/src/privacy.ts"></script>
+  </body>
+</html>

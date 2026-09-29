@@ -124,6 +124,8 @@ export function LoginPage({ sessionEnded }: LoginPageProps) {
       <p className={styles.aside}>
         No account?{" "}
         <a href="https://tookratt.com">Request access at tookratt.com</a>
+        {" · "}
+        <a href="https://tookratt.com/privacy">Privacy</a>
       </p>
     </>
   );

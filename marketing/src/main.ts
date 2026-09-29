@@ -226,7 +226,7 @@ root.innerHTML = `
 
     <footer class="shell footer">
       <span class="footer-brand">töökratt</span>
-      <p class="footer-meta">© ${year} Töökratt · Built in the EU</p>
+      <p class="footer-meta">© ${year} Töökratt · Built in the EU · <a href="/privacy">Privacy</a></p>
     </footer>
   </div>
 `;

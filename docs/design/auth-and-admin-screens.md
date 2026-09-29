@@ -36,7 +36,7 @@ The second field is labeled "Type it again".
 
 ### Login, under the card
 
-"No account? Request access at tookratt.com". "Request access at tookratt.com" links to `https://tookratt.com`. It does not open a sign-up form.
+"No account? Request access at tookratt.com · Privacy". "Request access at tookratt.com" links to `https://tookratt.com`. "Privacy" links to `https://tookratt.com/privacy`. It does not open a sign-up form. The line stays on one row and wraps if it does not fit.
 
 ## 2. States
 
@@ -136,7 +136,7 @@ Strings ALE-216 should use as written.
 |---|---|
 | Login heading | Log in |
 | Login body | Töökratt is invite-only. Use the email your invite was sent to. |
-| Below the login card | No account? Request access at tookratt.com |
+| Below the login card | No account? Request access at tookratt.com · Privacy |
 | Email label | Email |
 | Invite placeholder | name@example.com |
 | Password label, invite | Password |
