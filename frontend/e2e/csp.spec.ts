@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { contentSecurityPolicy } from "../securityHeaders.ts";
 import { PENDING_PASSWORD_TYPE_KEY } from "../src/api/authHash";
 import {
   MOCK_CHAT_QUESTION,
@@ -58,6 +59,17 @@ async function mockAdminUsers(page: Page): Promise<void> {
     });
   });
 }
+
+test("preview sends the report-only policy and frame denial", async ({ request }) => {
+  const policy = contentSecurityPolicy(["https://example.supabase.co"]);
+  for (const path of ["/", "/login"]) {
+    const response = await request.get(path);
+    expect(response.ok()).toBeTruthy();
+    const headers = response.headers();
+    expect(headers["content-security-policy-report-only"]).toBe(policy);
+    expect(headers["x-frame-options"]).toBe("DENY");
+  }
+});
 
 test("login page stays within the report-only policy", async ({ page }) => {
   const consoleHits = await installCspProbe(page);

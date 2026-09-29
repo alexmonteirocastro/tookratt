@@ -56,6 +56,18 @@ export function pagesHeadersFile(policy: string = contentSecurityPolicy()): stri
   return ["/*", ...headerLines, ""].join("\n");
 }
 
+/**
+ * Vite inlines assets under 4 kB. A small @fontsource subset would become a
+ * `data:` font that `font-src 'self'` blocks, and English pages never request it.
+ * Font files stay external whatever their size. Other assets keep Vite's default.
+ */
+export function assetInlineLimit(filePath: string): boolean | undefined {
+  if (filePath.endsWith(".woff") || filePath.endsWith(".woff2")) {
+    return false;
+  }
+  return undefined;
+}
+
 /** Headers for `vite preview`. Not applied to `vite dev`. */
 export function previewHeaders(
   extraConnectSrc: readonly string[] = [],

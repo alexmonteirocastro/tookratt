@@ -8,6 +8,7 @@ import {
   CSP_REPORT_ONLY_HEADER,
   PRODUCTION_API_ORIGIN,
   PRODUCTION_SUPABASE_ORIGIN,
+  assetInlineLimit,
   contentSecurityPolicy,
   pagesHeadersFile,
   previewHeaders,
@@ -32,6 +33,12 @@ describe("production security headers", () => {
     expect(policy).toContain("font-src 'self'");
     expect(policy).not.toContain("font-src 'self' data:");
     expect(policy).toContain("img-src 'self' data:");
+  });
+
+  it("never inlines font files, whatever their size", () => {
+    expect(assetInlineLimit("/assets/space-grotesk-vietnamese.woff2")).toBe(false);
+    expect(assetInlineLimit("/assets/ibm-plex-sans.woff")).toBe(false);
+    expect(assetInlineLimit("/assets/favicon.svg")).toBeUndefined();
   });
 
   it("adds the Playwright Supabase host only on the preview policy", () => {
