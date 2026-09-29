@@ -117,7 +117,9 @@ jobs:
           echo "Uploaded ${prefix}/auth-data.dump and ${prefix}/public.dump"
 
       - name: Record schedule heartbeat
-        if: success()
+        # A manual workflow_dispatch must not refresh this. Only a scheduled
+        # run proves GitHub has not disabled the timer.
+        if: success() && github.event_name == 'schedule'
         env:
           GRAFANA_LOKI_URL: ${{ secrets.GRAFANA_LOKI_URL }}
           GRAFANA_LOKI_USER_ID: ${{ secrets.GRAFANA_LOKI_USER_ID }}

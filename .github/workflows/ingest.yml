@@ -77,3 +77,36 @@ jobs:
             exit 1
           fi
           echo "Marketing deploy hook accepted"
+
+      - name: Record schedule heartbeat
+        # ALE-247. Ingest logs with print, so an absence rule cannot watch them.
+        # A manual run must not reset the 36-hour window.
+        if: success() && github.event_name == 'schedule'
+        env:
+          GRAFANA_LOKI_URL: ${{ secrets.GRAFANA_LOKI_URL }}
+          GRAFANA_LOKI_USER_ID: ${{ secrets.GRAFANA_LOKI_USER_ID }}
+          GRAFANA_LOKI_API_KEY: ${{ secrets.GRAFANA_LOKI_API_KEY }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in GRAFANA_LOKI_URL GRAFANA_LOKI_USER_ID GRAFANA_LOKI_API_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "${name} is unset"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          now=$(date +%s%N)
+          payload=$(printf '{"streams":[{"stream":{"app":"tookratt","event":"schedule_heartbeat","source":"ingest"},"values":[["%s","ingest schedule ran"]]}]}' "$now")
+          code=$(curl --silent --show-error --output /tmp/loki-body --write-out "%{http_code}" \
+            --user "${GRAFANA_LOKI_USER_ID}:${GRAFANA_LOKI_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data "$payload" \
+            --url "$GRAFANA_LOKI_URL" || echo "000")
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "Loki push returned HTTP ${code}"
+            exit 1
+          fi
+          echo "Loki heartbeat accepted"
