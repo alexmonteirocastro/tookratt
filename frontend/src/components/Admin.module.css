@@ -23,9 +23,9 @@
   padding: var(--space-6);
 }
 
-.inviteRow {
+.inviteControls {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   gap: var(--space-3);
 }
 
@@ -43,7 +43,9 @@
 }
 
 .input {
+  flex: 1;
   width: 100%;
+  min-width: 0;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -235,9 +237,8 @@
 }
 
 @media (max-width: 640px) {
-  .inviteRow {
+  .inviteControls {
     flex-direction: column;
-    align-items: stretch;
   }
 
   .inviteButton {
@@ -248,7 +249,7 @@
     display: inline-block;
   }
 
-  .statusCell,
+  .table .statusCell,
   .confirmDesktop {
     display: none;
   }
@@ -287,9 +288,9 @@
     margin-top: var(--space-3);
   }
 
-  .roleCell,
-  .addedCell,
-  .seenCell {
+  .table .roleCell,
+  .table .addedCell,
+  .table .seenCell {
     display: none;
   }
 

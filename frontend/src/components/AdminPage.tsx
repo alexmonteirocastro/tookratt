@@ -165,11 +165,11 @@ export function AdminPage({ currentUserId }: AdminPageProps) {
       </div>
       <section className={styles.card}>
         <form onSubmit={(event) => void onInvite(event)} noValidate>
-          <div className={styles.inviteRow}>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="invite-email">
-                Invite by email
-              </label>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="invite-email">
+              Invite by email
+            </label>
+            <div className={styles.inviteControls}>
               <input
                 id="invite-email"
                 className={emailError ? `${styles.input} ${styles.inputInvalid}` : styles.input}
@@ -184,11 +184,11 @@ export function AdminPage({ currentUserId }: AdminPageProps) {
                 }}
                 disabled={invitePending}
               />
+              <button className={styles.inviteButton} type="submit" disabled={invitePending}>
+                {invitePending ? <span className={styles.spinner} aria-hidden="true" /> : null}
+                Create invite link
+              </button>
             </div>
-            <button className={styles.inviteButton} type="submit" disabled={invitePending}>
-              {invitePending ? <span className={styles.spinner} aria-hidden="true" /> : null}
-              Create invite link
-            </button>
           </div>
           {emailError ? (
             <p id="invite-email-error" className={styles.fieldError} role="alert">

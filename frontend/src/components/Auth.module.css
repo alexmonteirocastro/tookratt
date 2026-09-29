@@ -3,8 +3,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: var(--space-8) var(--space-4);
+  /* Pins the lockup to one top offset on every auth card. */
+  justify-content: flex-start;
+  padding: var(--space-10) var(--space-4) var(--space-8);
   background: var(--color-surface-alt);
   box-sizing: border-box;
 }
