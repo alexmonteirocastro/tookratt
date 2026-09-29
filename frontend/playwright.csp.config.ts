@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const isCI = Boolean(process.env.CI);
 
 /**
- * Report-only CSP against a production preview (ALE-218).
+ * Enforcing CSP against a production preview (ALE-218, enforced in ALE-249).
  * Kept off the dev servers in playwright.config.ts: Vite's React refresh
  * preamble is an inline script that production never ships.
  */

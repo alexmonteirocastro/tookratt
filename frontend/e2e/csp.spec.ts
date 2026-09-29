@@ -60,18 +60,19 @@ async function mockAdminUsers(page: Page): Promise<void> {
   });
 }
 
-test("preview sends the report-only policy and frame denial", async ({ request }) => {
+test("preview sends the enforcing policy and frame denial", async ({ request }) => {
   const policy = contentSecurityPolicy(["https://example.supabase.co"]);
   for (const path of ["/", "/login"]) {
     const response = await request.get(path);
     expect(response.ok()).toBeTruthy();
     const headers = response.headers();
-    expect(headers["content-security-policy-report-only"]).toBe(policy);
+    expect(headers["content-security-policy"]).toBe(policy);
+    expect(headers["content-security-policy-report-only"]).toBeUndefined();
     expect(headers["x-frame-options"]).toBe("DENY");
   }
 });
 
-test("login page stays within the report-only policy", async ({ page }) => {
+test("login page stays within the enforcing policy", async ({ page }) => {
   const consoleHits = await installCspProbe(page);
   await mockJobsStats(page);
   await page.route("**/auth/v1/token**", async (route) => {
@@ -107,7 +108,7 @@ test("login page stays within the report-only policy", async ({ page }) => {
   await expectNoCspViolations(page, consoleHits);
 });
 
-test("set-password page stays within the report-only policy", async ({ page }) => {
+test("set-password page stays within the enforcing policy", async ({ page }) => {
   const consoleHits = await installCspProbe(page);
   await mockJobsStats(page);
   await seedSession(page);
@@ -143,7 +144,7 @@ test("set-password page stays within the report-only policy", async ({ page }) =
   await expectNoCspViolations(page, consoleHits);
 });
 
-test("chat stays within the report-only policy", async ({ page }) => {
+test("chat stays within the enforcing policy", async ({ page }) => {
   const consoleHits = await installCspProbe(page);
   await seedSession(page);
   await mockChat(page);
@@ -156,7 +157,7 @@ test("chat stays within the report-only policy", async ({ page }) => {
   await expectNoCspViolations(page, consoleHits);
 });
 
-test("job market bars stay within the report-only policy", async ({ page }) => {
+test("job market bars stay within the enforcing policy", async ({ page }) => {
   const consoleHits = await installCspProbe(page);
   await seedSession(page);
   await mockJobsStats(page);
@@ -166,7 +167,7 @@ test("job market bars stay within the report-only policy", async ({ page }) => {
   await expectNoCspViolations(page, consoleHits);
 });
 
-test("admin stays within the report-only policy", async ({ page }) => {
+test("admin stays within the enforcing policy", async ({ page }) => {
   const consoleHits = await installCspProbe(page);
   await seedSession(page, "admin");
   await mockAdminUsers(page);

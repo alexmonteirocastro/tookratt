@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
-  CSP_REPORT_ONLY_HEADER,
+  CSP_HEADER,
   PRODUCTION_API_ORIGIN,
   PRODUCTION_SUPABASE_ORIGIN,
   assetInlineLimit,
@@ -17,13 +17,14 @@ import {
 const headersPath = join(dirname(fileURLToPath(import.meta.url)), "public", "_headers");
 
 describe("production security headers", () => {
-  it("locks public/_headers to the report-only production allow-list", () => {
+  it("locks public/_headers to the enforced production allow-list", () => {
     const file = readFileSync(headersPath, "utf8");
     const policy = contentSecurityPolicy();
 
     expect(file).toBe(pagesHeadersFile());
-    expect(file).toContain(`${CSP_REPORT_ONLY_HEADER}: ${policy}`);
-    expect(file).not.toMatch(/^ {2}Content-Security-Policy:/m);
+    expect(file).toContain(`${CSP_HEADER}: ${policy}`);
+    expect(file).toMatch(/^ {2}Content-Security-Policy:/m);
+    expect(file).not.toContain("Content-Security-Policy-Report-Only");
     expect(file).toContain(PRODUCTION_API_ORIGIN);
     expect(file).toContain(PRODUCTION_SUPABASE_ORIGIN);
     expect(file).toContain("X-Frame-Options: DENY");
@@ -43,7 +44,8 @@ describe("production security headers", () => {
 
   it("adds the Playwright Supabase host only on the preview policy", () => {
     const preview = previewHeaders(["https://example.supabase.co"]);
-    expect(preview[CSP_REPORT_ONLY_HEADER]).toContain("https://example.supabase.co");
+    expect(preview[CSP_HEADER]).toContain("https://example.supabase.co");
+    expect(preview["Content-Security-Policy-Report-Only"]).toBeUndefined();
     expect(pagesHeadersFile()).not.toContain("example.supabase.co");
   });
 });

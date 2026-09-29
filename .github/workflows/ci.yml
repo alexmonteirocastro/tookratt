@@ -192,7 +192,7 @@ jobs:
           PLAYWRIGHT_VISUAL: "0"
         run: npx playwright test --grep @smoke
 
-      - name: Run CSP report-only checks
+      - name: Run CSP enforcement checks
         if: ${{ !inputs.skip_heavy_tests }}
         working-directory: frontend
         run: npx playwright test --config playwright.csp.config.ts

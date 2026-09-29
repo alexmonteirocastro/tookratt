@@ -1,18 +1,18 @@
 /**
  * Source of truth for the app Pages security headers (ALE-218).
  * `frontend/public/_headers` must match `pagesHeadersFile()`.
- * Enforcement is ALE-249: rename the CSP header after a clean report-only day.
+ * CSP is enforced (ALE-249, 2026-09-29).
  */
 
 export const PRODUCTION_API_ORIGIN = "https://hubster-alpi.onrender.com";
 export const PRODUCTION_SUPABASE_ORIGIN = "https://jogkvchexsfiwezdpirb.supabase.co";
 
-export const CSP_REPORT_ONLY_HEADER = "Content-Security-Policy-Report-Only";
+export const CSP_HEADER = "Content-Security-Policy";
 
 const CONNECT_SRC = ["'self'", PRODUCTION_API_ORIGIN, PRODUCTION_SUPABASE_ORIGIN] as const;
 
 /**
- * Report-only policy for the production bundle.
+ * Policy for the production bundle.
  * `extraConnectSrc` is for the Playwright preview only (`https://example.supabase.co`).
  * It must not appear in `public/_headers`.
  *
@@ -36,8 +36,8 @@ export function contentSecurityPolicy(extraConnectSrc: readonly string[] = []): 
 }
 
 /**
- * Enforced on every response. `frame-ancestors` is ignored inside a report-only
- * policy, so `X-Frame-Options` is the clickjacking control until ALE-249.
+ * Enforced on every response. `frame-ancestors 'none'` is in effect on the CSP
+ * header; `X-Frame-Options` stays as the clickjacking control for older browsers.
  */
 export const ENFORCED_SECURITY_HEADERS: Readonly<Record<string, string>> = {
   "X-Frame-Options": "DENY",
@@ -50,7 +50,7 @@ export const ENFORCED_SECURITY_HEADERS: Readonly<Record<string, string>> = {
 
 export function pagesHeadersFile(policy: string = contentSecurityPolicy()): string {
   const headerLines = [
-    `  ${CSP_REPORT_ONLY_HEADER}: ${policy}`,
+    `  ${CSP_HEADER}: ${policy}`,
     ...Object.entries(ENFORCED_SECURITY_HEADERS).map(([name, value]) => `  ${name}: ${value}`),
   ];
   return ["/*", ...headerLines, ""].join("\n");
@@ -73,7 +73,7 @@ export function previewHeaders(
   extraConnectSrc: readonly string[] = [],
 ): Record<string, string> {
   return {
-    [CSP_REPORT_ONLY_HEADER]: contentSecurityPolicy(extraConnectSrc),
+    [CSP_HEADER]: contentSecurityPolicy(extraConnectSrc),
     ...ENFORCED_SECURITY_HEADERS,
   };
 }
