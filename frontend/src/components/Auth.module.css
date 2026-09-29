@@ -51,6 +51,11 @@
   line-height: var(--line-height-tight);
 }
 
+/* Space Grotesk draws the apostrophe as a curly quote. The body face matches the other strings. */
+.apostrophe {
+  font-family: var(--font-family);
+}
+
 .lede {
   margin: var(--space-3) 0 0;
   color: var(--color-text-secondary);

@@ -106,6 +106,7 @@
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
   padding: 0 var(--space-3) var(--space-3);
+  white-space: nowrap;
 }
 
 .table td {
@@ -175,6 +176,18 @@
 .confirmCopy {
   margin: 0 0 var(--space-2);
   font-size: var(--font-size-xs);
+}
+
+.emailText,
+.addedCell,
+.seenCell {
+  white-space: nowrap;
+}
+
+.confirmDesktop {
+  width: 0;
+  min-width: 100%;
+  white-space: normal;
 }
 
 .meta {
@@ -258,6 +271,11 @@
     display: none;
   }
 
+  .table tbody tr:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
   .table,
   .table tbody,
   .table tr,
@@ -276,11 +294,21 @@
     padding: 0;
   }
 
-  .emailCell {
+  .table .emailCell {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
+  }
+
+  .emailText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .emailCell .mobileOnly {
+    flex-shrink: 0;
   }
 
   .hideMobile,

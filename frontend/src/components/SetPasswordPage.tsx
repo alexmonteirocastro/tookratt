@@ -165,7 +165,13 @@ export function LinkErrorCard({
       <div className={styles.state}>
         <StateIcon name={expired ? "expired" : "revoked"} />
         <h2 className={styles.heading}>
-          {expired ? "This link has expired" : "This link doesn't work"}
+          {expired ? (
+            "This link has expired"
+          ) : (
+            <>
+              This link doesn<span className={styles.apostrophe}>'</span>t work
+            </>
+          )}
         </h2>
         <p className={styles.stateBody}>
           {expired ? (

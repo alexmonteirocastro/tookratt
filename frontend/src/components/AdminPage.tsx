@@ -308,7 +308,7 @@ function UserRow({
   return (
     <tr className={confirming ? styles.rowConfirm : undefined}>
       <td className={styles.emailCell}>
-        <span>
+        <span className={styles.emailText}>
           {email}
           {isYou ? " (you)" : ""}
         </span>
@@ -324,9 +324,14 @@ function UserRow({
       <td className={styles.seenCell}>{lastLogin}</td>
       <td className={styles.actionsCell}>
         {confirming ? (
-          <p className={`${styles.confirmCopy} ${styles.meta}`}>
-            Revoke access? Takes effect within an hour.
-          </p>
+          <>
+            <p className={`${styles.confirmCopy} ${styles.meta}`}>
+              Revoke access? Takes effect within an hour.
+            </p>
+            <p className={`${styles.confirmCopy} ${styles.confirmDesktop}`}>
+              Revoke access? Takes effect within an hour.
+            </p>
+          </>
         ) : (
           <p className={styles.meta}>{meta}</p>
         )}
@@ -334,9 +339,6 @@ function UserRow({
           <span className={styles.ownNote}>No actions on your own account</span>
         ) : confirming ? (
           <div className={styles.actions}>
-            <p className={`${styles.confirmCopy} ${styles.confirmDesktop}`}>
-              Revoke access? Takes effect within an hour.
-            </p>
             <button type="button" className={styles.button} onClick={onCancelRevoke} disabled={busy}>
               Cancel
             </button>
