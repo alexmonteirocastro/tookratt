@@ -165,11 +165,11 @@ export function AdminPage({ currentUserId }: AdminPageProps) {
       </div>
       <section className={styles.card}>
         <form onSubmit={(event) => void onInvite(event)} noValidate>
-          <div className={styles.inviteRow}>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="invite-email">
-                Invite by email
-              </label>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="invite-email">
+              Invite by email
+            </label>
+            <div className={styles.inviteControls}>
               <input
                 id="invite-email"
                 className={emailError ? `${styles.input} ${styles.inputInvalid}` : styles.input}
@@ -184,11 +184,11 @@ export function AdminPage({ currentUserId }: AdminPageProps) {
                 }}
                 disabled={invitePending}
               />
+              <button className={styles.inviteButton} type="submit" disabled={invitePending}>
+                {invitePending ? <span className={styles.spinner} aria-hidden="true" /> : null}
+                Create invite link
+              </button>
             </div>
-            <button className={styles.inviteButton} type="submit" disabled={invitePending}>
-              {invitePending ? <span className={styles.spinner} aria-hidden="true" /> : null}
-              Create invite link
-            </button>
           </div>
           {emailError ? (
             <p id="invite-email-error" className={styles.fieldError} role="alert">
@@ -308,7 +308,7 @@ function UserRow({
   return (
     <tr className={confirming ? styles.rowConfirm : undefined}>
       <td className={styles.emailCell}>
-        <span>
+        <span className={styles.emailText}>
           {email}
           {isYou ? " (you)" : ""}
         </span>
@@ -324,9 +324,14 @@ function UserRow({
       <td className={styles.seenCell}>{lastLogin}</td>
       <td className={styles.actionsCell}>
         {confirming ? (
-          <p className={`${styles.confirmCopy} ${styles.meta}`}>
-            Revoke access? Takes effect within an hour.
-          </p>
+          <>
+            <p className={`${styles.confirmCopy} ${styles.meta}`}>
+              Revoke access? Takes effect within an hour.
+            </p>
+            <p className={`${styles.confirmCopy} ${styles.confirmDesktop}`}>
+              Revoke access? Takes effect within an hour.
+            </p>
+          </>
         ) : (
           <p className={styles.meta}>{meta}</p>
         )}
@@ -334,9 +339,6 @@ function UserRow({
           <span className={styles.ownNote}>No actions on your own account</span>
         ) : confirming ? (
           <div className={styles.actions}>
-            <p className={`${styles.confirmCopy} ${styles.confirmDesktop}`}>
-              Revoke access? Takes effect within an hour.
-            </p>
             <button type="button" className={styles.button} onClick={onCancelRevoke} disabled={busy}>
               Cancel
             </button>
