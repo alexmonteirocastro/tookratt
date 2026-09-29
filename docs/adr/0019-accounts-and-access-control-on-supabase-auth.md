@@ -153,7 +153,7 @@ These were checks, not undecided architecture. The fallback if checks 1–5 had 
 * Endpoints, login UI, a new dependency, and the production project. Those are ALE-214, ALE-216, and ALE-215.
 * Admin-panel screens are [ALE-216](https://linear.app/alex-projects/issue/ALE-216). If Bet 006's day-3 circuit breaker fires, invite and revoke run through the admin API or the Supabase dashboard, and the screens move to a follow-up.
 * Profiles, chat history in Postgres, SMTP, and OAuth.
-* Turning off the legacy `anon` / `service_role` keys. That is a follow-up on ALE-215, on both dev and production.
+* Turning off the legacy `anon` / `service_role` keys. Done: they are disabled on the dev project and on production.
 
 ## Follow-up notes
 
@@ -170,3 +170,11 @@ Recorded first as a [comment on ALE-212](https://linear.app/alex-projects/issue/
 ### Local verification lag, as shipped (ALE-214)
 
 The API verifies access tokens locally and does not ask GoTrue on each request. A revoke (`ban_duration`) or a demotion stays invisible to this check until the current access token expires, at most one hour. [ALE-213](https://linear.app/alex-projects/issue/ALE-213/spike-run-the-seven-supabase-auth-checks-on-the-dev-project-bet-006) already measured that lag. The hard cutoff (`auth.sessions` or a `user_roles` table) stays out of scope, and it is the moment the API would open SQL. Merging ALE-214 also makes the pre-login frontend key receive 403 on `/chat` and `/jobs/search` until [ALE-216](https://linear.app/alex-projects/issue/ALE-216) ships. That 403 is the cutover, not an outage. `GET /jobs/stats` still accepts the marketing key.
+
+### Off-site dumps and the schedule heartbeat (ALE-247, 2026-09-29)
+
+Decision 5's text is unchanged. The accepted risks in Consequences — a free project pauses after a quiet week, Supabase free has no backups, and GitHub can disable a scheduled workflow without saying so — now point at [`.github/workflows/supabase-dump.yml`](../../.github/workflows/supabase-dump.yml) and [docs/ops/supabase-production.md](../ops/supabase-production.md).
+
+The workflow dumps `auth` (data only) and `public` once a day into the private EU bucket `tookratt-supabase-dumps`. Objects expire after 30 days. The same run issues a trivial query so the free project does not pause. A Loki line `event=schedule_heartbeat` is written only after a scheduled success, on the dump workflow and on `ingest.yml`. The ops doc specifies the Grafana absence rule that pages `tookratt-email` when either source is missing for 36 hours. A manual `workflow_dispatch` does not refresh that window.
+
+A restore of `dumps/20260929T065405Z` into a scratch local stack confirmed the admin account. The ownership workaround is in the ops doc. Legacy `anon` and `service_role` keys are disabled on the dev project and on production.
