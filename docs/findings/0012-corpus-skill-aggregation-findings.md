@@ -194,9 +194,13 @@ The only field that moved is `expirationDate`, and only where the day-1 value wa
 
 `2027-03-29` is six months after 2026-09-29, and `2027-03-30` is six months after 2026-09-30. The other 13 expiration dates stayed put, including `2027-03-15`, `2027-03-21`, and `2027-03-22`. Company `createdAt`, company `approvedAt`, and `activeCommunityProgramDeadline` were unchanged on every job.
 
+For these six the value looks computed at request time (fetch date + 6 months), not stored. `expirationDate` is not a reliable closing date and must not feed `closed_at` or listing-lifetime estimates.
+
 ### Decision
 
 Use `publishedAt` for “new listings in this period” where it is present. It was unchanged on all 16 jobs that carry it (16 of 19 in this sample). One day is a short window. Keep collecting snapshots either way.
+
+No bump happened in this window, so this does not show that a bump leaves `publishedAt` alone. Revisit trigger: the first time snapshots or sync logs show a `pumpedAt` change, check `publishedAt` on that job.
 
 ### Survivorship, from the sync logs
 
