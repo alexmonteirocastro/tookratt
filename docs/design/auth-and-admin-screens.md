@@ -49,7 +49,7 @@ The second field is labeled "Type it again".
 | Logging in | Login button | Logging in |
 | Session ended | Light accent-blue note above the "Log in" heading | You've been logged out. Log in again to keep going. |
 | Link expired or already used | Replaces the form | Heading: This link has expired. Body: This link was already used, or it is older than 24 hours. Ask for a new one at hello@tookratt.com. Link: Go to log in. |
-| Revoked account opening a link | Replaces the form. Error fragment, no session. | Heading: This link doesn't work. Body: Your account can't use it right now. Write to hello@tookratt.com if that seems wrong. |
+| Revoked account opening a link | Replaces the form. A new link fails `verifyOtp` with `user_banned`. An older link still arrives as an error fragment, with no session. | Heading: This link doesn't work. Body: Your account can't use it right now. Write to hello@tookratt.com if that seems wrong. |
 | Paused project | Replaces the form | Heading: Paused right now. Body: Töökratt is paused right now. Contact us and we'll get it back up. Link on its own line: hello@tookratt.com. |
 | Member opens `/admin` | Replaces the People content. The header stays. | Heading: Admins only. Body: This page is for inviting and managing people. Your account can use Job market and Chat. Link: Go to Job market. |
 

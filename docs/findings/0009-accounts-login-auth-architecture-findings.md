@@ -299,7 +299,7 @@ An invite link sent over WhatsApp on 2026-09-30 showed "This link has expired" b
 
 The admin API no longer returns `action_link` or `email_otp`. It builds `{APP_PUBLIC_URL}/set-password#token_hash=<hashed_token>&type=<invite|recovery>` from `generate_link`'s `hashed_token`. The page makes no Supabase call on load. Submit calls `verifyOtp`, then `updateUser({ password })`. A plain GET does not consume the token.
 
-Checked on the dev project before the code change: `POST /auth/v1/verify` with the publishable key and `token_hash` returned a session for both `invite` and `recovery`, with public sign-up off. The throwaway user was deleted.
+Checked on the dev project before the code change: `POST /auth/v1/verify` with the publishable key and `token_hash` returned a session for both `invite` and `recovery`, with public sign-up off. A second verify of the same invite token returned 403 `otp_expired`. The throwaway user was deleted.
 
 Production Email OTP expiration is not in the database. `auth.instances` on the production project has no rows, and ALE-213 already found that `GET /auth/v1/settings` does not return the lifetime. The ops doc still records 86400 seconds for both projects. This check could not read the live dashboard value. The "24 hours" copy stays on that record.
 

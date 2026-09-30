@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   AUTH_FALLBACK_MESSAGE,
   classifyAuthError,
+  type AuthErrorLike,
 } from "../api/authErrors";
 import {
   clearPendingPasswordType,
@@ -14,6 +15,14 @@ import {
 import { supabase } from "../api/supabase";
 import { AuthCard, FieldError, Spinner, StateIcon } from "./AuthLayout";
 import styles from "./Auth.module.css";
+
+function verifyRejectedTheLink(error: AuthErrorLike): boolean {
+  if (error.code === "otp_expired" || error.code === "user_banned") {
+    return true;
+  }
+  const status = error.status;
+  return typeof status === "number" && status >= 400 && status < 500 && status !== 429;
+}
 
 interface SetPasswordPageProps {
   type: PasswordLinkType;
@@ -62,13 +71,19 @@ export function SetPasswordPage({ type, email, onDone }: SetPasswordPageProps) {
         type: token.type,
       });
       if (verifyError) {
-        clearPendingToken();
         setPending(false);
         if (classifyAuthError(verifyError) === "paused") {
           setPaused(true);
           return;
         }
-        setLinkError(verifyError.code === "otp_expired" ? "otp_expired" : (verifyError.code ?? "unspecified_code"));
+        if (!verifyRejectedTheLink(verifyError)) {
+          setFormError(AUTH_FALLBACK_MESSAGE);
+          return;
+        }
+        clearPendingToken();
+        setLinkError(
+          verifyError.code === "otp_expired" ? "otp_expired" : (verifyError.code ?? "unspecified_code"),
+        );
         return;
       }
       const nextEmail = data.user?.email;

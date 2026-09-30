@@ -169,4 +169,42 @@ describe("SetPasswordPage", () => {
     expect(sessionStorage.getItem(PENDING_TOKEN_HASH_KEY)).toBeNull();
     expect(updateUser).not.toHaveBeenCalled();
   });
+
+  it("keeps the token and the form when verify is rate limited", async () => {
+    writePendingToken({ tokenHash: "hash-1", type: "invite" });
+    verifyOtp.mockResolvedValue({
+      data: { user: null, session: null },
+      error: { status: 429, code: "over_request_rate_limit", message: "slow down" },
+    });
+    const user = userEvent.setup();
+    renderPage("invite", "");
+
+    await user.type(screen.getByLabelText("Password"), "long-enough");
+    await user.type(screen.getByLabelText("Type it again"), "long-enough");
+    await user.click(screen.getByRole("button", { name: "Set password and continue" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/something went wrong/i);
+    expect(screen.getByRole("heading", { name: "Welcome to Töökratt" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "This link doesn't work" })).not.toBeInTheDocument();
+    expect(sessionStorage.getItem(PENDING_TOKEN_HASH_KEY)).not.toBeNull();
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it("keeps the token when verify fails because the project is paused", async () => {
+    writePendingToken({ tokenHash: "hash-1", type: "invite" });
+    verifyOtp.mockResolvedValue({
+      data: { user: null, session: null },
+      error: { status: 503, message: "Project is paused" },
+    });
+    const user = userEvent.setup();
+    renderPage("invite", "");
+
+    await user.type(screen.getByLabelText("Password"), "long-enough");
+    await user.type(screen.getByLabelText("Type it again"), "long-enough");
+    await user.click(screen.getByRole("button", { name: "Set password and continue" }));
+
+    expect(await screen.findByRole("heading", { name: "Paused right now" })).toBeInTheDocument();
+    expect(sessionStorage.getItem(PENDING_TOKEN_HASH_KEY)).not.toBeNull();
+    expect(updateUser).not.toHaveBeenCalled();
+  });
 });

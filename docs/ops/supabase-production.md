@@ -19,7 +19,7 @@ Both projects, set in the dashboard:
 - Email OTP expiry is 86400 seconds.
 - No custom SMTP.
 - Legacy `anon` and `service_role` keys are disabled.
-- Site URL and redirect allow-list: dev `http://localhost:5173`, production `https://app.tookratt.com`. Invite and recovery links are built by the API as `{APP_PUBLIC_URL}/set-password#token_hash=…&type=invite|recovery`. A plain GET does not consume the token. Do not send a new link until both Render and Pages are on that build.
+- Site URL and redirect allow-list: dev `http://localhost:5173`, production `https://app.tookratt.com`. Invite and recovery links are built by the API as `{APP_PUBLIC_URL}/set-password#token_hash=…&type=invite|recovery`. A plain GET does not consume the token. Do not send a new link until both Render and Pages are on that build. An admin who opens one of those links in the same tab they are signed in with sees the invitee's form on every route until that tab closes. Test the link in a private window.
 
 ## Dump
 
