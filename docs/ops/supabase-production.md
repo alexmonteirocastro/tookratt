@@ -150,13 +150,15 @@ For each rule:
 1. **Alerting** → **Alert rules** → **New alert rule**, folder `Hubster`.
 2. Query type: **LogQL**, type **Instant**, datasource `grafanacloud-cosmicmerlin1468-logs`. The stack's default is the Prometheus datasource and it cannot be changed (provisioned), so switch it first. Not `…-alert-state-history`: that Loki source holds Grafana's alert state, not app logs.
 3. Condition: fire when the query **is above** `0`.
-4. Evaluation group: `schedule-heartbeat`, interval `1h`. Create it once, with the first rule, and pick it for the second. Do not put these rules in the 1m group the auth and injection rules use: changing a group's interval changes every rule in it. Pending period: `0`. Keep firing for: None.
+4. Evaluation group: `schedule-heartbeat`, interval `1h`. Create it once, with the first rule, and pick it for the second. Do not put these rules in the group the auth and injection rules use: changing a group's interval changes every rule in it. Pending period: `0`. Keep firing for: None.
 5. **Alert state if no data:** **Normal**. `absent_over_time` returns nothing while heartbeats arrive, so No Data is the healthy state. Left at the default, it sends a No Data notification on a healthy schedule.
 6. **Alert state if execution error:** **Error**.
 7. Contact point: `tookratt-email`.
 8. Summary: `Ingest schedule heartbeat missing` / `Supabase dump schedule heartbeat missing`. Description: `No scheduled <ingest|supabase-dump> heartbeat for 36h. Check .github/workflows/<ingest|supabase-dump>.yml and whether GitHub disabled the schedule.`
 
 Leave the 36-hour window. The ingest heartbeat landed about 4 hours after its 00:00 UTC schedule on 2026-09-30 (GitHub start delay plus job run time), and the window absorbs that. With a 1h interval and the default of 2 missing-series evaluations, an alert can take up to about 2 hours to resolve after a heartbeat arrives.
+
+The Loki push secret is `logs:write` and cannot create the rule; this is a Grafana Cloud click.
 
 ### Proved once
 
