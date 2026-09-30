@@ -136,40 +136,31 @@ A dump that nobody notices has stopped is not a backup. Both [`.github/workflows
 
 The step condition is `if: success() && github.event_name == 'schedule'`. A `workflow_dispatch` run does not refresh the line, so a hand trigger cannot hide a disabled timer. Ingest logs with `print`, so this line is the only ingest signal an absence rule can watch. The ingest heartbeat is after the marketing Pages hook. A failed hook is `continue-on-error` and does not fail the sync.
 
-### Alert rule
+### Alert rules
 
-Reuse the contact point `tookratt-email` from [grafana-cloud-injection-alerting.md](grafana-cloud-injection-alerting.md). One rule, two queries. A regex over both `source` values stays quiet when only one job is alive, so do not combine them.
+Reuse the contact point `tookratt-email` from [grafana-cloud-injection-alerting.md](grafana-cloud-injection-alerting.md). One rule per source, so the alert title says which schedule stopped.
 
-1. **Alerting** → **Alert rules** → **New alert rule**.
-2. Query type: **LogQL** against the Loki datasource. Add both queries:
+| Rule | Identifier | Query |
+|---|---|---|
+| Schedule heartbeat missing: supabase_dump | `ffzpbtlt5ryf4e` | `absent_over_time({app="tookratt", event="schedule_heartbeat", source="supabase_dump"}[36h])` |
+| Schedule heartbeat missing: ingest | `cfzpbztihwveof` | `absent_over_time({app="tookratt", event="schedule_heartbeat", source="ingest"}[36h])` |
 
-```logql
-absent_over_time({app="tookratt", event="schedule_heartbeat", source="supabase_dump"}[36h])
-```
+For each rule:
 
-```logql
-absent_over_time({app="tookratt", event="schedule_heartbeat", source="ingest"}[36h])
-```
-
-3. Expression: classic condition, **OR**. Fire when `last()` of either query **is above** `0`.
-4. **Evaluation interval:** `1h`. Pending period: `0`.
-5. **Alert state if no data:** **Normal**. `absent_over_time` returns nothing while heartbeats are arriving. The default No Data state would page on a healthy schedule.
+1. **Alerting** → **Alert rules** → **New alert rule**, folder `Hubster`.
+2. Query type: **LogQL**, type **Instant**, datasource `grafanacloud-cosmicmerlin1468-logs`. The stack's default is the Prometheus datasource and it cannot be changed (provisioned), so switch it first. Not `…-alert-state-history`: that Loki source holds Grafana's alert state, not app logs.
+3. Condition: fire when the query **is above** `0`.
+4. Evaluation group: `schedule-heartbeat`, interval `1h`. Create it once, with the first rule, and pick it for the second. Do not put these rules in the 1m group the auth and injection rules use: changing a group's interval changes every rule in it. Pending period: `0`. Keep firing for: None.
+5. **Alert state if no data:** **Normal**. `absent_over_time` returns nothing while heartbeats arrive, so No Data is the healthy state. Left at the default, it sends a No Data notification on a healthy schedule.
 6. **Alert state if execution error:** **Error**.
-7. Notification: contact point `tookratt-email`.
+7. Contact point: `tookratt-email`.
+8. Summary: `Ingest schedule heartbeat missing` / `Supabase dump schedule heartbeat missing`. Description: `No scheduled <ingest|supabase-dump> heartbeat for 36h. Check .github/workflows/<ingest|supabase-dump>.yml and whether GitHub disabled the schedule.`
 
-Leave the 36-hour window in place. The two jobs run about a day apart; 36 hours is one missed day plus overlap, not a same-day page.
+Leave the 36-hour window. The ingest heartbeat landed about 4 hours after its 00:00 UTC schedule on 2026-09-30 (GitHub start delay plus job run time), and the window absorbs that. With a 1h interval and the default of 2 missing-series evaluations, an alert can take up to about 2 hours to resolve after a heartbeat arrives.
 
-### Prove it once
+### Proved once
 
-No `source="ingest"` heartbeat exists until the first scheduled ingest after this change is on `main`. Ingest runs at 00:00 UTC. Create the rule after that merge and before that run. A third query for a source that was never written is not needed.
-
-1. Set the evaluation interval to `5m` for the test. Pending period stays `0`. An interval of `1h` would hide each state change for up to an hour.
-2. On the next evaluation the ingest query should return a value and the rule should fire. The dump query stays empty if a scheduled dump heartbeat is already in Loki. That is the check that a classic OR fires when one query has a value and the other returns nothing.
-3. After the 00:00 UTC ingest succeeds, the ingest query goes empty and the rule should return to Normal.
-4. Set the evaluation interval back to `1h`. Leave both queries and the 36-hour window.
-5. Write the firing time and the resolving time on [ALE-247](https://linear.app/alex-projects/issue/ALE-247).
-
-Stop if the rule does not fire while ingest is absent, or does not resolve after that ingest. The Loki push secret is `logs:write` and cannot create the rule; this is a Grafana Cloud click.
+On 2026-09-29/30 the ingest rule fired at 09:21 UTC, when no `source="ingest"` heartbeat existed yet, and resolved at 03:54 UTC after the first scheduled ingest. The dump rule never fired, because a dump heartbeat was already in Loki; both rules use the same query shape. Times and details are on [ALE-247](https://linear.app/alex-projects/issue/ALE-247).
 
 ## Privacy
 
