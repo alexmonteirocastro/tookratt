@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 from qdrant_client import QdrantClient
 
 _DEFAULT_CORS_ORIGINS = ("http://localhost:5173",)
+DEFAULT_APP_PUBLIC_URL = "http://localhost:5173"
 DEFAULT_CHAT_QUESTION_MAX_LENGTH = 500
 DEFAULT_CHAT_RATE_LIMIT = "10/minute"
 # Calibrated against tests/fixtures/golden_queries.json
@@ -163,6 +164,31 @@ class Settings(BaseSettings):
             "Server-only. Ingest does not read it."
         ),
     )
+    app_public_url: str = Field(
+        default=DEFAULT_APP_PUBLIC_URL,
+        validation_alias="APP_PUBLIC_URL",
+        description=(
+            "Public origin of the chat app. Invite and reset links are "
+            "{origin}/set-password#token_hash=…. The API refuses to start when "
+            "SUPABASE_URL is the production project unless this is "
+            "https://app.tookratt.com."
+        ),
+    )
+
+    @field_validator("app_public_url", mode="before")
+    @classmethod
+    def normalize_app_public_url(cls, value: object) -> str:
+        if value is None or value == "":
+            return DEFAULT_APP_PUBLIC_URL
+        if not isinstance(value, str):
+            raise ValueError("must be an http or https URL")
+        trimmed = value.strip()
+        if trimmed.endswith("/"):
+            trimmed = trimmed[:-1]
+        parsed = urlparse(trimmed)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("must be an http or https URL")
+        return trimmed
 
     @field_validator("tookratt_api_keys", mode="before")
     @classmethod

@@ -311,7 +311,33 @@ def test_settings_validate_without_supabase_env(monkeypatch, tmp_path):
     monkeypatch.delenv("SUPABASE_URL", raising=False)
     monkeypatch.delenv("SUPABASE_SECRET_KEY", raising=False)
 
+    monkeypatch.delenv("APP_PUBLIC_URL", raising=False)
+
     settings = Settings()
 
     assert settings.supabase_url is None
     assert settings.supabase_secret_key is None
+    assert settings.app_public_url == "http://localhost:5173"
+
+
+def test_app_public_url_strips_one_trailing_slash(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("QDRANT_URL", "http://localhost:6333")
+    monkeypatch.setenv("QDRANT_COLLECTION_NAME", "JOBS_ON_THE_HUB")
+    monkeypatch.setenv("EMBEDDING_MODEL", E5_MODEL)
+    monkeypatch.setenv("TOOKRATT_API_KEYS", "test-key")
+    monkeypatch.setenv("APP_PUBLIC_URL", "https://app.tookratt.com/")
+
+    assert Settings().app_public_url == "https://app.tookratt.com"
+
+
+def test_app_public_url_rejects_a_non_http_scheme(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("QDRANT_URL", "http://localhost:6333")
+    monkeypatch.setenv("QDRANT_COLLECTION_NAME", "JOBS_ON_THE_HUB")
+    monkeypatch.setenv("EMBEDDING_MODEL", E5_MODEL)
+    monkeypatch.setenv("TOOKRATT_API_KEYS", "test-key")
+    monkeypatch.setenv("APP_PUBLIC_URL", "ftp://app.tookratt.com")
+
+    with pytest.raises(ValidationError):
+        Settings()

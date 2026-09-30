@@ -57,5 +57,5 @@ export interface AdminUserList {
 }
 
 export interface ActionLink {
-  action_link: string;
+  link: string;
 }

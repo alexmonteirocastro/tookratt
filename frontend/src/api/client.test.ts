@@ -340,7 +340,7 @@ describe("admin client", () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ action_link: "https://example.test/recover" }),
+      json: () => Promise.resolve({ link: "https://example.test/recover" }),
     } as Response);
 
     await expect(createResetLink("user-2")).resolves.toBe("https://example.test/recover");

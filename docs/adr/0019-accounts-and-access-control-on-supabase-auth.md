@@ -41,7 +41,8 @@ ALE-213 ran the seven preconditions on the permanent dev project (`uuaoiyzztkxzr
 
 **Link handling, from ALE-213:**
 
-- The REST admin response puts `action_link` on the top-level object. Client SDKs expose `properties.action_link`. The same response includes an 8-digit `email_otp` and a `hashed_token`. The admin endpoint must not return those.
+- The REST admin response puts `action_link` on the top-level object. Client SDKs expose `properties.action_link`. The same response includes an 8-digit `email_otp` and a `hashed_token`. The admin endpoint must not return `email_otp` or `action_link`.
+- ALE-269: the link the admin copies is built from `hashed_token`, as `{APP_PUBLIC_URL}/set-password#token_hash=<hashed_token>&type=<invite|recovery>`. The token is verified when the person submits the form, not when the link is opened. `action_link` is a GET to Supabase `/verify`, so a link preview consumes it.
 - A `redirect_to` outside the allow list is rewritten to the Site URL. It is not an error. Dev Site URL is `http://localhost:5173`.
 - Email OTP expiration on the dev project is set to 86400 seconds (24 hours). That setting is the invite and recovery link lifetime. `auth.one_time_tokens.expires_at` is null, and `GET /auth/v1/settings` does not return the value, so production (ALE-215) must set the same dashboard value rather than reading it back. The dashboard rejects a value above 86400 seconds.
 - A banned user's recovery link is still issued, but opening it does not create a session. Unban first, or set a password with `update_user_by_id`.

@@ -293,6 +293,16 @@ A `redirect_to` outside the allow list was rewritten to the Site URL rather than
 
 Dashboard key names in use: publishable `sb_publishable_…` (`SUPABASE_PUBLISHABLE_KEY`) and secret `sb_secret_…` (`SUPABASE_SECRET_KEY`). A legacy anon JWT is also enabled. The Vite app gets the publishable key only.
 
+## Follow-up — ALE-269 (2026-09-30)
+
+An invite link sent over WhatsApp on 2026-09-30 showed "This link has expired" before the invitee opened it. Resetting the link and sending it again did the same. The link we handed out was Supabase's `action_link`, which verifies and consumes the one-time token on a plain GET. WhatsApp's link preview requested that URL on the sender's phone. Supabase reports a used token as `otp_expired`, so the screen said expired even though no time had passed. The same GET consumes a reset link. Findings above flagged mailbox scanners. A chat preview does it too.
+
+The admin API no longer returns `action_link` or `email_otp`. It builds `{APP_PUBLIC_URL}/set-password#token_hash=<hashed_token>&type=<invite|recovery>` from `generate_link`'s `hashed_token`. The page makes no Supabase call on load. Submit calls `verifyOtp`, then `updateUser({ password })`. A plain GET does not consume the token.
+
+Checked on the dev project before the code change: `POST /auth/v1/verify` with the publishable key and `token_hash` returned a session for both `invite` and `recovery`, with public sign-up off. The throwaway user was deleted.
+
+Production Email OTP expiration is not in the database. `auth.instances` on the production project has no rows, and ALE-213 already found that `GET /auth/v1/settings` does not return the lifetime. The ops doc still records 86400 seconds for both projects. This check could not read the live dashboard value. The "24 hours" copy stays on that record.
+
 ## Out of scope (unchanged from the ticket, updated for the vision)
 
 * No implementation: no Supabase project, no endpoints, no login UI, no new dependency.

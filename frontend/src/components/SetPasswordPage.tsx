@@ -4,7 +4,13 @@ import {
   AUTH_FALLBACK_MESSAGE,
   classifyAuthError,
 } from "../api/authErrors";
-import { clearPendingPasswordType, type PasswordLinkType } from "../api/authHash";
+import {
+  clearPendingPasswordType,
+  clearPendingToken,
+  readPendingToken,
+  writePendingPasswordType,
+  type PasswordLinkType,
+} from "../api/authHash";
 import { supabase } from "../api/supabase";
 import { AuthCard, FieldError, Spinner, StateIcon } from "./AuthLayout";
 import styles from "./Auth.module.css";
@@ -21,9 +27,13 @@ export function SetPasswordPage({ type, email, onDone }: SetPasswordPageProps) {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [verifiedEmail, setVerifiedEmail] = useState("");
   const [paused, setPaused] = useState(false);
   const [pending, setPending] = useState(false);
   const invite = type === "invite";
+  const awaitingVerify = readPendingToken() !== null && !verifiedEmail;
+  const shownEmail = awaitingVerify ? "" : verifiedEmail || email;
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -45,6 +55,29 @@ export function SetPasswordPage({ type, email, onDone }: SetPasswordPageProps) {
     }
     setFormError(null);
     setPending(true);
+    const token = readPendingToken();
+    if (token) {
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: token.tokenHash,
+        type: token.type,
+      });
+      if (verifyError) {
+        clearPendingToken();
+        setPending(false);
+        if (classifyAuthError(verifyError) === "paused") {
+          setPaused(true);
+          return;
+        }
+        setLinkError(verifyError.code === "otp_expired" ? "otp_expired" : (verifyError.code ?? "unspecified_code"));
+        return;
+      }
+      const nextEmail = data.user?.email;
+      if (nextEmail) {
+        setVerifiedEmail(nextEmail);
+      }
+      clearPendingToken();
+      writePendingPasswordType(token.type);
+    }
     const { error } = await supabase.auth.updateUser({ password });
     setPending(false);
     if (error) {
@@ -58,6 +91,10 @@ export function SetPasswordPage({ type, email, onDone }: SetPasswordPageProps) {
     }
     clearPendingPasswordType();
     onDone();
+  }
+
+  if (linkError) {
+    return <LinkErrorCard errorCode={linkError} onGoToLogin={() => setLinkError(null)} />;
   }
 
   if (paused) {
@@ -82,13 +119,18 @@ export function SetPasswordPage({ type, email, onDone }: SetPasswordPageProps) {
       <h2 className={styles.heading}>{invite ? "Welcome to Töökratt" : "Set a new password"}</h2>
       <p className={styles.lede}>
         {invite ? (
-          <>
-            Set a password for {email}. You'll log in with this email and password from now on.
-          </>
+          shownEmail ? (
+            <>
+              Set a password for {shownEmail}. You'll log in with this email and password from now
+              on.
+            </>
+          ) : (
+            <>Set a password. You'll log in with this email and password from now on.</>
+          )
+        ) : shownEmail ? (
+          <>For {shownEmail}. Your old password stops working once you save this one.</>
         ) : (
-          <>
-            For {email}. Your old password stops working once you save this one.
-          </>
+          <>Your old password stops working once you save this one.</>
         )}
       </p>
       {formError ? (
@@ -176,7 +218,7 @@ export function LinkErrorCard({
         <p className={styles.stateBody}>
           {expired ? (
             <>
-              Links work once and last 24 hours. Ask for a new one at{" "}
+              This link was already used, or it is older than 24 hours. Ask for a new one at{" "}
               <a className={styles.stateLink} href="mailto:hello@tookratt.com">
                 hello@tookratt.com
               </a>

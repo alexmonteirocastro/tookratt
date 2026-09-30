@@ -59,14 +59,16 @@ function sessionStorageAdapter(): Pick<Storage, "getItem" | "setItem" | "removeI
 }
 
 /**
- * Captured before `createClient`. @supabase/auth-js 2.117 (supabase-js 2.117)
- * clears `window.location.hash` in `_getSessionFromURL` after a successful
- * implicit grant, which drops `type=invite` / `type=recovery` before React
- * renders. Error fragments are not cleared there, so `captureAuthRedirect`
- * removes those with `history.replaceState`.
+ * Captured before `createClient`. A `token_hash` fragment is stored and
+ * stripped here, so `detectSessionInUrl` never verifies it. Older links still
+ * use an implicit grant: @supabase/auth-js 2.117 (supabase-js 2.117) clears
+ * `window.location.hash` in `_getSessionFromURL` after success, which drops
+ * `type=invite` / `type=recovery` before React renders. Error fragments are
+ * not cleared there, so `captureAuthRedirect` removes those with
+ * `history.replaceState`.
  *
  * This package's default `flowType` is already `implicit`. It is set again
- * so a later default of `pkce` cannot reject the fragment session.
+ * so a later default of `pkce` cannot reject an older fragment session.
  */
 export const initialAuthRedirect: AuthRedirect = captureAuthRedirect(
   typeof window === "undefined" ? "" : window.location.hash,

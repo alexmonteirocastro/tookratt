@@ -116,7 +116,7 @@ class InviteRequest(BaseModel):
 
 
 class ActionLinkResponse(BaseModel):
-    action_link: str
+    link: str
 
 
 class AdminUserResponse(BaseModel):

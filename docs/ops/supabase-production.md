@@ -19,7 +19,7 @@ Both projects, set in the dashboard:
 - Email OTP expiry is 86400 seconds.
 - No custom SMTP.
 - Legacy `anon` and `service_role` keys are disabled.
-- Site URL and redirect allow-list: dev `http://localhost:5173`, production `https://app.tookratt.com`. Invite and recovery links land on that origin with the session in the URL fragment.
+- Site URL and redirect allow-list: dev `http://localhost:5173`, production `https://app.tookratt.com`. Invite and recovery links are built by the API as `{APP_PUBLIC_URL}/set-password#token_hash=…&type=invite|recovery`. A plain GET does not consume the token. Do not send a new link until both Render and Pages are on that build.
 
 ## Dump
 

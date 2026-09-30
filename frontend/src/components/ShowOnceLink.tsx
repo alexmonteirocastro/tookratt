@@ -48,8 +48,7 @@ export function ShowOnceLink({ kind, email, actionLink, onDone }: ShowOnceLinkPr
       <p className={styles.warning}>
         <WarningIcon />
         <span>
-          Send it in a chat app like Slack or Signal, not email. Some mail scanners open links and
-          use them up. It works once, lasts 24 hours, and won't be shown again.
+          It works once, after the password is saved. It lasts 24 hours and won't be shown again.
         </span>
       </p>
       <button type="button" className={`${styles.done} ${styles.doneMobile}`} onClick={onDone}>
