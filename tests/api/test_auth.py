@@ -1,11 +1,13 @@
 import logging
 
+import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient
 
+from api.auth import require_api_auth_config
 from api.jwt_verify import JwksCache, JwksUnavailable, use_jwks_cache_for_tests
 from api.main import app
-from db.settings import get_settings
+from db.settings import Settings, get_settings
 from logging_config import AUTH_LOGGER_NAME
 from tests.api_auth import (
     AUTH_HEADERS,
@@ -220,3 +222,49 @@ def test_service_key_outside_the_allowlist_is_not_a_user():
         app.dependency_overrides.pop(get_settings, None)
 
     assert response.status_code == 401
+
+
+def _auth_settings(monkeypatch, tmp_path, **env: str) -> Settings:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("QDRANT_URL", "http://localhost:6333")
+    monkeypatch.setenv("QDRANT_COLLECTION_NAME", "JOBS_ON_THE_HUB")
+    monkeypatch.setenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
+    monkeypatch.setenv("TOOKRATT_API_KEYS", "test-key")
+    monkeypatch.setenv("SUPABASE_SECRET_KEY", "sb_secret_test")
+    monkeypatch.delenv("APP_PUBLIC_URL", raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    return Settings()
+
+
+def test_production_supabase_requires_the_public_app_url(monkeypatch, tmp_path):
+    settings = _auth_settings(
+        monkeypatch,
+        tmp_path,
+        SUPABASE_URL="https://jogkvchexsfiwezdpirb.supabase.co",
+    )
+
+    with pytest.raises(RuntimeError, match="APP_PUBLIC_URL"):
+        require_api_auth_config(settings)
+
+
+def test_production_supabase_accepts_the_exact_public_url(monkeypatch, tmp_path):
+    settings = _auth_settings(
+        monkeypatch,
+        tmp_path,
+        SUPABASE_URL="https://jogkvchexsfiwezdpirb.supabase.co",
+        APP_PUBLIC_URL="https://app.tookratt.com/",
+    )
+
+    require_api_auth_config(settings)
+
+
+def test_other_supabase_hosts_keep_the_default_public_url(monkeypatch, tmp_path):
+    settings = _auth_settings(
+        monkeypatch,
+        tmp_path,
+        SUPABASE_URL="https://test.supabase.co",
+    )
+
+    require_api_auth_config(settings)
+    assert settings.app_public_url == "http://localhost:5173"

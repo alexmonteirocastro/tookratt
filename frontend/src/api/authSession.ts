@@ -1,4 +1,4 @@
-import { clearPendingPasswordType } from "./authHash";
+import { clearPendingPasswordType, clearPendingToken } from "./authHash";
 import { AUTH_STORAGE_KEY, supabase } from "./supabase";
 
 let userAskedToLeave = false;
@@ -40,6 +40,7 @@ export function clearAuthStorage(): void {
 /** Local scope only. Never call this from `onAuthStateChange`. */
 export async function signOutLocal(): Promise<void> {
   clearPendingPasswordType();
+  clearPendingToken();
   try {
     await supabase.auth.signOut({ scope: "local" });
   } catch {

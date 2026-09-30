@@ -297,11 +297,11 @@ function readActionLink(body: unknown): string {
   if (
     typeof body === "object" &&
     body !== null &&
-    "action_link" in body &&
-    typeof body.action_link === "string" &&
-    body.action_link
+    "link" in body &&
+    typeof body.link === "string" &&
+    body.link
   ) {
-    return (body as ActionLink).action_link;
+    return (body as ActionLink).link;
   }
   throw new ApiHttpError(502, "Auth service is unavailable.", "auth_unavailable");
 }

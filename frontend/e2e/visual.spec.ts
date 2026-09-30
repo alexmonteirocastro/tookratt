@@ -8,7 +8,6 @@ import {
   sourceListLocator,
   submitQuestion,
 } from "./helpers";
-import { PENDING_PASSWORD_TYPE_KEY } from "../src/api/authHash";
 
 const ADMIN_USERS = [
   {
@@ -38,7 +37,7 @@ const ADMIN_USERS = [
 ];
 
 const FAKE_INVITE_LINK =
-  "https://app.tookratt.com/#access_token=fake-invite-token&type=invite";
+  "https://app.tookratt.com/set-password#token_hash=fake-invite-token&type=invite";
 
 async function mockAdminUsers(page: Page): Promise<void> {
   await page.route("**/api/admin/users**", async (route) => {
@@ -93,11 +92,7 @@ test.describe("visual snapshots", { tag: "@visual" }, () => {
   });
 
   test("set password", async ({ page }) => {
-    await seedSession(page);
-    await page.addInitScript((key: string) => {
-      sessionStorage.setItem(key, "invite");
-    }, PENDING_PASSWORD_TYPE_KEY);
-    await openApp(page, "/");
+    await openApp(page, "/set-password#token_hash=fake-invite-token&type=invite");
 
     await expect(page.getByRole("heading", { name: "Welcome to Töökratt" })).toBeVisible();
     await expect(page).toHaveScreenshot("set-password.png", { fullPage: true });
@@ -164,11 +159,7 @@ test.describe("visual snapshots", { tag: "@visual" }, () => {
   });
 
   test("set password recovery", async ({ page }) => {
-    await seedSession(page);
-    await page.addInitScript((key: string) => {
-      sessionStorage.setItem(key, "recovery");
-    }, PENDING_PASSWORD_TYPE_KEY);
-    await openApp(page, "/");
+    await openApp(page, "/set-password#token_hash=fake-recovery-token&type=recovery");
 
     await expect(page.getByRole("heading", { name: "Set a new password" })).toBeVisible();
     await expect(page.getByLabel("New password")).toBeVisible();
@@ -229,7 +220,7 @@ test.describe("visual snapshots", { tag: "@visual" }, () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        json: { action_link: FAKE_INVITE_LINK },
+        json: { link: FAKE_INVITE_LINK },
       });
     });
     await openApp(page, "/admin");

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hmac
 from dataclasses import dataclass
 from typing import Annotated
+from urllib.parse import urlparse
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -22,6 +23,9 @@ from db.settings import Settings, get_settings
 from logging_config import log_auth_denied
 
 _bearer_scheme = HTTPBearer(auto_error=False)
+
+PRODUCTION_SUPABASE_HOST = "jogkvchexsfiwezdpirb.supabase.co"
+PRODUCTION_APP_PUBLIC_URL = "https://app.tookratt.com"
 
 
 @dataclass(frozen=True)
@@ -47,13 +51,23 @@ Caller = ServiceCaller | UserCaller
 def require_api_auth_config(settings: Settings) -> None:
     """Fail API startup when Supabase is not configured. Ingest does not call this."""
     missing: list[str] = []
-    if not settings.supabase_url:
+    supabase_url = settings.supabase_url
+    if not supabase_url:
         missing.append("SUPABASE_URL")
     if not settings.supabase_secret_key:
         missing.append("SUPABASE_SECRET_KEY")
     if missing:
         names = " and ".join(missing)
         raise RuntimeError(f"API startup requires {names}")
+    host = urlparse(supabase_url).hostname
+    if (
+        host == PRODUCTION_SUPABASE_HOST
+        and settings.app_public_url != PRODUCTION_APP_PUBLIC_URL
+    ):
+        raise RuntimeError(
+            "API startup requires APP_PUBLIC_URL=https://app.tookratt.com "
+            "when SUPABASE_URL is the production project"
+        )
 
 
 def _matches_service_key(candidate: str, keys: set[str]) -> bool:

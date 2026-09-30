@@ -15,7 +15,7 @@ Paper page (`--color-surface-alt`). The app header (subtitle, nav, email, Log ou
 
 The card is white (`--color-surface`), 1px `--color-border`, `--radius-lg`, padding `--space-8`, max width `--max-width-auth` (new, see Tokens). Heading is Space Grotesk. Body is IBM Plex Sans.
 
-The set-password screen is not a separate path. Invite and recovery links land on the Site URL with the session in the fragment (`type=invite` or `type=recovery`). A `redirect_to` outside the allow list is rewritten to that same URL. ALE-216 reads the fragment on `/` before the redirect to `/market`. One screen. The heading and the first field label change with `type`. The email in the body is the address on the session.
+Invite and recovery links land on `/set-password` with `token_hash` and `type` in the fragment (ALE-269). Opening the page does not call Supabase. The fragment is removed from the address bar. The heading and the first field label change with `type`. The email in the body is the address on the session, and it appears after the token is verified. Links already sent before that change still land on `/` with the session in the fragment.
 
 Some failures replace the form with a state card (expired link, revoked link, paused project). Those cards use the same shell: a small line icon, a heading, body, and one link.
 
@@ -48,8 +48,8 @@ The second field is labeled "Type it again".
 | Password too short | Under the first password field | Use at least 8 characters. |
 | Logging in | Login button | Logging in |
 | Session ended | Light accent-blue note above the "Log in" heading | You've been logged out. Log in again to keep going. |
-| Link expired or already used | Replaces the form | Heading: This link has expired. Body: Links work once and last 24 hours. Ask for a new one at hello@tookratt.com. Link: Go to log in. |
-| Revoked account opening a link | Replaces the form. Error fragment, no session. | Heading: This link doesn't work. Body: Your account can't use it right now. Write to hello@tookratt.com if that seems wrong. |
+| Link expired or already used | Replaces the form | Heading: This link has expired. Body: This link was already used, or it is older than 24 hours. Ask for a new one at hello@tookratt.com. Link: Go to log in. |
+| Revoked account opening a link | Replaces the form. A new link fails `verifyOtp` with `user_banned`. An older link still arrives as an error fragment, with no session. | Heading: This link doesn't work. Body: Your account can't use it right now. Write to hello@tookratt.com if that seems wrong. |
 | Paused project | Replaces the form | Heading: Paused right now. Body: Töökratt is paused right now. Contact us and we'll get it back up. Link on its own line: hello@tookratt.com. |
 | Member opens `/admin` | Replaces the People content. The header stays. | Heading: Admins only. Body: This page is for inviting and managing people. Your account can use Job market and Chat. Link: Go to Job market. |
 
@@ -103,11 +103,9 @@ Same panel for invite and reset. Pale wash of `--color-signal` on white, `--radi
 
 - Heading: "Invite link for sara@example.com" or "Reset link for jonas@example.com", with the real address.
 - "Done" dismisses the panel. On desktop it sits at the top right of the panel. On a narrow screen it sits centered under the warning. Closing does not bring the link back.
-- Read-only field with the `action_link`. The box may ellipsize. Copy uses the full link. The mock redacts the token in the picture. The product shows the real link.
+- Read-only field with the set-password link. The box may ellipsize. Copy uses the full link. The mock redacts the token in the picture. The product shows the real link.
 - Button "Copy link", accent fill, with a small copy icon. After a successful copy it reads "Copied" and returns to "Copy link" after a few seconds.
-- Warning, under the field: "Send it in a chat app like Slack or Signal, not email. Some mail scanners open links and use them up. It works once, lasts 24 hours, and won't be shown again."
-
-That warning is stricter than "send it by hand". The screen tells the admin not to use email.
+- Warning, under the field: "It works once, after the password is saved. It lasts 24 hours and won't be shown again."
 
 The panel does not log the URL.
 
@@ -167,12 +165,12 @@ Strings ALE-216 should use as written.
 | Relative last login | Today, Yesterday |
 | Show-once heading | Invite link for {email} |
 | Show-once heading, reset | Reset link for {email} |
-| Show-once warning | Send it in a chat app like Slack or Signal, not email. Some mail scanners open links and use them up. It works once, lasts 24 hours, and won't be shown again. |
+| Show-once warning | It works once, after the password is saved. It lasts 24 hours and won't be shown again. |
 | Copy button | Copy link |
 | Copy button, after | Copied |
 | Show-once dismiss | Done |
 | Expired heading | This link has expired |
-| Expired body | Links work once and last 24 hours. Ask for a new one at hello@tookratt.com. |
+| Expired body | This link was already used, or it is older than 24 hours. Ask for a new one at hello@tookratt.com. |
 | Expired link | Go to log in |
 | Revoked link heading | This link doesn't work |
 | Revoked link body | Your account can't use it right now. Write to hello@tookratt.com if that seems wrong. |
@@ -187,7 +185,7 @@ Strings ALE-216 should use as written.
 | Confirm field error | The two passwords don't match. |
 | Short password | Use at least 8 characters. |
 
-An admin invite that hits a confirmed account can say "That person already has an account." The public login form cannot. Inviting an address that was invited but never set a password returns a new link (checked on the dev project, 2026-09-28). "Create invite link" again is the resend. `email_exists` is only for an account that already confirmed.
+An admin invite that hits a confirmed account can say "That person already has an account." The public login form cannot. Inviting an address that was invited but never set a password returns a new link (checked on the dev project, 2026-09-28). "Create invite link" again is the resend. `email_exists` is only for an account that already confirmed. If they opened the link, verification succeeded, and they closed the tab before the password was saved, the link is used up and a new invite returns this 409. Send a reset link.
 
 ## Tokens and components
 

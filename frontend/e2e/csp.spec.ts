@@ -1,11 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { contentSecurityPolicy } from "../securityHeaders.ts";
-import { PENDING_PASSWORD_TYPE_KEY } from "../src/api/authHash";
 import {
   MOCK_CHAT_QUESTION,
   mockChat,
   mockJobsStats,
+  mockSetPassword,
   openApp,
   seedSession,
   submitQuestion,
@@ -111,29 +111,8 @@ test("login page stays within the enforcing policy", async ({ page }) => {
 test("set-password page stays within the enforcing policy", async ({ page }) => {
   const consoleHits = await installCspProbe(page);
   await mockJobsStats(page);
-  await seedSession(page);
-  await page.addInitScript((key: string) => {
-    sessionStorage.setItem(key, "invite");
-  }, PENDING_PASSWORD_TYPE_KEY);
-  await page.route("**/auth/v1/user**", async (route) => {
-    if (route.request().method() !== "PUT") {
-      await route.fallback();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      json: {
-        id: "e2e-user",
-        email: "alex@example.com",
-        aud: "authenticated",
-        role: "authenticated",
-        app_metadata: { role: "member" },
-        user_metadata: {},
-      },
-    });
-  });
-  await openApp(page, "/");
+  await mockSetPassword(page);
+  await openApp(page, "/set-password#token_hash=e2e-token&type=invite");
   await expect(page.getByRole("heading", { name: "Welcome to Töökratt" })).toBeVisible();
 
   await page.getByLabel("Password").fill("long-enough");

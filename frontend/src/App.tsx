@@ -3,7 +3,12 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 import type { Session } from "@supabase/supabase-js";
 import { CHAT_HISTORY_MAX_TURNS, setUnauthorizedHandler } from "./api/client";
 import { handleAuthChange } from "./api/authEvents";
-import { clearPendingPasswordType, readPendingPasswordType } from "./api/authHash";
+import {
+  clearPendingPasswordType,
+  clearPendingToken,
+  readPendingPasswordType,
+  readPendingToken,
+} from "./api/authHash";
 import { initialAuthRedirect, supabase } from "./api/supabase";
 import {
   armSessionEndedNote,
@@ -57,6 +62,7 @@ export default function App() {
       sessionRef.current = nextSession;
       if (event === "SIGNED_OUT") {
         clearPendingPasswordType();
+        clearPendingToken();
       }
       handleAuthChange(event, {
         userAskedToLeave: didUserAskToLeave(),
@@ -100,21 +106,35 @@ export default function App() {
     );
   }
 
+  const pendingToken = readPendingToken();
   const pendingType = readPendingPasswordType();
-  if (pendingType && session) {
-    return (
-      <AuthLayout>
-        <SetPasswordPage
-          type={pendingType}
-          email={session.user.email ?? ""}
-          onDone={() => navigate("/market", { replace: true })}
-        />
-      </AuthLayout>
-    );
+  if (pendingToken || (pendingType && session)) {
+    const linkType = pendingToken?.type ?? pendingType;
+    if (linkType) {
+      return (
+        <AuthLayout>
+          <SetPasswordPage
+            type={linkType}
+            email={pendingToken ? "" : (session?.user.email ?? "")}
+            onDone={() => navigate("/market", { replace: true })}
+          />
+        </AuthLayout>
+      );
+    }
   }
 
   return (
     <Routes>
+      <Route
+        path="/set-password"
+        element={
+          sessionRef.current ? (
+            <Navigate to="/market" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
       <Route
         path="/login"
         element={

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type { Session } from "@supabase/supabase-js";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PENDING_PASSWORD_TYPE_KEY } from "./api/authHash";
+import { PENDING_PASSWORD_TYPE_KEY, PENDING_TOKEN_HASH_KEY, writePendingToken } from "./api/authHash";
 import { disarmSessionEndedNote, resetUserAskedToLeave } from "./api/authSession";
 import { CHAT_HISTORY_MAX_TURNS } from "./api/client";
 import App from "./App";
@@ -184,6 +184,7 @@ describe("App", () => {
 
   it("drops a pending password on sign-out so the next login reaches the app", async () => {
     sessionStorage.setItem(PENDING_PASSWORD_TYPE_KEY, "invite");
+    writePendingToken({ tokenHash: "hash-1", type: "invite" });
     renderApp("/");
     expect(await screen.findByRole("heading", { name: "Welcome to Töökratt" })).toBeInTheDocument();
 
@@ -194,6 +195,7 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "Log in" })).toBeInTheDocument();
     expect(sessionStorage.getItem(PENDING_PASSWORD_TYPE_KEY)).toBeNull();
+    expect(sessionStorage.getItem(PENDING_TOKEN_HASH_KEY)).toBeNull();
 
     const next = sessionFor("member");
     next.user.email = "sara@example.com";
@@ -251,6 +253,22 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "Welcome to Töökratt" })).toBeInTheDocument();
     expect(window.location.hash).toBe("");
+  });
+
+  it("shows the set-password form when a token is stored and a session exists", async () => {
+    writePendingToken({ tokenHash: "hash-1", type: "invite" });
+    auth.state.session = sessionFor("admin");
+    renderApp("/set-password");
+
+    expect(await screen.findByRole("heading", { name: "Welcome to Töökratt" })).toBeInTheDocument();
+    expect(screen.queryByText(/Set a password for alex@example.com/)).not.toBeInTheDocument();
+  });
+
+  it("sends a signed-in visit to /set-password onward when there is no link", async () => {
+    renderApp("/set-password");
+
+    expect(await screen.findByRole("link", { name: "Job market" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Welcome to Töökratt" })).not.toBeInTheDocument();
   });
 
   it("uses the stored recovery type for the heading", async () => {

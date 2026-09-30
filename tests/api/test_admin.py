@@ -3,14 +3,16 @@ from uuid import UUID
 
 from fastapi.testclient import TestClient
 
-from api.admin import get_gotrue_admin
+from api.admin import build_set_password_link, get_gotrue_admin
 from api.gotrue import BAN_DURATION, GoTrueEmailExists, GoTrueUnavailable
 from api.main import app
+from db.settings import get_settings
 from logging_config import AUTH_LOGGER_NAME
 from tests.api_auth import ADMIN_HEADERS, ADMIN_SUB, USER_HEADERS
 
 ADMIN_ID = UUID("33333333-3333-4333-8333-333333333333")
 LINK = "https://example.test/invite#this-must-not-be-logged"
+HASHED = "hashed-secret"
 
 
 class FakeGoTrue:
@@ -18,6 +20,7 @@ class FakeGoTrue:
         self.updates: list[tuple[UUID, dict[str, str]]] = []
         self.generated: list[str] = []
         self.invite_error: Exception | None = None
+        self.omit_hashed_token = False
         self.user: dict = {
             "id": str(ADMIN_ID),
             "email": "person@example.com",
@@ -29,13 +32,15 @@ class FakeGoTrue:
         self.generated.append(email)
         if self.invite_error is not None:
             raise self.invite_error
-        return {
+        payload = {
             "action_link": LINK,
             "email_otp": "12345678",
-            "hashed_token": "hashed-secret",
             "id": str(ADMIN_ID),
             "email": email,
         }
+        if not self.omit_hashed_token:
+            payload["hashed_token"] = HASHED
+        return payload
 
     def list_users(self, page: int) -> dict:
         return {
@@ -66,7 +71,7 @@ def _client() -> tuple[TestClient, FakeGoTrue]:
     return TestClient(app, headers=ADMIN_HEADERS), fake
 
 
-def test_invite_response_contains_only_the_action_link(caplog):
+def test_invite_response_is_a_set_password_link(caplog):
     client, _fake = _client()
     try:
         with caplog.at_level(logging.INFO, logger=AUTH_LOGGER_NAME):
@@ -76,12 +81,15 @@ def test_invite_response_contains_only_the_action_link(caplog):
     finally:
         app.dependency_overrides.pop(get_gotrue_admin, None)
 
+    link = build_set_password_link(get_settings().app_public_url, HASHED, "invite")
     assert response.status_code == 200
-    assert response.json() == {"action_link": LINK}
+    assert response.json() == {"link": link}
     assert response.headers["cache-control"] == "no-store"
     assert "12345678" not in response.text
-    assert "hashed-secret" not in response.text
-    assert LINK not in caplog.text
+    assert "action_link" not in response.text
+    assert LINK not in response.text
+    assert link not in caplog.text
+    assert HASHED not in caplog.text
     assert "person@example.com" not in caplog.text
 
 
@@ -167,9 +175,34 @@ def test_reset_link_returns_only_the_link():
     finally:
         app.dependency_overrides.pop(get_gotrue_admin, None)
 
+    link = build_set_password_link(get_settings().app_public_url, HASHED, "recovery")
     assert response.status_code == 200
-    assert response.json() == {"action_link": LINK}
+    assert response.json() == {"link": link}
     assert response.headers["cache-control"] == "no-store"
+    assert "12345678" not in response.text
+    assert LINK not in response.text
+
+
+def test_invite_without_hashed_token_is_502():
+    client, fake = _client()
+    fake.omit_hashed_token = True
+    try:
+        response = client.post("/admin/invites", json={"email": "person@example.com"})
+    finally:
+        app.dependency_overrides.pop(get_gotrue_admin, None)
+
+    assert response.status_code == 502
+
+
+def test_set_password_link_encodes_the_fragment():
+    link = build_set_password_link("https://app.tookratt.com", "a+b/c=&x", "invite")
+    assert link == (
+        "https://app.tookratt.com/set-password#token_hash=a%2Bb%2Fc%3D%26x&type=invite"
+    )
+    recovery = build_set_password_link("http://localhost:5173", "plain", "recovery")
+    assert recovery == (
+        "http://localhost:5173/set-password#token_hash=plain&type=recovery"
+    )
 
 
 def test_invite_rejects_a_bad_email_before_gotrue():

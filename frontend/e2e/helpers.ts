@@ -116,6 +116,43 @@ export async function mockJobsStats(
   });
 }
 
+export async function mockSetPassword(page: Page): Promise<void> {
+  const user = {
+    id: "e2e-user",
+    aud: "authenticated",
+    role: "authenticated",
+    email: "sara@example.com",
+    app_metadata: { role: "member" },
+    user_metadata: {},
+    created_at: "2026-01-01T00:00:00.000Z",
+  };
+  await page.route("**/auth/v1/verify**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      json: {
+        access_token: "e2e-access-token",
+        refresh_token: "e2e-refresh-token",
+        expires_in: 3600,
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        token_type: "bearer",
+        user,
+      },
+    });
+  });
+  await page.route("**/auth/v1/user**", async (route) => {
+    if (route.request().method() !== "PUT") {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      json: user,
+    });
+  });
+}
+
 export async function openApp(page: Page, path = "/"): Promise<void> {
   await page.goto(path);
   await page.getByRole("heading", { name: "töökratt", exact: true }).waitFor();

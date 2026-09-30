@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PENDING_PASSWORD_TYPE_KEY } from "../src/api/authHash";
-import { mockJobsStats, openApp, seedSession } from "./helpers";
+import { mockJobsStats, mockSetPassword, openApp, seedSession } from "./helpers";
 
 test("login failure stays on the form", { tag: "@smoke" }, async ({ page }) => {
   await page.route("**/auth/v1/token**", async (route) => {
@@ -72,30 +71,11 @@ test("paused project replaces the login form", { tag: "@smoke" }, async ({ page 
 
 test("set-password page accepts a new password", { tag: "@smoke" }, async ({ page }) => {
   await mockJobsStats(page);
-  await seedSession(page);
-  await page.addInitScript((key: string) => {
-    sessionStorage.setItem(key, "invite");
-  }, PENDING_PASSWORD_TYPE_KEY);
-  await page.route("**/auth/v1/user**", async (route) => {
-    if (route.request().method() !== "PUT") {
-      await route.fallback();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      json: {
-        id: "e2e-user",
-        email: "alex@example.com",
-        aud: "authenticated",
-        role: "authenticated",
-        app_metadata: { role: "member" },
-        user_metadata: {},
-      },
-    });
-  });
-  await openApp(page, "/");
+  await mockSetPassword(page);
+  await openApp(page, "/set-password#token_hash=e2e-token&type=invite");
   await expect(page.getByRole("heading", { name: "Welcome to Töökratt" })).toBeVisible();
+  await expect(page).toHaveURL(/\/set-password$/);
+  expect(page.url()).not.toContain("token_hash");
   await page.getByLabel("Password").fill("long-enough");
   await page.getByLabel("Type it again").fill("long-enough");
   await page.getByRole("button", { name: "Set password and continue" }).click();

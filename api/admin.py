@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -53,11 +54,18 @@ def _unavailable(exc: Exception) -> HTTPException:
     )
 
 
-def _action_link(payload: dict[str, Any]) -> str:
-    link = payload.get("action_link")
-    if not isinstance(link, str) or not link:
+def build_set_password_link(origin: str, hashed_token: str, link_type: str) -> str:
+    """A fragment link. A plain GET does not call Supabase."""
+    token = quote(hashed_token, safe="")
+    kind = quote(link_type, safe="")
+    return f"{origin}/set-password#token_hash={token}&type={kind}"
+
+
+def _set_password_link(payload: dict[str, Any], link_type: str, origin: str) -> str:
+    hashed = payload.get("hashed_token")
+    if not isinstance(hashed, str) or not hashed:
         raise GoTrueUnavailable
-    return link
+    return build_set_password_link(origin, hashed, link_type)
 
 
 def _target_id(payload: dict[str, Any], fallback: str) -> str:
@@ -125,12 +133,13 @@ def create_invite(
     response: Response,
     admin: Annotated[UserCaller, Depends(require_admin)],
     gotrue: Annotated[GoTrueAdmin, Depends(get_gotrue_admin)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> ActionLinkResponse:
     # email_exists is a confirmed account. An invite that was never accepted
     # gets a fresh link from GoTrue, so sending the form again is the resend.
     try:
         payload = gotrue.generate_link("invite", body.email)
-        link = _action_link(payload)
+        link = _set_password_link(payload, "invite", settings.app_public_url)
     except GoTrueEmailExists as exc:
         raise HTTPException(
             status_code=409,
@@ -155,7 +164,7 @@ def create_invite(
         target_user_id=_target_id(payload, ""),
     )
     response.headers["Cache-Control"] = "no-store"
-    return ActionLinkResponse(action_link=link)
+    return ActionLinkResponse(link=link)
 
 
 @router.get("/admin/users", response_model=AdminUserListResponse)
@@ -240,6 +249,7 @@ def reset_link(
     response: Response,
     admin: Annotated[UserCaller, Depends(require_admin)],
     gotrue: Annotated[GoTrueAdmin, Depends(get_gotrue_admin)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> ActionLinkResponse:
     try:
         user = gotrue.get_user(user_id)
@@ -264,7 +274,7 @@ def reset_link(
         raise _unavailable(GoTrueUnavailable())
     try:
         payload = gotrue.generate_link("recovery", email)
-        link = _action_link(payload)
+        link = _set_password_link(payload, "recovery", settings.app_public_url)
     except (GoTrueEmailExists, GoTrueRejected, GoTrueUnavailable) as exc:
         raise _unavailable(exc) from exc
     log_admin_action(
@@ -273,4 +283,4 @@ def reset_link(
         target_user_id=str(user_id),
     )
     response.headers["Cache-Control"] = "no-store"
-    return ActionLinkResponse(action_link=link)
+    return ActionLinkResponse(link=link)

@@ -3,10 +3,14 @@ import { AUTH_FALLBACK_MESSAGE, CREDENTIALS_MESSAGE, classifyAuthError } from ".
 import { handleAuthChange } from "./authEvents";
 import {
   PENDING_PASSWORD_TYPE_KEY,
+  PENDING_TOKEN_HASH_KEY,
   captureAuthRedirect,
   clearPendingPasswordType,
+  clearPendingToken,
   parseAuthHash,
+  parsePasswordTokenHash,
   readPendingPasswordType,
+  readPendingToken,
 } from "./authHash";
 
 describe("parseAuthHash", () => {
@@ -28,6 +32,22 @@ describe("parseAuthHash", () => {
       errorCode: "user_banned",
     });
     expect(parseAuthHash("")).toEqual({ type: null, errorCode: null });
+  });
+});
+
+describe("parsePasswordTokenHash", () => {
+  it("reads invite and recovery token hashes and ignores other fragments", () => {
+    expect(parsePasswordTokenHash("#token_hash=abc&type=invite")).toEqual({
+      tokenHash: "abc",
+      type: "invite",
+    });
+    expect(parsePasswordTokenHash("#type=recovery&token_hash=xyz")).toEqual({
+      tokenHash: "xyz",
+      type: "recovery",
+    });
+    expect(parsePasswordTokenHash("#access_token=abc&type=invite")).toBeNull();
+    expect(parsePasswordTokenHash("#token_hash=abc&type=magiclink")).toBeNull();
+    expect(parsePasswordTokenHash("#error=access_denied&error_code=otp_expired&token_hash=abc")).toBeNull();
   });
 });
 
@@ -54,6 +74,21 @@ describe("captureAuthRedirect", () => {
     expect(readPendingPasswordType()).toBe("recovery");
   });
 
+  it("stores a token hash, strips the fragment, and does not set the pending type", () => {
+    window.history.replaceState(null, "", "/set-password#token_hash=abc&type=invite");
+    expect(captureAuthRedirect(window.location.hash)).toEqual({ type: null, errorCode: null });
+    expect(readPendingToken()).toEqual({ tokenHash: "abc", type: "invite" });
+    expect(readPendingPasswordType()).toBeNull();
+    expect(window.location.hash).toBe("");
+
+    clearPendingToken();
+    window.history.replaceState(null, "", "/set-password#type=recovery&token_hash=xyz");
+    captureAuthRedirect(window.location.hash);
+    expect(readPendingToken()).toEqual({ tokenHash: "xyz", type: "recovery" });
+    expect(sessionStorage.getItem(PENDING_PASSWORD_TYPE_KEY)).toBeNull();
+    expect(window.location.hash).toBe("");
+  });
+
   it("clears an error fragment and does not set the pending flag", () => {
     window.history.replaceState(null, "", "/#error=access_denied&error_code=otp_expired");
     expect(captureAuthRedirect(window.location.hash)).toEqual({
@@ -62,6 +97,7 @@ describe("captureAuthRedirect", () => {
     });
     expect(window.location.hash).toBe("");
     expect(sessionStorage.getItem(PENDING_PASSWORD_TYPE_KEY)).toBeNull();
+    expect(sessionStorage.getItem(PENDING_TOKEN_HASH_KEY)).toBeNull();
 
     window.history.replaceState(null, "", "/#error=access_denied&error_code=user_banned");
     expect(captureAuthRedirect(window.location.hash).errorCode).toBe("user_banned");
