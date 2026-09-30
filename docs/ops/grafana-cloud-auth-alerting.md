@@ -7,12 +7,14 @@ Structured auth logs use Loki labels `app=tookratt`, `event`, and `source` only.
 ## Alert rule
 
 1. **Alerting** → **Alert rules** → **New alert rule**.
-2. Query type: **LogQL** against the Loki datasource.
-3. Query (more than 20 denials in 5 minutes, so ordinary scanner noise does not page):
+2. Query type: **LogQL**, type **Instant**, datasource `grafanacloud-cosmicmerlin1468-logs`. The stack's default datasource is Prometheus and cannot be changed (provisioned), so switch it first; a LogQL query sent to Prometheus errors on every evaluation. Not `…-alert-state-history`, which holds Grafana's alert state, not app logs.
+3. Query:
 
 ```logql
-count_over_time({app="tookratt", event="auth_denied"}[5m]) > 20
+sum(count_over_time({app="tookratt", event="auth_denied"}[5m]))
 ```
+
+   Alert condition: **is above** `20` (more than 20 denials in 5 minutes, so ordinary scanner noise does not page). The threshold is in the condition, not the query, so the preview shows the real count. `sum()` gives one alert instance across `source` values.
 
 Equivalent explore filter:
 
@@ -22,7 +24,8 @@ Equivalent explore filter:
 
 4. **Evaluation interval:** `1m`.
 5. Pending period: `1m`.
-6. Notification: contact point `tookratt-email`.
+6. **Alert state if no data:** **Normal**. Loki returns nothing when there are no denials, so No Data is the healthy state. **Alert state if execution error:** **Error**.
+7. Notification: contact point `tookratt-email`.
 
 A JWKS outage is HTTP 503 and is not an `auth_denied` event, so this rule does not fire for it.
 
