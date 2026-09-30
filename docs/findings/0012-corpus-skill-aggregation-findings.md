@@ -3,7 +3,7 @@
 * **Ticket:** [ALE-190](https://linear.app/alex-projects/issue/ALE-190/spike-evaluate-corpus-level-skill-aggregation-approach-tier-3-in)
 * **Related:** [PRODUCT_VISION](../PRODUCT_VISION.md) tier 3, [findings 0001](0001-keyword-tech-stack-retrieval-gap-findings.md), [ADR-0015](../adr/0015-observability-logging-and-alerting.md), [ADR-0019](../adr/0019-accounts-and-access-control-on-supabase-auth.md) Decision 5, [ALE-188](https://linear.app/alex-projects/issue/ALE-188/spike-quantify-filter-extraction-miss-rate-for-job-rolecompanyjob), [ALE-199](https://linear.app/alex-projects/issue/ALE-199/spike-discover-freecodecamp-catalog-access-video-coverage-and-skill), [ALE-256](https://linear.app/alex-projects/issue/ALE-256/start-daily-skill-count-snapshots-before-a-trend-can-be-shown)
 * **Date:** 2026-09-29
-* **Status:** Spike complete for extraction, counts, and the trend design. The day-2 timestamp compare is not run. The earliest second fetch is 2026-09-30.
+* **Status:** Spike complete for extraction, counts, the trend design, and the day-2 date compare (2026-09-30).
 
 ## Summary
 
@@ -167,13 +167,40 @@ Listing `docs[0]` on `/api/v2/jobs`, for DK, SE, NO, FI, IS, and EU, has no date
 
 The median age of 16 days describes this page-1 set, not the corpus. Denmark page 1 that evening was 15 cards, 5 of them featured. A job on the last Denmark page (page 27 of 27) had `publishedAt` on 2026-09-29, so page order is not an age ranking. If featured cards are over-represented on page 1, this median leans young.
 
-### Day-2 stability is not measured
+### Day-2 stability (2026-09-30)
 
-The 19 ids and their date values are in `tmp/ale190/dates-2026-09-29.json`, captured on 2026-09-29. A second fetch has to be at least one calendar day later. The earliest is 2026-09-30. Until that compare exists, do not claim `publishedAt` is stable, and do not claim `pumpedAt` only changes on a bump. The shape above is one day’s reading.
+The 19 ids in `tmp/ale190/dates-2026-09-29.json` were fetched again on 2026-09-30 with `GET /api/jobs/single/{id}`. Today’s date-like fields are in `tmp/ale190/dates-2026-09-30.json`. All 19 responses were HTTP 200. No listing closed or moved. This is 19 page-1 jobs over one day.
+
+| Field | Unchanged | Jobs that have it |
+|---|---|---|
+| `createdAt` | 19 | 19 |
+| `approvedAt` | 19 | 19 |
+| `publishedAt` | 16 | 16. Still missing on the same 3 Norway listings. |
+| `pumpedAt` | 5 | 5. Still absent on the other 14. |
+| `expirationDate` | 13 | 19 |
+
+`publishedAt` did not move. `pumpedAt` did not move on the 5 jobs that have it, and it did not appear on the other 14. This window has no bump.
+
+The only field that moved is `expirationDate`, and only where the day-1 value was `2027-03-29`. Each of those six is now `2027-03-30`:
+
+| Country | Job | 2026-09-29 | 2026-09-30 |
+|---|---|---|---|
+| SE | `6a84f2d13fa22e5cfd593edf` | `2027-03-29` | `2027-03-30` |
+| NO | `6a728411650cb842b85b505e` | `2027-03-29` | `2027-03-30` |
+| NO | `6a7bb9536cd84825d6ab518f` | `2027-03-29` | `2027-03-30` |
+| NO | `6a767345ca7c9e16fa8771b7` | `2027-03-29` | `2027-03-30` |
+| IS | `6ab074668b9ad34a03baa559` | `2027-03-29` | `2027-03-30` |
+| EU | `69fe7a04e71953e82dea3674` | `2027-03-29` | `2027-03-30` |
+
+`2027-03-29` is six months after 2026-09-29, and `2027-03-30` is six months after 2026-09-30. The other 13 expiration dates stayed put, including `2027-03-15`, `2027-03-21`, and `2027-03-22`. Company `createdAt`, company `approvedAt`, and `activeCommunityProgramDeadline` were unchanged on every job.
+
+For these six the value looks computed at request time (fetch date + 6 months), not stored. `expirationDate` is not a reliable closing date and must not feed `closed_at` or listing-lifetime estimates.
 
 ### Decision
 
-Use `publishedAt` for “new listings in this period” only where it is present, and say the denominator is listings that carry it (16 of 19 in this sample). Keep collecting snapshots either way. If the day-2 fetch shows `publishedAt` moving on its own, drop it and rely on snapshots plus `first_seen_at`.
+Use `publishedAt` for “new listings in this period” where it is present. It was unchanged on all 16 jobs that carry it (16 of 19 in this sample). One day is a short window. Keep collecting snapshots either way.
+
+No bump happened in this window, so this does not show that a bump leaves `publishedAt` alone. Revisit trigger: the first time snapshots or sync logs show a `pumpedAt` change, check `publishedAt` on that job.
 
 ### Survivorship, from the sync logs
 
